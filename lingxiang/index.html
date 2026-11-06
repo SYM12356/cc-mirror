@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f5f0e2" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="description" content="草稿纸上的校园 3v3 MOBA：3 名学生 vs 3 名老师，18 名英雄，推掉对方核心，决定今天到底放不放学。" />
+  <meta property="og:title" content="铃响之前 · 校园 3v3" />
+  <meta property="og:description" content="草稿纸手绘风的校园 3v3 单机 MOBA。18 名英雄，3v3 AI 对战，零素材、零联网。" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%94%3C/text%3E%3C/svg%3E" />
   <title>铃响之前 · 校园 3v3</title>
   <style>
 :root {
@@ -857,7 +862,7 @@ body.mobile #minimap-wrap {
 body.mobile .minimap-title { display: none; }
 
 body.mobile #killfeed {
-  top: calc(env(safe-area-inset-top, 0px) + 120px);
+  top: calc(env(safe-area-inset-top, 0px) + 140px);
   left: calc(env(safe-area-inset-left, 0px) + 8px);
   right: auto;
   align-items: flex-start;
@@ -912,6 +917,396 @@ body.mobile #respawn-tip { font-size: 12px; }
   #board-content th, #board-content td { padding: 5px 4px; }
 }
 
+/* ===================== UI v2 · P0 ===================== */
+#tooltip {
+  position: fixed;
+  z-index: 90;
+  width: 286px;
+  padding: 10px 12px;
+  background: var(--paper-2);
+  border: 1.6px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 4px 5px 0 rgba(46, 42, 36, .16);
+  pointer-events: none;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+#tooltip.hidden { display: none !important; }
+.tip-head { display: flex; align-items: center; gap: 7px; color: var(--ink); margin-bottom: 4px; }
+.tip-head .ui-icon { color: var(--teal-deep); flex: none; }
+.tip-head b { font-size: 13px; }
+.tip-head span { margin-left: auto; font-size: 9px; color: var(--muted); letter-spacing: .06em; }
+.tip-meta { font-size: 10px; color: var(--muted); margin: 2px 0 4px; }
+#tooltip p { margin: 0; }
+
+/* 顶栏塔数 */
+.pips { display: inline-flex; gap: 3px; margin-left: 4px; }
+.pips i {
+  width: 6px; height: 6px; border-radius: 2px;
+  border: 1px solid rgba(46, 42, 36, .55);
+  background: var(--teal);
+}
+.team-score.teacher .pips i { background: var(--red); }
+.pips i.dead { background: transparent; opacity: .28; }
+
+/* 底部玩家面板 */
+#hero-panel {
+  width: min(940px, calc(100vw - 24px));
+  gap: 10px;
+  padding: 8px 11px;
+  border-radius: 13px;
+}
+#hero-head { display: flex; align-items: center; gap: 8px; flex: none; }
+#portrait { width: 50px; height: 50px; }
+#portrait .portrait-face { font-size: 22px; }
+#hero-id { width: 88px; min-width: 0; }
+#hero-name {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#hero-meta { display: flex; gap: 6px; margin-top: 3px; font-size: 9px; white-space: nowrap; }
+#hero-meta #hero-kda { color: var(--muted); }
+#bars { width: 168px; flex: none; }
+#hero-panel .bar.hp { height: 15px; }
+#hero-panel .bar.mp { height: 11px; }
+#hero-panel .bar.xp { height: 4px; }
+#skills { gap: 5px; }
+#hero-panel .skill { width: 58px; height: 58px; }
+#hero-panel .skill.passive { width: 46px; }
+.skill { pointer-events: auto; cursor: help; isolation: isolate; }
+.skill .s-icon {
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  opacity: .86;
+  margin-top: -9px;
+  pointer-events: none;
+}
+.skill.passive .s-icon { color: var(--gold); margin-top: -4px; }
+.skill .name {
+  position: absolute;
+  left: 2px; right: 2px; bottom: 2px;
+  padding: 0;
+  font-size: 9px;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  pointer-events: none;
+}
+.skill .cost {
+  position: absolute;
+  right: 4px; top: 2px;
+  font-size: 8px;
+  font-weight: 800;
+  color: #2f6fb3;
+  pointer-events: none;
+}
+.skill .cd {
+  background: rgba(30, 28, 24, .22);
+  color: var(--ink);
+  font-size: 15px;
+  z-index: 2;
+}
+.skill.on-cd .s-icon, .skill.on-cd .name { opacity: .32; }
+.skill::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: conic-gradient(rgba(46, 42, 36, .42) calc(var(--cdPct, 0) * 1%), transparent 0);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.skill.on-cd::before { opacity: 1; }
+.skill.locked .cd { background: rgba(46, 42, 36, .35); font-size: 11px; }
+#items { gap: 3px; }
+#items .item-slot { width: 30px; height: 30px; }
+.item-icon { position: absolute; inset: 0; display: grid; place-items: center; z-index: 1; color: #fffdf6; opacity: .9; }
+.item-slot .short { position: absolute; right: 1px; bottom: 0; z-index: 2; font-size: 7px; opacity: .8; }
+#btn-shop { display: inline-flex; align-items: center; gap: 4px; padding: 6px 8px; }
+
+/* 选人页 */
+#hero-filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: -4px 0 4px; }
+.hero-filter {
+  font-family: inherit; font-size: 11px; font-weight: 700;
+  color: var(--ink-soft); background: rgba(255, 253, 246, .6);
+  border: 1.2px solid var(--line); border-radius: 999px;
+  padding: 5px 11px; cursor: pointer; letter-spacing: .04em;
+}
+.hero-filter:hover { border-color: var(--ink); color: var(--ink); }
+.hero-filter.active { background: var(--ink); color: var(--paper-2); border-color: var(--ink); }
+#hero-select-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  width: min(1120px, 94vw);
+  align-items: start;
+}
+#hero-select-body .hero-grid { width: auto; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+#hero-select-body .hero-card {
+  min-height: 122px;
+  padding: 9px 10px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border-width: 1.5px;
+}
+.hero-card.selected { outline: 2.5px solid var(--gold); outline-offset: 1px; }
+.hc-top { display: flex; align-items: center; gap: 8px; }
+.hc-avatar {
+  position: relative; width: 42px; height: 42px; flex: none;
+  border-radius: 50%; border: 1.6px solid var(--ink);
+  background: var(--outfit); overflow: hidden;
+}
+.hc-avatar .av-head {
+  position: absolute; left: 50%; top: 7px; width: 21px; height: 21px;
+  transform: translateX(-50%); border-radius: 50%;
+  background: var(--skin); border: 2px solid var(--hair);
+}
+.hc-avatar .av-body {
+  position: absolute; left: 50%; bottom: -9px; width: 34px; height: 24px;
+  transform: translateX(-50%); border-radius: 50% 50% 0 0; background: var(--outfit);
+  border-top: 1.5px solid rgba(46, 42, 36, .35);
+}
+.hc-title { min-width: 0; display: flex; flex-direction: column; }
+.hc-name { font-size: 15px; font-weight: 800; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hc-sub { font-size: 9px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hc-diff { margin-left: auto; font-size: 8px; color: var(--gold); letter-spacing: 1px; align-self: flex-start; }
+.hc-role { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--ink-soft); }
+.hc-role .ui-icon { color: var(--teal-deep); }
+.teacher .hc-role .ui-icon { color: var(--red-deep); }
+.hc-kit { display: flex; align-items: center; gap: 4px; margin-top: auto; color: var(--muted); }
+.hc-kit .ui-icon { padding: 2px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255, 253, 246, .7); }
+.hc-more { margin-left: auto; font-size: 9px; color: var(--muted); letter-spacing: .08em; }
+.hero-empty { grid-column: 1 / -1; padding: 30px; text-align: center; color: var(--muted); font-size: 13px; }
+
+.hero-detail {
+  position: sticky; top: 18px;
+  max-height: calc(100vh - 210px);
+  overflow: auto;
+  padding: 14px 15px;
+  background: var(--paper-2);
+  border: 1.6px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 5px 6px 0 rgba(46, 42, 36, .12);
+}
+.hd-head { display: flex; align-items: center; gap: 10px; }
+.hd-head .hc-avatar { width: 50px; height: 50px; }
+.hd-id { min-width: 0; }
+.hd-id h3 { margin: 0; font-family: var(--serif); font-size: 24px; letter-spacing: .05em; }
+.hd-id p { margin: 2px 0 0; font-size: 10px; color: var(--muted); }
+.hd-diff { margin-left: auto; font-size: 9px; color: var(--gold); letter-spacing: 1px; }
+.hd-blurb { margin: 10px 0 4px; font-size: 11px; line-height: 1.65; color: var(--ink-soft); }
+.hd-quote { font-size: 10px; color: var(--muted); font-style: italic; margin-bottom: 10px; }
+.hd-stats { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.hd-stat { display: grid; grid-template-columns: 28px 1fr 28px; align-items: center; gap: 7px; font-size: 9px; color: var(--muted); }
+.hd-bar { height: 5px; background: var(--paper-3); border-radius: 3px; overflow: hidden; }
+.hd-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--teal), var(--gold)); border-radius: 3px; }
+.hd-stat b { text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; }
+.hd-passive { display: flex; gap: 8px; padding: 8px; margin-bottom: 8px; background: var(--paper-3); border: 1px solid var(--line); border-radius: 8px; }
+.hd-passive p { margin: 3px 0 0; font-size: 10px; line-height: 1.55; color: var(--ink-soft); }
+.hd-passive b { font-size: 11px; }
+.hd-skill { display: grid; grid-template-columns: 18px 24px 1fr; gap: 7px; padding: 7px 0; border-top: 1px dashed var(--line); align-items: start; }
+.hd-key { display: grid; place-items: center; width: 18px; height: 18px; border: 1px solid var(--ink); border-radius: 4px; font-size: 9px; font-weight: 800; }
+.hd-icon { color: var(--teal-deep); padding-top: 1px; }
+.hd-skill-head { display: flex; align-items: baseline; gap: 7px; }
+.hd-skill-head b { font-size: 11px; }
+.hd-skill-head span { font-size: 9px; color: var(--muted); }
+.hd-skill p { margin: 2px 0 0; font-size: 10px; line-height: 1.5; color: var(--ink-soft); }
+
+/* 手机端技能图标 / CD 环 */
+.tskill { isolation: isolate; }
+.tskill .ticon { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); color: var(--ink); opacity: .86; pointer-events: none; }
+.tskill .tname { margin-top: 22px; }
+.tskill .tcd { background: rgba(30, 28, 24, .24); color: var(--ink); z-index: 2; font-size: 13px; }
+.tskill.cooling .ticon, .tskill.cooling .tname { opacity: .3; }
+.tskill::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: 10px;
+  background: conic-gradient(rgba(46, 42, 36, .4) calc(var(--cdPct, 0) * 1%), transparent 0);
+  opacity: 0; pointer-events: none; z-index: 1;
+}
+.tskill.cooling::before { opacity: 1; }
+
+body.mobile #tooltip { display: none !important; }
+body.mobile .pips { display: none; }
+body.mobile #hero-panel { width: 192px; gap: 3px; padding: 6px 8px; flex-direction: column; align-items: stretch; }
+body.mobile #hero-head { width: 100%; }
+body.mobile #hero-id { width: 100%; }
+body.mobile #hero-name { font-size: 11px; }
+body.mobile #hero-meta { font-size: 8px; gap: 4px; }
+body.mobile #bars { width: 100%; }
+body.mobile #hero-panel .bar.hp { height: 12px; }
+body.mobile #hero-panel .bar.mp { height: 9px; }
+body.mobile #hero-panel .bar.xp { height: 3px; }
+
+@media (max-width: 1000px) {
+  #hero-select-body { grid-template-columns: minmax(0, 1fr) 310px; }
+  #hero-select-body .hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  #screen-hero, #screen-side { justify-content: flex-start; padding-top: max(16px, env(safe-area-inset-top, 0px)); }
+  #hero-select-body { grid-template-columns: 1fr; width: 94vw; }
+  #hero-select-body .hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero-detail { position: static; max-height: none; }
+  #hero-filters { justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+  .hero-filter { flex: none; }
+  #hero-panel { gap: 8px; }
+  #hero-id { width: 68px; }
+  #bars { width: 120px; }
+  #items { display: none; }
+  .pips { display: none; }
+}
+@media (max-width: 620px) {
+  #hero-select-body .hero-grid { gap: 7px; }
+  #hero-select-body .hero-card { padding: 8px; min-height: 112px; }
+  .hc-avatar { width: 36px; height: 36px; }
+  .hc-name { font-size: 13px; }
+  .hc-sub { font-size: 8px; }
+  .hc-role { font-size: 9px; }
+  .hd-head .hc-avatar { width: 44px; height: 44px; }
+  .hd-id h3 { font-size: 21px; }
+}
+
+/* HUD v2：小地图固定右上，击杀播报左上，给底部面板让位 */
+#minimap-wrap {
+  top: 64px;
+  right: 16px;
+  bottom: auto;
+}
+#killfeed {
+  top: 64px;
+  left: 16px;
+  right: auto;
+  align-items: flex-start;
+}
+body.mobile #minimap-wrap {
+  top: calc(env(safe-area-inset-top, 0px) + 64px);
+  right: calc(env(safe-area-inset-right, 0px) + 8px);
+  bottom: auto;
+}
+body.mobile #killfeed {
+  top: calc(env(safe-area-inset-top, 0px) + 140px);
+  left: calc(env(safe-area-inset-left, 0px) + 8px);
+  right: auto;
+  align-items: flex-start;
+}
+@media (max-height: 430px) {
+  body.mobile #minimap-wrap { top: calc(env(safe-area-inset-top, 0px) + 54px); }
+}
+
+/* ===================== UI v2 · P1：商店 / 记分板 / 结算 ===================== */
+#shop-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 8px; }
+.shop-tab {
+  font-family: inherit; font-size: 11px; font-weight: 700;
+  border: 1.2px solid var(--line); border-radius: 999px;
+  background: var(--paper); color: var(--ink-soft);
+  padding: 5px 12px; cursor: pointer;
+}
+.shop-tab.active { background: var(--ink); color: var(--paper-2); border-color: var(--ink); }
+.shop-recommend { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; font-size: 10px; color: var(--muted); }
+.rec-label { font-weight: 800; letter-spacing: .08em; color: var(--ink); margin-right: 2px; }
+.rec-item { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border: 1px solid var(--line); border-radius: 5px; background: rgba(255, 253, 246, .6); }
+.rec-item.owned { opacity: .4; text-decoration: line-through; }
+.rec-item.next { border-color: var(--gold); color: var(--ink); background: rgba(201, 162, 39, .12); }
+.shop-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.shop-item {
+  position: relative;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  gap: 3px 8px;
+  padding: 8px;
+}
+.si-icon {
+  grid-row: 1 / 3;
+  width: 42px; height: 42px; flex: none;
+  display: grid; place-items: center;
+  border: 1.4px solid rgba(46, 42, 36, .6);
+  border-radius: 9px;
+  color: #fffdf6;
+  font-size: 0;
+  overflow: hidden;
+}
+.si-name { font-size: 12px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.si-price { font-size: 11px; font-weight: 800; color: var(--gold); }
+.si-price::after { content: ' 金'; font-size: 8px; color: var(--muted); }
+.si-desc { grid-column: 2 / 4; font-size: 9px; line-height: 1.35; color: var(--muted); }
+.si-active { position: absolute; right: 5px; bottom: 5px; background: var(--paper-2); font-size: 8px; font-weight: 800; color: var(--teal-deep); border: 1px solid var(--teal); border-radius: 4px; padding: 0 3px; }
+.shop-item.disabled .si-name, .shop-item.disabled .si-price { opacity: .55; }
+.shop-empty { grid-column: 1 / -1; padding: 22px; text-align: center; color: var(--muted); font-size: 12px; }
+.shop-owned { display: flex; flex-wrap: wrap; gap: 5px; }
+.owned-item { display: inline-flex; align-items: center; gap: 4px; }
+.owned-item span { color: var(--ink); font-weight: 700; }
+.owned-item em { font-style: normal; color: var(--muted); font-size: 9px; }
+
+#board-content { display: flex; flex-direction: column; gap: 12px; }
+.board-team { border: 1.4px solid var(--ink); border-radius: 12px; overflow: hidden; background: rgba(255, 253, 246, .65); }
+.board-team.student { border-left: 5px solid var(--teal); }
+.board-team.teacher { border-left: 5px solid var(--red); }
+.board-team.neutral { border-left: 5px solid var(--muted); }
+.bt-head { display: flex; align-items: center; gap: 8px; padding: 8px 11px; background: rgba(46, 42, 36, .05); border-bottom: 1px solid var(--line); }
+.bt-head .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); border: 1px solid var(--ink); }
+.board-team.teacher .bt-head .dot { background: var(--red); border-radius: 2px; }
+.board-team.neutral .bt-head .dot { background: var(--muted); }
+.bt-head b { font-size: 13px; letter-spacing: .08em; }
+.bt-meta { margin-left: auto; font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.board-rows { display: flex; flex-direction: column; }
+.board-row {
+  display: grid;
+  grid-template-columns: 30px minmax(80px, 1fr) 74px 50px 58px 58px;
+  align-items: center; gap: 7px;
+  padding: 5px 10px;
+  border-bottom: 1px dashed var(--line);
+  font-size: 10px; color: var(--ink-soft);
+}
+.board-row:last-child { border-bottom: none; }
+.board-row.me { background: rgba(201, 162, 39, .10); }
+.br-avatar .hc-avatar { width: 26px; height: 26px; border-width: 1px; }
+.br-avatar .av-head { width: 14px; height: 14px; top: 5px; border-width: 1.4px; }
+.br-avatar .av-body { width: 22px; height: 16px; bottom: -7px; }
+.br-name { display: flex; align-items: baseline; gap: 5px; color: var(--ink); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.br-name em { font-style: normal; font-size: 9px; color: var(--muted); font-weight: 400; }
+.br-kda, .br-gold, .br-dmg, .br-status { text-align: right; font-variant-numeric: tabular-nums; }
+.br-gold { color: var(--gold); font-weight: 700; }
+.br-status { color: var(--red-deep); font-size: 9px; }
+.board-empty { padding: 12px; font-size: 11px; color: var(--muted); }
+
+#result-mvp { width: min(430px, 90vw); margin: 5px 0 2px; }
+.mvp-label { font-size: 9px; font-weight: 800; letter-spacing: .25em; color: var(--gold); text-align: left; }
+.mvp-main { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border: 1.4px solid var(--ink); border-radius: 10px; background: var(--paper-2); box-shadow: 3px 3px 0 rgba(46,42,36,.12); }
+.mvp-main .hc-avatar { width: 38px; height: 38px; }
+.mvp-main b { display: block; font-size: 13px; }
+.mvp-main span { display: block; font-size: 9px; color: var(--muted); }
+.mvp-dmg { margin-left: auto; text-align: right; font-size: 16px; font-weight: 800; }
+.mvp-dmg em { display: block; font-size: 8px; font-weight: 400; color: var(--muted); font-style: normal; }
+.result-teams { display: flex; gap: 8px; width: min(430px, 90vw); }
+.rt-team { flex: 1; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,253,246,.6); }
+.rt-team.student { border-left: 4px solid var(--teal); }
+.rt-team.teacher { border-left: 4px solid var(--red); }
+.rt-name { font-size: 10px; font-weight: 800; margin-bottom: 3px; }
+.rt-stats { display: flex; gap: 7px; font-size: 9px; color: var(--muted); flex-wrap: wrap; }
+.rt-stats b { color: var(--ink); }
+
+@media (max-width: 700px) {
+  .shop-grid { grid-template-columns: repeat(2, 1fr); }
+  .si-desc { display: none; }
+  .shop-item { grid-template-rows: auto auto; }
+  .board-row { grid-template-columns: 26px minmax(64px, 1fr) 62px 42px; }
+  .board-row .br-status { display: none; }
+  .board-row .br-dmg { display: none; }
+  .bt-meta { font-size: 9px; }
+  .result-teams { flex-direction: column; }
+}
+
 </style>
 </head>
 <body>
@@ -921,9 +1316,9 @@ body.mobile #respawn-tip { font-size: 12px; }
   <!-- ===================== 对局 HUD ===================== -->
   <div id="hud" class="hidden">
     <div id="topbar">
-      <div class="team-score student"><span class="dot"></span><b id="score-student">0</b><span class="label">涂鸦同盟</span></div>
+      <div class="team-score student"><span class="dot"></span><b id="score-student">0</b><span class="label">涂鸦同盟</span><span id="pips-student" class="pips"></span></div>
       <div id="clock">00:00</div>
-      <div class="team-score teacher"><span class="label">红笔联盟</span><b id="score-teacher">0</b><span class="dot"></span></div>
+      <div class="team-score teacher"><span class="label">红笔联盟</span><b id="score-teacher">0</b><span class="dot"></span><span id="pips-teacher" class="pips"></span></div>
     </div>
 
     <div id="bell-hud"><span class="b-icon">🔔</span><span id="bell-text">--:--</span></div>
@@ -937,26 +1332,31 @@ body.mobile #respawn-tip { font-size: 12px; }
     </div>
 
     <div id="hero-panel">
-      <div id="portrait"><div class="portrait-face"></div></div>
+      <div id="hero-head">
+        <div id="portrait"><div class="portrait-face"></div></div>
+        <div id="hero-id">
+          <div id="hero-name">—</div>
+          <div id="hero-meta">
+            <span id="hero-level">Lv.1</span>
+            <span id="hero-gold">600</span>
+            <span id="hero-kda">0 / 0 / 0</span>
+          </div>
+        </div>
+      </div>
       <div id="bars">
         <div class="bar hp"><div id="hp-fill" class="fill"></div><span id="hp-text">0 / 0</span></div>
         <div class="bar mp"><div id="mp-fill" class="fill"></div><span id="mp-text">0 / 0</span></div>
         <div class="bar xp"><div id="xp-fill" class="fill"></div></div>
-        <div id="hero-meta">
-          <span id="hero-level">Lv.1</span>
-          <span id="hero-gold">600</span>
-          <span id="hero-kda">0 / 0 / 0</span>
-        </div>
       </div>
       <div id="skills">
-        <div class="skill passive" data-slot="p"><span class="key">被动</span><span class="name">—</span></div>
-        <div class="skill" data-slot="q"><span class="key">J</span><span class="name">—</span><span class="cd"></span></div>
-        <div class="skill" data-slot="e"><span class="key">K</span><span class="name">—</span><span class="cd"></span></div>
-        <div class="skill" data-slot="r"><span class="key">L</span><span class="name">—</span><span class="cd"></span></div>
-        <div class="skill" data-slot="t"><span class="key">U</span><span class="name">—</span><span class="cd"></span></div>
+        <div class="skill passive" data-slot="p" tabindex="0"><span class="s-icon"></span><span class="key">被动</span><span class="name">—</span></div>
+        <div class="skill" data-slot="q" tabindex="0"><span class="s-icon"></span><span class="key">J</span><span class="name">—</span><span class="cost"></span><span class="cd"></span></div>
+        <div class="skill" data-slot="e" tabindex="0"><span class="s-icon"></span><span class="key">K</span><span class="name">—</span><span class="cost"></span><span class="cd"></span></div>
+        <div class="skill" data-slot="r" tabindex="0"><span class="s-icon"></span><span class="key">L</span><span class="name">—</span><span class="cost"></span><span class="cd"></span></div>
+        <div class="skill" data-slot="t" tabindex="0"><span class="s-icon"></span><span class="key">U</span><span class="name">—</span><span class="cost"></span><span class="cd"></span></div>
       </div>
       <div id="items"></div>
-      <button id="btn-shop" class="hud-shop" title="商店（P）">商店</button>
+      <button id="btn-shop" class="hud-shop" title="商店（P）"><span class="icon"></span>商店</button>
     </div>
 
     <div id="hint">WASD 移动 · 普攻自动 · 左键锁定 · J/K/L/U 技能 · 1-6 装备 · B 回城 · P 商店 · Tab 记分板</div>
@@ -966,10 +1366,10 @@ body.mobile #respawn-tip { font-size: 12px; }
         <div id="joystick-knob"></div>
       </div>
       <div id="touch-skills">
-        <button class="tskill" data-slot="q"><span class="tkey">J</span><span class="tname">—</span><span class="tcd"></span></button>
-        <button class="tskill" data-slot="e"><span class="tkey">K</span><span class="tname">—</span><span class="tcd"></span></button>
-        <button class="tskill" data-slot="r"><span class="tkey">L</span><span class="tname">—</span><span class="tcd"></span></button>
-        <button class="tskill" data-slot="t"><span class="tkey">U</span><span class="tname">—</span><span class="tcd"></span></button>
+        <button class="tskill" data-slot="q"><span class="ticon"></span><span class="tkey">J</span><span class="tname">—</span><span class="tcd"></span></button>
+        <button class="tskill" data-slot="e"><span class="ticon"></span><span class="tkey">K</span><span class="tname">—</span><span class="tcd"></span></button>
+        <button class="tskill" data-slot="r"><span class="ticon"></span><span class="tkey">L</span><span class="tname">—</span><span class="tcd"></span></button>
+        <button class="tskill" data-slot="t"><span class="ticon"></span><span class="tkey">U</span><span class="tname">—</span><span class="tcd"></span></button>
       </div>
       <div id="touch-actions">
         <button id="touch-pause" class="touch-btn">暂停</button>
@@ -984,6 +1384,8 @@ body.mobile #respawn-tip { font-size: 12px; }
   </div>
 
   <!-- ===================== 标题 ===================== -->
+  <div id="tooltip" class="tooltip hidden"></div>
+
   <div id="screen-title" class="screen">
     <div class="title-mark">2D · 3v3 · 草稿纸战场</div>
     <h1 class="logo">铃响之前</h1>
@@ -1030,7 +1432,11 @@ body.mobile #respawn-tip { font-size: 12px; }
       <h2 id="hero-screen-title">挑一个英雄</h2>
       <p class="sub">你选 1 名，另外 2 名队友由 AI 从剩余英雄中补位。</p>
     </div>
-    <div class="hero-grid" id="hero-grid"></div>
+    <div id="hero-filters" class="hero-filters"></div>
+    <div id="hero-select-body">
+      <div class="hero-grid" id="hero-grid"></div>
+      <aside id="hero-detail" class="hero-detail"></aside>
+    </div>
     <div class="hero-foot">
       <button class="btn ghost" data-back="side">← 换个边</button>
       <button id="btn-fight" class="btn primary big" disabled>进入战场</button>
@@ -1042,6 +1448,8 @@ body.mobile #respawn-tip { font-size: 12px; }
     <div class="result-stamp" id="result-stamp">放学</div>
     <h2 id="result-title">胜利</h2>
     <p id="result-sub" class="sub"></p>
+    <div id="result-mvp" class="result-mvp"></div>
+    <div id="result-teams" class="result-teams"></div>
     <div class="result-stats" id="result-stats"></div>
     <div class="menu-buttons">
       <button id="btn-again" class="btn primary">再来一局</button>
@@ -1072,6 +1480,8 @@ body.mobile #respawn-tip { font-size: 12px; }
         <button id="btn-shop-close" class="btn ghost">关闭 (P)</button>
       </div>
       <p class="tiny">随时可买，最多 6 件；卖出返还 60%。商店打开时对局暂停。</p>
+      <div id="shop-tabs" class="shop-tabs"></div>
+      <div id="shop-recommend" class="shop-recommend"></div>
       <div id="shop-grid" class="shop-grid"></div>
       <h4 class="shop-owned-title">已装备 <span id="shop-owned-count" class="tiny">0 / 6</span></h4>
       <div id="shop-owned" class="shop-owned"></div>
@@ -2091,6 +2501,7 @@ body.mobile #respawn-tip { font-size: 12px; }
     }
     amount *= 1 + buffVal(tgt, "mark") + buffVal(tgt, "vuln") + buffVal(tgt, "record");
     amount *= 1 - clamp(buffVal(tgt, "dr"), 0, 0.8);
+    if (tgt.heroId === "fan" && tgt.team === "neutral") amount *= 0.4;
     if (src) amount *= 1 + buffVal(src, "dmgamp");
     if (src?.heroId === "chaoran" && tgt.hp / tgt.maxHp < 0.5) amount *= 1.15;
     if (src?.heroId === "yanjing" && dist(src.pos, tgt.pos) > 450) amount *= 1.1;
@@ -2113,10 +2524,12 @@ body.mobile #respawn-tip { font-size: 12px; }
       if (opts.showText !== false) floatText(w, { x: tgt.pos.x, y: tgt.pos.y - tgt.radius - 14 }, "0", "#cfc6ad", 15);
       return 0;
     }
+    const dealt = Math.min(tgt.hp, amount);
     tgt.hp -= amount;
     tgt.hitFlash = 0.14;
     tgt.revealedUntil = w.time + 1;
-    if (src) src.damageDealt += amount;
+    tgt.damageTaken = (tgt.damageTaken ?? 0) + dealt;
+    if (src) src.damageDealt += dealt;
     if (opts.showText !== false) {
       floatText(w, { x: tgt.pos.x + (w.rng.next() - 0.5) * 16, y: tgt.pos.y - tgt.radius - 12 }, String(Math.round(amount)), dmgColor(type), type === "true" ? 20 : 16);
     }
@@ -2309,6 +2722,7 @@ body.mobile #respawn-tip { font-size: 12px; }
   }
   function addXp(w, u, amount, silent = false) {
     if (u.kind !== "hero" || u.dead) return;
+    if (u.heroId === "fan" && u.team === "neutral") amount *= 1.5;
     u.xp += amount;
     while (u.level < 10 && u.xp >= XP_TABLE[u.level]) {
       u.level++;
@@ -2576,6 +2990,7 @@ body.mobile #respawn-tip { font-size: 12px; }
       if (t.kind === "camp") continue;
       if (!includeStructures && t.structure) continue;
       if (!isTargetable(w, t) || t.invulnerable) continue;
+      if (t.team === "neutral" && t.heroId === "fan" && !(t.revealedUntil && t.revealedUntil > w.time) && (u.ai || u.kind === "minion" || u.kind === "tower")) continue;
       if (!isVisibleToTeam(w, u.team, t)) continue;
       const d = dist(u.pos, t.pos);
       if (d <= range + t.radius && d < bestD) {
@@ -2693,6 +3108,10 @@ body.mobile #respawn-tip { font-size: 12px; }
         p.dead = true;
         continue;
       }
+      if (p.origin && p.leash && dist(p.pos, p.origin) > p.leash) {
+        p.dead = true;
+        continue;
+      }
       if (p.homingTarget) {
         const t = w.units.find((u) => u.id === p.homingTarget);
         if (!t || t.dead) {
@@ -2799,8 +3218,8 @@ body.mobile #respawn-tip { font-size: 12px; }
 
   // src/data/heroes.ts
   var GROWTH = { hp: 85, mp: 30, ad: 4, armor: 3, mr: 1.5 };
-  function stats(hp, mp, ad, armor, mr, speed2, range, atkSpeed) {
-    return { hp, mp, ad, ap: 0, armor, mr, speed: speed2, range, atkSpeed };
+  function stats(hp, mp, ad, armor, mr, speed2, range, atkSpeed, ap = 0) {
+    return { hp, mp, ad, ap, armor, mr, speed: speed2, range, atkSpeed };
   }
   function clampAim(from, aim, range) {
     const d = dist(from, aim);
@@ -4174,7 +4593,7 @@ body.mobile #respawn-tip { font-size: 12px; }
       if (!t) return;
       const dir = norm(sub(t.pos, u.pos));
       const d = dist(u.pos, t.pos) + t.radius + u.radius + 6;
-      const dmg = 60 + 22 * (rank - 1) + 0.5 * adOf(u);
+      const dmg = 65 + 24 * (rank - 1) + 0.5 * adOf(u);
       dash(w, u, dir, d, 1900, void 0, {
         onEnd: () => {
           if (t.dead) return;
@@ -4197,7 +4616,7 @@ body.mobile #respawn-tip { font-size: 12px; }
     cast(ctx2) {
       const { world: w, caster: u, target: t, rank } = ctx2;
       if (!t) return;
-      damage(w, u, t, 55 + 20 * (rank - 1) + 0.5 * adOf(u), "physical", { skill: true });
+      damage(w, u, t, 60 + 22 * (rank - 1) + 0.5 * adOf(u), "physical", { skill: true });
       slow(w, u, t, 0.4, 1.5);
       burst(w, t.pos, "#3FAF9B", 8, "chalk");
     }
@@ -4395,12 +4814,193 @@ body.mobile #respawn-tip { font-size: 12px; }
     ai: { use: "self", range: 600 },
     cast(ctx2) {
       const { world: w, caster: u, rank } = ctx2;
-      const dmg = 180 + 60 * (rank - 1) + 0.8 * adOf(u);
+      const dmg = 150 + 50 * (rank - 1) + 0.8 * adOf(u);
       for (const t of enemiesIn(w, u.team, u.pos, 600, false)) {
         damage(w, u, t, dmg, "physical", { skill: true });
       }
       burst(w, u.pos, "#D94F3D", 30, "star");
       floatText(w, { x: u.pos.x, y: u.pos.y - u.radius - 34 }, "\u644A\u724C\u4E86\uFF01", "#D94F3D", 20);
+    }
+  };
+  var shitangQ = {
+    id: "shitang_q",
+    name: "\u9501\u5589",
+    slot: "q",
+    targeting: "unit",
+    range: 260,
+    cooldown: 9,
+    mana: 45,
+    desc: "\u9501\u4F4F\u76EE\u6807\u5589\u5499\uFF1A\u9020\u6210\u4F24\u5BB3\u5E76\u62C9\u8FD1 80\uFF0C\u7729\u6655 0.6 \u79D2\u3001\u6C89\u9ED8 1.2 \u79D2\u3002",
+    ai: { use: "enemy", range: 250 },
+    cast(ctx2) {
+      const { world: w, caster: u, target: t, rank } = ctx2;
+      if (!t) return;
+      damage(w, u, t, 65 + 22 * (rank - 1) + 0.6 * adOf(u), "physical", { skill: true });
+      pull(w, u, t, 80);
+      stun(w, u, t, 0.6);
+      silence(w, u, t, 1.2);
+      floatText(w, { x: t.pos.x, y: t.pos.y - t.radius - 26 }, "\u9501\u5589\uFF01", "#D94F3D", 17);
+    }
+  };
+  var shitangE = {
+    id: "shitang_e",
+    name: "\u8E39",
+    slot: "e",
+    targeting: "unit",
+    range: 300,
+    cooldown: 8,
+    mana: 40,
+    desc: "\u4E00\u811A\u8E39\u5F00\uFF1A\u9020\u6210\u4F24\u5BB3\u3001\u51FB\u9000 180 \u5E76\u51CF\u901F 35%\u3002",
+    ai: { use: "enemy", range: 290 },
+    cast(ctx2) {
+      const { world: w, caster: u, target: t, rank } = ctx2;
+      if (!t) return;
+      damage(w, u, t, 55 + 22 * (rank - 1) + 0.5 * adOf(u), "physical", { skill: true });
+      knockback(w, u, t, 180);
+      slow(w, u, t, 0.35, 1.5);
+      burst(w, t.pos, "#D94F3D", 10, "chalk");
+    }
+  };
+  var shitangR = {
+    id: "shitang_r",
+    name: "\u9A82\u4EBA",
+    slot: "r",
+    targeting: "dir",
+    range: 500,
+    cooldown: 14,
+    mana: 60,
+    desc: "\u626F\u7740\u55D3\u5B50\u9A82\uFF1A\u9525\u5F62\u8303\u56F4\u4F24\u5BB3\u5E76\u6C89\u9ED8 1.2 \u79D2\u3001\u51CF\u901F 20%\u3002",
+    ai: { use: "enemy", range: 480 },
+    cast(ctx2) {
+      const { world: w, caster: u, aim, rank } = ctx2;
+      const dmg = 80 + 30 * (rank - 1) + 0.5 * adOf(u);
+      coneBurst(w, u, aim, 500, Math.PI / 3, (t) => {
+        damage(w, u, t, dmg, "physical", { skill: true });
+        silence(w, u, t, 1.2);
+        slow(w, u, t, 0.2, 1.5);
+      });
+      burst(w, add(u.pos, scale(norm(sub(aim, u.pos)), 130)), "#D94F3D", 14, "dot");
+    }
+  };
+  var shitangT = {
+    id: "shitang_t",
+    name: "\u4E00\u52FA\u70E9",
+    slot: "t",
+    targeting: "self",
+    range: 500,
+    cooldown: 55,
+    mana: 90,
+    desc: "\u62A1\u8D77\u5927\u52FA\u6A2A\u626B 500 \u8303\u56F4\uFF1A\u9020\u6210\u4F24\u5BB3\u3001\u51FB\u98DE 0.5 \u79D2\uFF0C\u5E76\u83B7\u5F97\u62A4\u76FE\u3002",
+    ai: { use: "self", range: 500 },
+    cast(ctx2) {
+      const { world: w, caster: u, rank } = ctx2;
+      const dmg = 150 + 50 * (rank - 1) + 0.8 * adOf(u);
+      for (const t of enemiesIn(w, u.team, u.pos, 500, false)) {
+        damage(w, u, t, dmg, "physical", { skill: true });
+        stun(w, u, t, 0.5);
+      }
+      addShield(w, u, u, 100 + 35 * (rank - 1), 3);
+      burst(w, u.pos, "#D94F3D", 26, "star");
+      floatText(w, { x: u.pos.x, y: u.pos.y - u.radius - 34 }, "\u4E00\u52FA\u70E9\uFF01", "#D94F3D", 20);
+    }
+  };
+  var messiQ = {
+    id: "messi_q",
+    name: "\u6885\u897F\u5927\u8098\u5B50",
+    slot: "q",
+    targeting: "unit",
+    range: 200,
+    cooldown: 8,
+    mana: 40,
+    desc: "\u4E00\u8BB0\u5927\u8098\u5B50\uFF1A\u9020\u6210\u7269\u7406\u4F24\u5BB3\u3001\u51FB\u9000 140 \u5E76\u7729\u6655 0.5 \u79D2\u3002",
+    ai: { use: "enemy", range: 195 },
+    cast(ctx2) {
+      const { world: w, caster: u, target: t, rank } = ctx2;
+      if (!t) return;
+      damage(w, u, t, 70 + 25 * (rank - 1) + 0.6 * adOf(u), "physical", { skill: true });
+      knockback(w, u, t, 140);
+      stun(w, u, t, 0.5);
+      burst(w, t.pos, "#3FAF9B", 10, "star");
+    }
+  };
+  var messiE = {
+    id: "messi_e",
+    name: "\u6885\u897F\u98DE\u8E22",
+    slot: "e",
+    targeting: "unit",
+    range: 420,
+    cooldown: 10,
+    mana: 50,
+    desc: "\u98DE\u8EAB\u8E39\u5411\u76EE\u6807\uFF1A\u9020\u6210\u4F24\u5BB3\u3001\u51FB\u9000 180 \u5E76\u51CF\u901F 25%\u3002",
+    ai: { use: "enemy", range: 400 },
+    cast(ctx2) {
+      const { world: w, caster: u, target: t, rank } = ctx2;
+      if (!t) return;
+      const d = Math.max(40, dist(u.pos, t.pos) - t.radius - u.radius);
+      const dmg = 80 + 30 * (rank - 1) + 0.7 * adOf(u);
+      dash(w, u, norm(sub(t.pos, u.pos)), d, 1800, void 0, {
+        onEnd: () => {
+          if (t.dead) return;
+          damage(w, u, t, dmg, "physical", { skill: true });
+          knockback(w, u, t, 180);
+          slow(w, u, t, 0.25, 1.5);
+          burst(w, t.pos, "#3FAF9B", 14, "star");
+        }
+      });
+    }
+  };
+  var messiR = {
+    id: "messi_r",
+    name: "\u6885\u897F\u7684\u96F7\u9706\u6B4C\u58F0",
+    slot: "r",
+    targeting: "self",
+    range: 500,
+    cooldown: 16,
+    mana: 60,
+    desc: "\u5F00\u55D3\u5C31\u662F\u96F7\u9706\uFF1A500 \u8303\u56F4\u4F24\u5BB3\u5E76\u6C89\u9ED8 1.2 \u79D2\u3001\u51CF\u901F 20%\u3002",
+    ai: { use: "self", range: 500 },
+    cast(ctx2) {
+      const { world: w, caster: u, rank } = ctx2;
+      const dmg = 90 + 30 * (rank - 1) + 0.5 * adOf(u);
+      for (const t of enemiesIn(w, u.team, u.pos, 500, false)) {
+        damage(w, u, t, dmg, "magic", { skill: true });
+        silence(w, u, t, 1.2);
+        slow(w, u, t, 0.2, 1.5);
+      }
+      burst(w, u.pos, "#3FAF9B", 24, "star");
+      floatText(w, { x: u.pos.x, y: u.pos.y - u.radius - 34 }, "\u96F7\u9706\u6B4C\u58F0\uFF01", "#3FAF9B", 20);
+    }
+  };
+  var messiT = {
+    id: "messi_t",
+    name: "\u6885\u897F\u7684\u5934\u76AE\u96EA",
+    slot: "t",
+    targeting: "point",
+    range: 450,
+    radius: 300,
+    cooldown: 45,
+    mana: 80,
+    desc: "\u5934\u76AE\u5C51\u50CF\u96EA\u4E00\u6837\u843D\u4E0B\uFF1A\u6307\u5B9A\u533A\u57DF 3 \u79D2\u6301\u7EED\u4F24\u5BB3\u5E76\u51CF\u901F 30%\u3002",
+    ai: { use: "point", range: 430 },
+    cast(ctx2) {
+      const { world: w, caster: u, aim, rank } = ctx2;
+      const pos = clampAim(u.pos, aim, 450);
+      const dmg = 20 + 10 * (rank - 1) + 0.1 * adOf(u);
+      zone(w, u, pos, {
+        radius: 300,
+        duration: 3,
+        color: "#3FAF9B",
+        kind: "circle",
+        label: "\u5934\u76AE\u96EA",
+        tickInterval: 0.5,
+        onTick(w2, z) {
+          for (const t of enemiesIn(w2, u.team, z.pos, 300, false)) {
+            damage(w2, u, t, dmg, "magic", { skill: false, showText: false });
+            slow(w2, u, t, 0.3, 0.7);
+          }
+        }
+      });
+      burst(w, pos, "#3FAF9B", 26, "dot");
     }
   };
   var HERO_LIST = [
@@ -4435,8 +5035,8 @@ body.mobile #respawn-tip { font-size: 12px; }
       difficulty: 2,
       blurb: "\u5934\u5F88\u4EAE\uFF0C\u4EAE\u5230\u5BF9\u9762\u666E\u653B\u90FD\u6253\u4E0D\u51C6\u3002\u8FD1\u8EAB\u8FD8\u6709\u4E00\u8BB0\u5934\u69CC\u3002",
       quote: "\u770B\u4ED4\u7EC6\u4E86\u3002",
-      stats: stats(700, 420, 52, 18, 28, 335, 500, 0.62),
-      growth: { ...GROWTH, mp: 40 },
+      stats: stats(700, 420, 52, 18, 28, 335, 500, 0.62, 26),
+      growth: { ...GROWTH, mp: 40, ap: 7 },
       abilities: {
         passive: { name: "\u53CD\u5149", desc: "\u53D7\u5230\u666E\u653B\u65F6 20% \u6982\u7387\u8BA9\u8BE5\u6B21\u666E\u653B\u672A\u547D\u4E2D\uFF1B\u6BCF 6 \u79D2\u6700\u591A\u89E6\u53D1\u4E00\u6B21\u3002" },
         q: zhaozeQ,
@@ -4477,8 +5077,8 @@ body.mobile #respawn-tip { font-size: 12px; }
       difficulty: 2,
       blurb: "\u5148\u5212\u91CD\u70B9\uFF0C\u518D\u62BC\u9898\u3002\u62BC\u4E2D\u4E86\u5C31\u662F\u4E00\u5957\uFF0C\u62BC\u4E0D\u4E2D\u5C31\u8BF4\u8FD9\u9898\u8D85\u7EB2\u3002",
       quote: "\u8FD9\u9898\u6211\u62BC\u8FC7\u3002",
-      stats: stats(680, 420, 50, 17, 30, 330, 520, 0.6),
-      growth: { ...GROWTH, mp: 40 },
+      stats: stats(680, 420, 50, 17, 30, 330, 520, 0.6, 28),
+      growth: { ...GROWTH, mp: 40, ap: 7 },
       abilities: {
         passive: { name: "\u8111\u5B50\u5FEB", desc: "\u6280\u80FD\u547D\u4E2D\u53E0\u300C\u601D\u8DEF\u300D\uFF0C\u6BCF\u5C42 -4% \u51B7\u5374\uFF08\u6700\u591A 5 \u5C42\uFF0C4 \u79D2\uFF09\u3002" },
         q: ataiQ,
@@ -4519,8 +5119,8 @@ body.mobile #respawn-tip { font-size: 12px; }
       difficulty: 2,
       blurb: "\u8D70\u5F97\u5F88\u6162\uFF0C\u7B97\u5F97\u5F88\u5FEB\u3002\u7AD9\u5B9A\u53E0\u6EE1\u4E13\u6CE8\uFF0C\u5F00\u5377\u8003\u8BD5\u4E00\u6CE2\u5E26\u8D70\u3002",
       quote: "\u8FD9\u9898\u6211\u8BB2\u8FC7\u516B\u767E\u904D\u4E86\u3002",
-      stats: stats(660, 460, 45, 15, 32, 280, 540, 0.55),
-      growth: { ...GROWTH, mp: 45 },
+      stats: stats(660, 460, 45, 15, 32, 280, 540, 0.55, 30),
+      growth: { ...GROWTH, mp: 45, ap: 7 },
       abilities: {
         passive: { name: "\u5B66\u65E0\u6B62\u5883", desc: "\u7AD9\u5B9A 1.5 \u79D2\u540E\u6BCF\u79D2\u53E0 1 \u5C42\u300C\u4E13\u6CE8\u300D\uFF08\u6700\u591A 5 \u5C42\uFF09\uFF1A\u6BCF\u5C42 +4% \u6CD5\u5F3A\u3001-3% \u51B7\u5374\uFF1B\u79FB\u52A8\u540E\u6E05\u96F6\u3002" },
         q: oldQ,
@@ -4532,7 +5132,7 @@ body.mobile #respawn-tip { font-size: 12px; }
     },
     {
       id: "wuhongchang",
-      name: "\u5434\u7EA2\u80A0",
+      name: "\u7EA2\u80A0",
       title: "\u62D6\u5802",
       team: "teacher",
       role: "tank",
@@ -4616,7 +5216,7 @@ body.mobile #respawn-tip { font-size: 12px; }
     },
     {
       id: "wangdi",
-      name: "\u738B\u5730",
+      name: "\u738B\u4E3B\u4EFB",
       title: "\u5FB7\u80B2\u4E3B\u4EFB",
       team: "teacher",
       role: "support",
@@ -4688,11 +5288,11 @@ body.mobile #respawn-tip { font-size: 12px; }
       difficulty: 2,
       blurb: "\u4E2A\u5B50\u5C0F\u3001\u8DD1\u5F97\u5FEB\uFF0C\u4E13\u5F80\u4EBA\u5806\u91CC\u94BB\u3002\u8E29\u5B8C\u4E00\u811A\u5C31\u8DD1\uFF0C\u8FFD\u90FD\u8FFD\u4E0D\u4E0A\u3002",
       quote: "\u8E29\u4F60\u4E00\u811A\u3002",
-      stats: stats(660, 300, 66, 18, 20, 360, 160, 0.85),
-      growth: { ...GROWTH, hp: 75 },
+      stats: stats(700, 300, 68, 18, 20, 365, 160, 0.88),
+      growth: { ...GROWTH, hp: 80 },
       radius: 18,
       abilities: {
-        passive: { name: "\u5C0F\u5DE7", desc: "15% \u6982\u7387\u95EA\u907F\u666E\u653B\u3002" },
+        passive: { name: "\u5C0F\u5DE7", desc: "18% \u6982\u7387\u95EA\u907F\u666E\u653B\u3002" },
         q: jiaoJ,
         e: jiaoK,
         r: jiaoR,
@@ -4734,13 +5334,56 @@ body.mobile #respawn-tip { font-size: 12px; }
       stats: stats(820, 360, 66, 26, 24, 335, 175, 0.75),
       growth: { ...GROWTH, hp: 85 },
       abilities: {
-        passive: { name: "\u5367\u5E95", desc: "1\u20133 \u7EA7\u53EA\u80FD\u6253\u5B66\u751F\uFF1B4\u20137 \u7EA7\u53D8\u4E2D\u7ACB\uFF0C\u53CC\u65B9\u90FD\u80FD\u6253\u4ED6\u3001\u4ED6\u4E5F\u80FD\u6253\u53CC\u65B9\uFF1B8 \u7EA7\u8D77\u8DF3\u53CD\u5230\u5B66\u751F\u9635\u8425\uFF0C\u53EA\u80FD\u6253\u8001\u5E08\u3002" },
+        passive: { name: "\u5367\u5E95", desc: "1\u20133 \u7EA7\u53EA\u80FD\u6253\u5B66\u751F\uFF1B4\u20137 \u7EA7\u53D8\u4E2D\u7ACB\uFF0C\u53CC\u65B9\u90FD\u80FD\u6253\u4ED6\u3001\u4ED6\u4E5F\u80FD\u6253\u53CC\u65B9\uFF1B\u4E2D\u7ACB\u65F6\u51CF\u4F24 60%\u3001\u7ECF\u9A8C +50%\uFF0CAI \u4E0D\u4F1A\u4E3B\u52A8\u96C6\u706B\uFF1B8 \u7EA7\u8D77\u8DF3\u53CD\u5230\u5B66\u751F\u9635\u8425\u3002" },
         q: fanJ,
         e: fanK,
         r: fanR,
         t: fanT
       },
       art: { body: { h: 34, w: 32 }, head: "receding", skin: "#d9ab7d", outfit: "#D94F3D", accent: "#a93627", hair: "#4a4038", prop: "book" }
+    },
+    {
+      id: "shitang",
+      name: "\u98DF\u5802\u8001\u5934",
+      title: "\u624B\u6296",
+      team: "teacher",
+      role: "fighter",
+      roleLabel: "\u6218\u58EB / \u63A7\u573A",
+      difficulty: 2,
+      blurb: "\u98DF\u5802\u7A97\u53E3\u540E\u9762\u7AD9\u4E86\u4E09\u5341\u5E74\u3002\u52FA\u5B50\u4E00\u6296\uFF0C\u5168\u6821\u90FD\u6015\uFF1B\u8C01\u6562\u63D2\u961F\uFF0C\u9501\u5589\u3001\u8E39\u3001\u9A82\u4EBA\u4E00\u5957\u8FDE\u62DB\u3002",
+      quote: "\u624B\u6296\u4EC0\u4E48\u624B\u6296\uFF0C\u591F\u4F60\u5403\u7684\u3002",
+      stats: stats(930, 340, 62, 26, 24, 325, 170, 0.7),
+      growth: { ...GROWTH, hp: 85 },
+      radius: 28,
+      abilities: {
+        passive: { name: "\u624B\u6296", desc: "\u666E\u653B\u6709 20% \u6982\u7387\u89E6\u53D1\u300C\u624B\u6296\u300D\uFF1A\u989D\u5916\u9020\u6210 20+0.2AD \u771F\u5B9E\u4F24\u5BB3\u5E76\u51CF\u901F 15%\u3002" },
+        q: shitangQ,
+        e: shitangE,
+        r: shitangR,
+        t: shitangT
+      },
+      art: { body: { h: 36, w: 38 }, head: "bald", skin: "#d9a878", outfit: "#D94F3D", accent: "#a93627", hair: "#2a2420", prop: "ladle" }
+    },
+    {
+      id: "messi",
+      name: "\u6885\u897F",
+      title: "\u7403\u738B",
+      team: "student",
+      role: "fighter",
+      roleLabel: "\u6218\u58EB / \u7A81\u8FDB",
+      difficulty: 2,
+      blurb: "\u4E2A\u5B50\u4E0D\u9AD8\uFF0C\u8098\u5B50\u5F88\u786C\uFF0C\u98DE\u8E22\u66F4\u5FEB\u3002\u5F00\u55D3\u50CF\u6253\u96F7\uFF0C\u5934\u76AE\u5C51\u50CF\u4E0B\u96EA\u3002",
+      quote: "\u628A\u7403\u7ED9\u6211\uFF0C\u6216\u8005\u5403\u6211\u4E00\u8098\u3002",
+      stats: stats(760, 320, 72, 22, 22, 350, 175, 0.8),
+      growth: { ...GROWTH, hp: 85 },
+      abilities: {
+        passive: { name: "\u7403\u738B", desc: "\u6BCF\u7B2C 3 \u6B21\u666E\u653B\u9644\u5E26 30+0.35AD \u4F24\u5BB3\u5E76\u51FB\u9000 80\u3002" },
+        q: messiQ,
+        e: messiE,
+        r: messiR,
+        t: messiT
+      },
+      art: { body: { h: 30, w: 28 }, head: "messy", skin: "#e8b98f", outfit: "#3FAF9B", accent: "#247a6c", hair: "#2b2119", prop: "ball" }
     }
   ];
   var HEROES = Object.fromEntries(HERO_LIST.map((h) => [h.id, h]));
@@ -4789,6 +5432,7 @@ body.mobile #respawn-tip { font-size: 12px; }
     drawWalkable(ctx2);
     drawBaseRings(ctx2, w);
     drawBushes(ctx2);
+    drawTowerRanges(ctx2, w);
     drawExam(ctx2, w);
     drawProps(ctx2, view);
     drawLaneDashes(ctx2);
@@ -5079,6 +5723,29 @@ body.mobile #respawn-tip { font-size: 12px; }
     }
     f.globalCompositeOperation = "source-over";
     ctx2.drawImage(fogCanvas, 0, 0, cssW2, cssH2);
+  }
+  function drawTowerRanges(ctx2, w) {
+    const p = w.units.find((u) => u.id === w.playerId);
+    for (const u of w.units) {
+      if (u.kind !== "tower" || u.dead) continue;
+      if (u.team !== w.playerTeam && !isVisibleToTeam(w, w.playerTeam, u)) continue;
+      const range = u.base.range;
+      const targeted = u.targetId === w.playerId;
+      const d = p ? Math.hypot(p.pos.x - u.pos.x, p.pos.y - u.pos.y) : 9999;
+      if (!targeted && d > 1600) continue;
+      const col = u.team === "student" ? "63,175,155" : "217,79,61";
+      ctx2.save();
+      ctx2.beginPath();
+      ctx2.arc(u.pos.x, u.pos.y, range, 0, Math.PI * 2);
+      ctx2.fillStyle = `rgba(${col},0.035)`;
+      ctx2.fill();
+      ctx2.strokeStyle = `rgba(${col},${targeted ? "0.55" : "0.22"})`;
+      ctx2.lineWidth = targeted ? 2.5 : 1.6;
+      ctx2.setLineDash([10, 9]);
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+      ctx2.restore();
+    }
   }
   function drawExam(ctx2, w) {
     const ex = w.exam;
@@ -5442,6 +6109,37 @@ body.mobile #respawn-tip { font-size: 12px; }
         ctx2.moveTo(0, 12);
         ctx2.lineTo(0, -12);
         ctx2.arc(4, -12, 4, Math.PI, Math.PI * 2);
+        ctx2.stroke();
+        break;
+      case "ball":
+        ctx2.beginPath();
+        ctx2.arc(0, 0, 7, 0, Math.PI * 2);
+        ctx2.fillStyle = "#fffdf6";
+        ctx2.fill();
+        ctx2.strokeStyle = "rgba(46,42,36,.65)";
+        ctx2.lineWidth = 1.4;
+        ctx2.stroke();
+        ctx2.fillStyle = "#2e2a24";
+        for (let i = 0; i < 5; i++) {
+          const a = i / 5 * Math.PI * 2 - Math.PI / 2;
+          ctx2.beginPath();
+          ctx2.arc(Math.cos(a) * 3.4, Math.sin(a) * 3.4, 1.2, 0, Math.PI * 2);
+          ctx2.fill();
+        }
+        break;
+      case "ladle":
+        ctx2.strokeStyle = "#8a949e";
+        ctx2.lineWidth = 3;
+        ctx2.beginPath();
+        ctx2.moveTo(-11, 12);
+        ctx2.lineTo(7, -7);
+        ctx2.stroke();
+        ctx2.beginPath();
+        ctx2.arc(9, -9, 7, 0, Math.PI * 2);
+        ctx2.fillStyle = "#c7ced6";
+        ctx2.fill();
+        ctx2.strokeStyle = "rgba(46,42,36,.55)";
+        ctx2.lineWidth = 1.4;
         ctx2.stroke();
         break;
       case "bun":
@@ -5982,6 +6680,37 @@ body.mobile #respawn-tip { font-size: 12px; }
         ctx2.arc(0, 0, 5, 0, Math.PI * 2);
         ctx2.fill();
         break;
+      case "ball":
+        ctx2.beginPath();
+        ctx2.arc(0, 0, 7, 0, Math.PI * 2);
+        ctx2.fillStyle = "#fffdf6";
+        ctx2.fill();
+        ctx2.strokeStyle = "rgba(46,42,36,.65)";
+        ctx2.lineWidth = 1.4;
+        ctx2.stroke();
+        ctx2.fillStyle = "#2e2a24";
+        for (let i = 0; i < 5; i++) {
+          const a = i / 5 * Math.PI * 2 - Math.PI / 2;
+          ctx2.beginPath();
+          ctx2.arc(Math.cos(a) * 3.4, Math.sin(a) * 3.4, 1.2, 0, Math.PI * 2);
+          ctx2.fill();
+        }
+        break;
+      case "ladle":
+        ctx2.strokeStyle = "#8a949e";
+        ctx2.lineWidth = 3;
+        ctx2.beginPath();
+        ctx2.moveTo(-11, 12);
+        ctx2.lineTo(7, -7);
+        ctx2.stroke();
+        ctx2.beginPath();
+        ctx2.arc(9, -9, 7, 0, Math.PI * 2);
+        ctx2.fillStyle = "#c7ced6";
+        ctx2.fill();
+        ctx2.strokeStyle = "rgba(46,42,36,.55)";
+        ctx2.lineWidth = 1.4;
+        ctx2.stroke();
+        break;
       case "bun":
         ctx2.fillStyle = "#f0d9b0";
         ctx2.beginPath();
@@ -6103,6 +6832,25 @@ body.mobile #respawn-tip { font-size: 12px; }
         ctx2.closePath();
         ctx2.fill();
       }
+    }
+    if (w.exam && !w.exam.done) {
+      const x = w.exam.pos.x * sx;
+      const y = w.exam.pos.y * sy;
+      ctx2.save();
+      ctx2.fillStyle = "#c9a227";
+      ctx2.beginPath();
+      ctx2.moveTo(x, y - 5);
+      ctx2.lineTo(x + 5, y);
+      ctx2.lineTo(x, y + 5);
+      ctx2.lineTo(x - 5, y);
+      ctx2.closePath();
+      ctx2.fill();
+      ctx2.strokeStyle = "rgba(201,162,39,.7)";
+      ctx2.lineWidth = 1.2;
+      ctx2.beginPath();
+      ctx2.arc(x, y, 8 + Math.sin(w.time * 3) * 2, 0, Math.PI * 2);
+      ctx2.stroke();
+      ctx2.restore();
     }
     for (const u of w.units) {
       if (u.dead) continue;
@@ -6455,6 +7203,12 @@ body.mobile #respawn-tip { font-size: 12px; }
   }
   function playerOf(w) {
     return w.units.find((u) => u.id === w.playerId);
+  }
+  function towersOf(w, team) {
+    return w.units.filter((u) => u.kind === "tower" && u.team === team);
+  }
+  function coreOf(w, team) {
+    return w.units.find((u) => u.kind === "core" && u.team === team);
   }
 
   // src/sim.ts
@@ -6836,7 +7590,18 @@ body.mobile #respawn-tip { font-size: 12px; }
         kb = true;
       }
     }
+    if (u.heroId === "messi") {
+      u.autoCount = (u.autoCount ?? 0) + 1;
+      if (u.autoCount % 3 === 0) {
+        dmg += 30 + 0.35 * eff(w, u, "ad");
+        kb = true;
+      }
+    }
     damage(w, u, t, dmg, "physical", {});
+    if (u.heroId === "shitang" && !t.dead && w.rng.chance(0.2)) {
+      damage(w, u, t, 20 + 0.2 * eff(w, u, "ad"), "true", { showText: true });
+      if (!t.dead) slow(w, u, t, 0.15, 1);
+    }
     for (const e of extraMagic) damage(w, u, t, e, "magic", { showText: false });
     if (kb) {
       knockback(w, u, t, 80);
@@ -6872,11 +7637,13 @@ body.mobile #respawn-tip { font-size: 12px; }
       radius: 12,
       damage: dmg,
       dtype: "physical",
-      ttl: 2.2,
+      ttl: 1.6,
       pierce: 0,
       homingTarget: t.id,
       visual: "ink",
-      skill: false
+      skill: false,
+      origin: { ...u.pos },
+      leash: range + 80
     });
   }
   function minionThink(w, u) {
@@ -7174,9 +7941,101 @@ body.mobile #respawn-tip { font-size: 12px; }
     return n;
   }
 
+  // src/ui/icons.ts
+  var PATHS = {
+    sword: '<path d="M4 20l4-1L19 8l1-4-4 1L5 16z"/><path d="M4 20l4-4"/><path d="M13 6l5 5"/>',
+    fist: '<rect x="5" y="9" width="14" height="9" rx="4"/><path d="M9 9V6.5a1.5 1.5 0 0 1 3 0V9M12 9V6a1.5 1.5 0 0 1 3 0v3M15 9V7a1.5 1.5 0 0 1 3 0v7"/><path d="M8 13h8"/>',
+    boot: '<path d="M8 4v8l-2 3v3h12l-2-4V9"/><path d="M6 18h13"/><path d="M8 12h6"/>',
+    music: '<circle cx="7" cy="18" r="2.2"/><circle cx="17" cy="15" r="2.2"/><path d="M9.2 18V6l9-2v9"/>',
+    snow: '<path d="M12 3v18M4.5 7.5l15 9M19.5 7.5l-15 9"/><path d="M12 7l-2 2m2-2l2 2M12 17l-2-2m2 2l2-2"/>',
+    hand: '<path d="M8 12V6.5a1.5 1.5 0 0 1 3 0V11M11 11V5.5a1.5 1.5 0 0 1 3 0V11M14 11V7a1.5 1.5 0 0 1 3 0v8a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.5L4 15a2 2 0 0 1 3-2.5L8 14"/>',
+    shield: '<path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+    book: '<path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v16H7.5A2.5 2.5 0 0 0 5 21.5z"/><path d="M5 5.5v16"/><path d="M9 7h6M9 11h5"/>',
+    bolt: '<path d="M13 2L5 14h6l-1 8 8-12h-6z"/>',
+    star: '<path d="M12 3l2.6 5.7 6.2.7-4.7 4.2 1.3 6.1L12 16.6 6.6 19.7l1.3-6.1L3.2 9.4l6.2-.7z"/>',
+    heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+    bell: '<path d="M18 9a6 6 0 0 0-12 0c0 6-2 7-2 7h16s-2-1-2-7"/><path d="M10 20a2.2 2.2 0 0 0 4 0"/><path d="M12 3V1.8"/>',
+    ball: '<circle cx="12" cy="12" r="8.5"/><path d="M12 8.2l3.8 2.8-1.4 4.5h-4.8L8.2 11z"/><path d="M12 8.2V4M8.2 11L4 9.8M15.8 11L20 9.8M10 15.5l-2.8 3.8M14 15.5l2.8 3.8"/>',
+    spoon: '<ellipse cx="9" cy="7" rx="4.5" ry="5.5"/><path d="M11.5 11.5L18 20"/><path d="M7 4.5c1.2-1 2.8-1 4 0"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>',
+    coin: '<circle cx="12" cy="12" r="8.5"/><path d="M9 9.5h6M9 14.5h6M12 7v10"/>',
+    bag: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M9 13h6"/>',
+    pause: '<path d="M8 5v14M16 5v14"/>',
+    tower: '<path d="M7 21V9l-2-2V4h3v2h2V4h4v2h2V4h3v3l-2 2v12"/><path d="M9 21v-5h6v5"/><path d="M10 11h4"/>',
+    potion: '<path d="M9 3h6M10 3v5l-4 7a4 4 0 0 0 3.5 6h5A4 4 0 0 0 18 15l-4-7V3"/><path d="M7.5 14h9"/>',
+    speed: '<path d="M3 12h5M14 6l4 6-4 6M8 6l4 6-4 6"/>',
+    eye: '<path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.6"/>',
+    skull: '<path d="M5 11a7 7 0 0 1 14 0c0 3-1.5 4.5-2.5 5.5V19H7.5v-2.5C6.5 15.5 5 14 5 11z"/><circle cx="9" cy="11" r="1.2"/><circle cx="15" cy="11" r="1.2"/><path d="M10 19v2M14 19v2"/>',
+    target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.3"/>'
+  };
+  function iconSvg(name, size = 22) {
+    return `<svg class="ui-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[name]}</svg>`;
+  }
+  var RULES = [
+    [/雷霆|雷|电|激光|闪|亮|光/, "bolt"],
+    [/肘|拳|锁|抓|拉|背|抱|扛|举|摔|揍|打/, "fist"],
+    [/踢|踹|脚|跳|冲|撞|跑|飞|溜|钻/, "boot"],
+    [/歌|骂|吼|喊|哨|唠叨|口头|训|叫|声|课/, "music"],
+    [/雪|雨|烟|雾|毒|头皮/, "snow"],
+    [/盾|护|保|防|减伤|犊/, "shield"],
+    [/书|题|纸|笔记|考|默写|重点|抄|作业/, "book"],
+    [/铃/, "bell"],
+    [/球/, "ball"],
+    [/勺|饭|包|食堂/, "spoon"],
+    [/血|治|奶|红包|回复|塞|压岁/, "heart"],
+    [/眼|视野|标记|盯|巡视|记过|检查/, "eye"],
+    [/拖|时间|钟|冷却/, "clock"],
+    [/金币|零花|抢/, "coin"]
+  ];
+  function iconForSkill(name, slot = "q") {
+    for (const [re, icon] of RULES) if (re.test(name)) return icon;
+    if (slot === "r" || slot === "t") return "star";
+    return slot === "q" ? "sword" : "bolt";
+  }
+  function iconForRole(role) {
+    switch (role) {
+      case "tank":
+        return "shield";
+      case "fighter":
+        return "sword";
+      case "mage":
+        return "book";
+      case "assassin":
+        return "bolt";
+      case "support":
+        return "heart";
+      case "initiator":
+        return "hand";
+      case "marksman":
+        return "target";
+      default:
+        return "star";
+    }
+  }
+  function iconForItem(short, active = false) {
+    if (active) return short === "\u725B" ? "speed" : "heart";
+    if (/铅|筋|MP/.test(short)) return "sword";
+    if (/荧|错|激/.test(short)) return "book";
+    if (/服/.test(short)) return "shield";
+    if (/包/.test(short)) return "bag";
+    if (/杯/.test(short)) return "potion";
+    if (/条/.test(short)) return "clock";
+    if (/贴/.test(short)) return "heart";
+    return "bag";
+  }
+
   // src/ui.ts
   var $ = (id) => document.getElementById(id);
   var announceTimer;
+  function itemCategory(def) {
+    if (def.active) return "active";
+    if (def.stats.ap || def.stats.magicPen) return "magic";
+    if (def.stats.armor || def.stats.mr || def.stats.hp || def.stats.hpRegen) return "defense";
+    if (def.stats.ad || def.stats.atkSpeed) return "attack";
+    if (def.stats.speed) return "move";
+    if (def.stats.cdr) return "magic";
+    return "attack";
+  }
   var UI = class {
     constructor(handlers) {
       __publicField(this, "handlers");
@@ -7185,6 +8044,10 @@ body.mobile #respawn-tip { font-size: 12px; }
       __publicField(this, "currentHero", null);
       __publicField(this, "lastSkillSig", "");
       __publicField(this, "itemSig", "");
+      __publicField(this, "towerSig", "");
+      __publicField(this, "heroFilter", "all");
+      __publicField(this, "shopCategory", "all");
+      __publicField(this, "tipTarget", null);
       this.handlers = handlers;
       $("btn-start").addEventListener("click", () => {
         this.handlers.onStart();
@@ -7216,7 +8079,7 @@ body.mobile #respawn-tip { font-size: 12px; }
       const itemsEl = $("items");
       itemsEl.innerHTML = Array.from(
         { length: 6 },
-        (_, i) => `<div class="item-slot empty" data-idx="${i}"><span class="short"></span><span class="cd"></span></div>`
+        (_, i) => `<div class="item-slot empty" data-idx="${i}"><span class="item-icon"></span><span class="short"></span><span class="cd"></span></div>`
       ).join("");
       itemsEl.querySelectorAll(".item-slot").forEach((el) => {
         el.addEventListener("click", () => {
@@ -7234,9 +8097,20 @@ body.mobile #respawn-tip { font-size: 12px; }
         const el = e.target.closest("[data-sell]");
         if (el) this.handlers.onSell(Number(el.dataset.sell));
       });
+      const shopModal = $("modal-shop");
+      shopModal.addEventListener("pointerover", (e) => {
+        const el = e.target?.closest(".shop-item[data-item]");
+        if (el) this.showShopItemTip(el);
+      });
+      shopModal.addEventListener("pointerout", (e) => {
+        if (!this.tipTarget || !this.tipTarget.classList.contains("shop-item")) return;
+        const to = e.relatedTarget;
+        if (!to || !this.tipTarget.contains(to)) this.hideHudTip();
+      });
       $("volume").addEventListener("input", (e) => {
         this.handlers.onVolume(Number(e.target.value) / 100);
       });
+      this.bindHudTooltips();
       this.renderSide();
     }
     renderSide() {
@@ -7264,36 +8138,169 @@ body.mobile #respawn-tip { font-size: 12px; }
       this.hideAll();
       this.selectedTeam = team;
       this.selectedHero = null;
+      this.heroFilter = "all";
       $("hero-screen-title").textContent = team === "student" ? "\u6311\u4E00\u4E2A\u5B66\u751F\u82F1\u96C4" : "\u6311\u4E00\u4E2A\u6559\u5E08\u82F1\u96C4";
       $("btn-fight").disabled = true;
       $("screen-hero").classList.remove("hidden");
+      this.renderHeroFilters(team);
       this.renderHeroGrid(team);
+      const first = this.filteredHeroes(team)[0];
+      if (first) this.selectHero(first);
+    }
+    filteredHeroes(team) {
+      const list = heroesOf(team);
+      return this.heroFilter === "all" ? list : list.filter((h) => h.role === this.heroFilter);
+    }
+    renderHeroFilters(team) {
+      const el = $("hero-filters");
+      const roles = [
+        ["all", "\u5168\u90E8"],
+        ["tank", "\u5766\u514B"],
+        ["fighter", "\u6218\u58EB"],
+        ["mage", "\u6CD5\u5E08"],
+        ["assassin", "\u523A\u5BA2"],
+        ["support", "\u8F85\u52A9"]
+      ];
+      const present = new Set(heroesOf(team).map((h) => h.role));
+      el.innerHTML = roles.filter(([role]) => role === "all" || present.has(role)).map(([role, label]) => `<button class="hero-filter ${this.heroFilter === role ? "active" : ""}" data-role="${role}">${label}</button>`).join("");
+      el.querySelectorAll(".hero-filter").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          this.heroFilter = btn.dataset.role || "all";
+          el.querySelectorAll(".hero-filter").forEach((b) => b.classList.toggle("active", b === btn));
+          this.renderHeroGrid(team);
+        });
+      });
+    }
+    heroAvatar(def) {
+      const a = def.art;
+      return `<span class="hc-avatar" style="--skin:${a.skin};--hair:${a.hair};--outfit:${a.outfit}"><i class="av-body"></i><i class="av-head"></i></span>`;
     }
     renderHeroGrid(team) {
-      const list = heroesOf(team);
+      const list = this.filteredHeroes(team);
       const grid = $("hero-grid");
       grid.innerHTML = "";
+      if (!list.length) {
+        grid.innerHTML = '<div class="hero-empty">\u8FD9\u4E2A\u5B9A\u4F4D\u6682\u65F6\u6CA1\u6709\u82F1\u96C4</div>';
+        return;
+      }
       for (const def of list) {
         const card = document.createElement("button");
-        card.className = `hero-card ${team}`;
+        card.className = `hero-card ${team}${this.selectedHero === def.id ? " selected" : ""}`;
         card.dataset.hero = def.id;
         card.innerHTML = `
         <div class="hc-top">
-          <span class="hc-name">${def.name}</span>
-          <span class="hc-role">${def.roleLabel}</span>
+          ${this.heroAvatar(def)}
+          <div class="hc-title">
+            <span class="hc-name">${def.name}</span>
+            <span class="hc-sub">${def.title}</span>
+          </div>
+          <span class="hc-diff" title="\u96BE\u5EA6">${"\u25CF".repeat(def.difficulty)}${"\u25CB".repeat(3 - def.difficulty)}</span>
         </div>
-        <div class="hc-desc">${def.blurb}</div>
-        <div class="hc-desc" style="color:var(--muted);font-style:italic">"${def.quote}"</div>
-        <div class="hc-foot"><span class="stars">${"\u2605".repeat(def.difficulty)}${"\u2606".repeat(3 - def.difficulty)}</span><span>\u96BE\u5EA6</span></div>
+        <div class="hc-role">${iconSvg(iconForRole(def.role), 13)}<span>${def.roleLabel}</span></div>
+        <div class="hc-kit">
+          ${["q", "e", "r", "t"].map((slot) => iconSvg(iconForSkill(def.abilities[slot].name, slot), 14)).join("")}
+          <span class="hc-more">\u6280\u80FD</span>
+        </div>
       `;
-        card.addEventListener("click", () => {
-          this.selectedHero = def.id;
-          grid.querySelectorAll(".hero-card").forEach((c) => c.classList.remove("selected"));
-          card.classList.add("selected");
-          $("btn-fight").disabled = false;
-        });
+        card.addEventListener("click", () => this.selectHero(def));
         grid.appendChild(card);
       }
+      if (!this.selectedHero || !list.some((h) => h.id === this.selectedHero)) {
+        this.selectHero(list[0]);
+      }
+    }
+    selectHero(def) {
+      this.selectedHero = def.id;
+      $("btn-fight").disabled = false;
+      document.querySelectorAll(".hero-card").forEach((c) => {
+        c.classList.toggle("selected", c.dataset.hero === def.id);
+      });
+      this.renderHeroDetail(def);
+    }
+    renderHeroDetail(def) {
+      const el = $("hero-detail");
+      const stats2 = [
+        ["\u751F\u547D", def.stats.hp, 1200],
+        ["\u653B\u51FB", def.stats.ad, 110],
+        ["\u62A4\u7532", def.stats.armor, 60],
+        ["\u5C04\u7A0B", def.stats.range, 800]
+      ];
+      const kit = ["q", "e", "r", "t"].map((slot) => {
+        const sk = def.abilities[slot];
+        return `<div class="hd-skill">
+        <span class="hd-key">${{ q: "J", e: "K", r: "L", t: "U" }[slot]}</span>
+        <span class="hd-icon">${iconSvg(iconForSkill(sk.name, slot), 19)}</span>
+        <div class="hd-skill-text">
+          <div class="hd-skill-head"><b>${sk.name}</b><span>${sk.cooldown}s \xB7 \u84DD ${sk.mana}</span></div>
+          <p>${sk.desc}</p>
+        </div>
+      </div>`;
+      }).join("");
+      el.innerHTML = `
+      <div class="hd-head">
+        ${this.heroAvatar(def)}
+        <div class="hd-id">
+          <h3>${def.name}</h3>
+          <p>${def.title} \xB7 ${def.roleLabel}</p>
+        </div>
+        <span class="hd-diff">${"\u25CF".repeat(def.difficulty)}${"\u25CB".repeat(3 - def.difficulty)}</span>
+      </div>
+      <p class="hd-blurb">${def.blurb}</p>
+      <div class="hd-quote">\u201C${def.quote}\u201D</div>
+      <div class="hd-stats">
+        ${stats2.map(([name, value, max]) => `<div class="hd-stat"><span>${name}</span><div class="hd-bar"><i style="width:${Math.min(100, Math.round(value / max * 100))}%"></i></div><b>${Math.round(value)}</b></div>`).join("")}
+      </div>
+      <div class="hd-passive"><span class="hd-icon">${iconSvg(iconForSkill(def.abilities.passive.name, "q"), 17)}</span><div><b>\u88AB\u52A8 \xB7 ${def.abilities.passive.name}</b><p>${def.abilities.passive.desc}</p></div></div>
+      <div class="hd-kit">${kit}</div>
+    `;
+    }
+    bindHudTooltips() {
+      const hud = $("hud");
+      const tip = $("tooltip");
+      const find = (e) => e.target?.closest(".skill[data-slot], .item-slot[data-idx]") ?? null;
+      hud.addEventListener("pointerover", (e) => {
+        const el = find(e);
+        if (el && el !== this.tipTarget) this.showHudTip(el);
+      });
+      hud.addEventListener("pointerout", (e) => {
+        if (!this.tipTarget) return;
+        const to = e.relatedTarget;
+        if (!to || !this.tipTarget.contains(to)) this.hideHudTip();
+      });
+      hud.addEventListener("focusin", (e) => {
+        const el = find(e);
+        if (el) this.showHudTip(el);
+      });
+      hud.addEventListener("focusout", () => this.hideHudTip());
+      tip.addEventListener("pointerdown", () => this.hideHudTip());
+    }
+    showHudTip(el) {
+      const tip = $("tooltip");
+      const slot = el.dataset.slot;
+      let html = "";
+      if (slot) {
+        const def = this.currentHero ? HEROES[this.currentHero] : null;
+        if (!def) return;
+        const key = { p: "\u88AB\u52A8", q: "J", e: "K", r: "L", t: "U" }[slot];
+        if (slot === "p") {
+          html = `<div class="tip-head">${iconSvg(iconForSkill(def.abilities.passive.name, "q"), 20)}<b>${def.abilities.passive.name}</b><span>\u88AB\u52A8</span></div><p>${def.abilities.passive.desc}</p>`;
+        } else {
+          const a = def.abilities[slot];
+          html = `<div class="tip-head">${iconSvg(iconForSkill(a.name, slot), 20)}<b>${a.name}</b><span>${key}</span></div><div class="tip-meta">CD ${a.cooldown}s \xB7 \u84DD\u8017 ${a.mana}</div><p>${a.desc}</p>`;
+        }
+      } else {
+        const id = el.dataset.item;
+        if (!id) return;
+        const item = ITEM_MAP[id];
+        if (!item) return;
+        html = `<div class="tip-head">${iconSvg(iconForItem(item.short, !!item.active), 20)}<b>${item.name}</b><span>${item.price} \u91D1\u5E01</span></div><p>${item.desc}</p>${item.active ? `<div class="tip-meta">\u4E3B\u52A8\uFF1A${item.active.name}\uFF08${item.active.cd}s\uFF09</div>` : ""}`;
+      }
+      if (!html) return;
+      this.positionTip(el, html);
+    }
+    hideHudTip() {
+      this.tipTarget = null;
+      $("tooltip").classList.add("hidden");
     }
     showHud() {
       this.hideAll();
@@ -7314,6 +8321,8 @@ body.mobile #respawn-tip { font-size: 12px; }
         face.textContent = def.name.slice(0, 1);
         face.style.color = u.team === "student" ? COLOR.studentDeep : COLOR.teacherDeep;
       }
+      const hn = document.getElementById("hero-name");
+      if (hn) hn.textContent = def.name;
       const names = {
         q: def.abilities.q.name,
         e: def.abilities.e.name,
@@ -7322,11 +8331,22 @@ body.mobile #respawn-tip { font-size: 12px; }
         p: def.abilities.passive.name
       };
       for (const [slot, name] of Object.entries(names)) {
-        const el = document.querySelector(`.skill[data-slot="${slot}"] .name`);
-        if (el) el.textContent = name;
         const box = document.querySelector(`.skill[data-slot="${slot}"]`);
-        if (box) box.classList.toggle("locked", slot === "r");
+        if (!box) continue;
+        const el = box.querySelector(".name");
+        if (el) el.textContent = name;
+        const icon = box.querySelector(".s-icon");
+        if (icon) icon.innerHTML = slot === "p" ? iconSvg(iconForSkill(name, "q"), 18) : iconSvg(iconForSkill(name, slot), 24);
+        const cost = box.querySelector(".cost");
+        if (cost) cost.textContent = slot === "p" ? "" : String(def.abilities[slot].mana);
+        box.classList.toggle("locked", false);
       }
+      for (const slot of ["q", "e", "r", "t"]) {
+        const ticon = document.querySelector(`.tskill[data-slot="${slot}"] .ticon`);
+        if (ticon) ticon.innerHTML = iconSvg(iconForSkill(def.abilities[slot].name, slot), 20);
+      }
+      const shopIcon = document.querySelector("#btn-shop .icon");
+      if (shopIcon) shopIcon.innerHTML = iconSvg("bag", 15);
     }
     updateHud(w) {
       const p = playerOf(w);
@@ -7352,6 +8372,15 @@ body.mobile #respawn-tip { font-size: 12px; }
         bell.classList.toggle("active", false);
         bell.classList.toggle("urgent", left <= 10);
         bellText.textContent = `${nextBreak ? "\u4E0B\u8BFE\u94C3" : "\u4E0A\u8BFE\u94C3"} ${fmtTime(left)}`;
+      }
+      const pipSig = ["student", "teacher"].map((team) => towersOf(w, team).map((t) => t.dead ? "0" : "1").join("")).join("|");
+      if (pipSig !== this.towerSig) {
+        this.towerSig = pipSig;
+        for (const team of ["student", "teacher"]) {
+          const el = document.getElementById(`pips-${team}`);
+          if (!el) continue;
+          el.innerHTML = towersOf(w, team).map((t) => `<i class="${t.dead ? "dead" : ""}"></i>`).join("");
+        }
       }
       const hpPct = Math.max(0, p.hp / p.maxHp);
       $("hp-fill").style.width = `${hpPct * 100}%`;
@@ -7388,6 +8417,7 @@ body.mobile #respawn-tip { font-size: 12px; }
           if (cd) cd.textContent = rem > 0 ? rem < 1 ? rem.toFixed(1) : String(Math.ceil(rem)) : "";
           tb.classList.toggle("cooling", rem > 0);
           tb.classList.toggle("locked", st.rank <= 0);
+          tb.style.setProperty("--cdPct", rem > 0 ? String(Math.min(100, rem / Math.max(1e-3, st.def.cooldown) * 100)) : "0");
         }
       }
       const itemBtn = document.getElementById("touch-item");
@@ -7412,6 +8442,7 @@ body.mobile #respawn-tip { font-size: 12px; }
         el.classList.toggle("on-cd", rem > 0 && st.rank > 0);
         el.classList.toggle("no-mana", p.mp < st.def.mana);
         el.classList.toggle("locked", st.rank <= 0);
+        el.style.setProperty("--cdPct", rem > 0 ? String(Math.min(100, rem / Math.max(1e-3, st.def.cooldown) * 100)) : "0");
         const cd = el.querySelector(".cd");
         if (cd) {
           if (st.rank <= 0) cd.textContent = "4\u7EA7";
@@ -7430,19 +8461,22 @@ body.mobile #respawn-tip { font-size: 12px; }
         slots.forEach((el, i) => {
           const id = ids[i];
           el.classList.toggle("empty", !id);
+          el.dataset.item = id ?? "";
+          const icon = el.querySelector(".item-icon");
           const short = el.querySelector(".short");
           if (!id) {
             if (short) short.textContent = "";
+            if (icon) icon.innerHTML = "";
             el.style.background = "";
             el.style.color = "";
             el.title = "";
           } else {
             const def = ITEM_MAP[id];
             if (short) short.textContent = def?.short ?? "?";
+            if (icon) icon.innerHTML = def ? iconSvg(iconForItem(def.short, !!def.active), 15) : "";
             el.style.background = def?.color ?? "";
             el.style.color = "#fffdf6";
-            el.title = def ? `${def.name}
-${def.desc}` : id;
+            el.title = "";
           }
         });
       }
@@ -7464,21 +8498,71 @@ ${def.desc}` : id;
       if (!p) return;
       $("shop-gold").textContent = String(Math.floor(p.gold));
       const full = (p.itemIds?.length ?? 0) >= 6;
-      $("shop-grid").innerHTML = ITEMS.map((def) => {
+      const tabs = [
+        ["all", "\u5168\u90E8"],
+        ["attack", "\u653B\u51FB"],
+        ["defense", "\u9632\u5FA1"],
+        ["magic", "\u6CD5\u5F3A"],
+        ["move", "\u79FB\u901F"],
+        ["active", "\u4E3B\u52A8"]
+      ];
+      const tabsEl = $("shop-tabs");
+      tabsEl.innerHTML = tabs.map(([id, label]) => `<button class="shop-tab ${this.shopCategory === id ? "active" : ""}" data-cat="${id}">${label}</button>`).join("");
+      tabsEl.querySelectorAll(".shop-tab").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          this.shopCategory = btn.dataset.cat || "all";
+          this.renderShop(w);
+        });
+      });
+      const role = p.heroId ? HEROES[p.heroId]?.role : "fighter";
+      const build = AI_BUILDS[role ?? "fighter"] ?? [];
+      const owned = new Set(p.itemIds ?? []);
+      const next = build.find((id) => !owned.has(id));
+      $("shop-recommend").innerHTML = build.length ? `<span class="rec-label">\u63A8\u8350\u51FA\u88C5</span>${build.map((id) => {
+        const def = ITEM_MAP[id];
+        if (!def) return "";
+        return `<span class="rec-item ${owned.has(id) ? "owned" : id === next ? "next" : ""}" title="${def.name}">${iconSvg(iconForItem(def.short, !!def.active), 14)}<span>${def.name}</span></span>`;
+      }).join("")}` : "";
+      const list = ITEMS.filter((def) => this.shopCategory === "all" || itemCategory(def) === this.shopCategory);
+      $("shop-grid").innerHTML = list.map((def) => {
         const can = !full && p.gold >= def.price;
-        return `<button class="shop-item ${can ? "" : "disabled"}" data-item="${def.id}">
-        <span class="si-icon" style="background:${def.color}">${def.short}</span>
+        return `<button class="shop-item ${can ? "" : "disabled"}" data-item="${def.id}" aria-label="${def.name}\uFF0C${def.price} \u91D1\u5E01">
+        <span class="si-icon" style="background:${def.color}">${iconSvg(iconForItem(def.short, !!def.active), 21)}</span>
         <span class="si-name">${def.name}</span>
         <span class="si-price">${def.price}</span>
+        ${def.active ? '<span class="si-active">\u4E3B\u52A8</span>' : ""}
         <span class="si-desc">${def.desc}</span>
       </button>`;
       }).join("");
-      const owned = p.itemIds ?? [];
-      $("shop-owned-count").textContent = `${owned.length} / 6`;
-      $("shop-owned").innerHTML = owned.length ? owned.map((id, i) => {
+      if (!list.length) $("shop-grid").innerHTML = '<div class="shop-empty">\u8FD9\u4E2A\u5206\u7C7B\u6682\u65F6\u6CA1\u6709\u88C5\u5907</div>';
+      const ids = p.itemIds ?? [];
+      $("shop-owned-count").textContent = `${ids.length} / 6`;
+      $("shop-owned").innerHTML = ids.length ? ids.map((id, i) => {
         const def = ITEM_MAP[id];
-        return `<button class="owned-item" data-sell="${i}">${def?.name ?? id}<span>\u5356 ${Math.round((def?.price ?? 0) * 0.6)}</span></button>`;
+        return `<button class="owned-item" data-sell="${i}">${def ? iconSvg(iconForItem(def.short, !!def.active), 14) : ""}<span>${def?.name ?? id}</span><em>\u5356 ${Math.round((def?.price ?? 0) * 0.6)}</em></button>`;
       }).join("") : '<span class="tiny">\u8FD8\u6CA1\u6709\u88C5\u5907\u3002\u8865\u5200\u3001\u51FB\u6740\u3001\u63A8\u5854\u90FD\u4F1A\u6765\u96F6\u82B1\u94B1\u3002</span>';
+    }
+    showShopItemTip(el) {
+      const id = el.dataset.item;
+      if (!id) return;
+      const item = ITEM_MAP[id];
+      if (!item) return;
+      const html = `<div class="tip-head">${iconSvg(iconForItem(item.short, !!item.active), 20)}<b>${item.name}</b><span>${item.price} \u91D1\u5E01</span></div><p>${item.desc}</p>${item.active ? `<div class="tip-meta">\u4E3B\u52A8\uFF1A${item.active.name}\uFF08${item.active.cd}s\uFF09</div>` : ""}`;
+      this.positionTip(el, html);
+    }
+    positionTip(el, html) {
+      const tip = $("tooltip");
+      this.tipTarget = el;
+      tip.innerHTML = html;
+      tip.classList.remove("hidden");
+      const r = el.getBoundingClientRect();
+      const tw = tip.offsetWidth;
+      const th = tip.offsetHeight;
+      const x = Math.max(8, Math.min(innerWidth - tw - 8, r.left + r.width / 2 - tw / 2));
+      let y = r.top - th - 10;
+      if (y < 8) y = r.bottom + 10;
+      tip.style.left = `${x}px`;
+      tip.style.top = `${y}px`;
     }
     setSkillCooldownText(slot, text) {
       const cd = document.querySelector(`.skill[data-slot="${slot}"] .cd`);
@@ -7520,33 +8604,70 @@ ${def.desc}` : id;
     }
     renderBoard(w) {
       const heroes = w.units.filter((u) => u.kind === "hero");
-      const rows = (team) => {
+      const block = (team, title) => {
         const list = heroes.filter((h) => h.team === team);
-        return list.map((h) => {
+        const towers = towersOf(w, team);
+        const alive = towers.filter((t) => !t.dead).length;
+        const core = coreOf(w, team);
+        const rows = list.map((h) => {
           const def = h.heroId ? HEROES[h.heroId] : void 0;
-          return `<tr class="${team}">
-            <td>${def?.name ?? h.name}${h.id === w.playerId ? "\uFF08\u4F60\uFF09" : ""}</td>
-            <td>Lv.${h.level}</td>
-            <td>${h.kills}</td><td>${h.deaths}</td><td>${h.assists}</td>
-            <td>${Math.round(h.gold)}</td>
-            <td>${Math.round(h.damageDealt)}</td>
-          </tr>`;
+          const respawn = h.dead ? `\u590D\u6D3B ${Math.max(0, Math.ceil(h.respawnAt - w.time))}s` : "";
+          return `<div class="board-row ${h.id === w.playerId ? "me" : ""}">
+          <span class="br-avatar">${def ? this.heroAvatar(def) : ""}</span>
+          <span class="br-name">${def?.name ?? h.name}<em>Lv.${h.level}</em></span>
+          <span class="br-kda">${h.kills} / ${h.deaths} / ${h.assists}</span>
+          <span class="br-gold">${Math.round(h.gold)}</span>
+          <span class="br-dmg">${Math.round(h.damageDealt)}</span>
+          <span class="br-status">${respawn}</span>
+        </div>`;
         }).join("");
+        return `<section class="board-team ${team}">
+        <div class="bt-head">
+          <span class="dot"></span><b>${title}</b>
+          <span class="bt-meta">\u51FB\u6740 ${w.kills[team]} \xB7 \u5854 ${alive}/${towers.length} \xB7 \u6838\u5FC3 ${core ? core.invulnerable ? "\u65E0\u654C" : Math.round(core.hp) : "\u2014"}</span>
+        </div>
+        <div class="board-rows">${rows || '<div class="board-empty">\u6682\u65E0\u82F1\u96C4</div>'}</div>
+      </section>`;
       };
-      $("board-content").innerHTML = `
-      <table>
-        <thead><tr><th>\u82F1\u96C4</th><th>\u7B49\u7EA7</th><th>\u51FB\u6740</th><th>\u6B7B\u4EA1</th><th>\u52A9\u653B</th><th>\u91D1\u5E01</th><th>\u4F24\u5BB3</th></tr></thead>
-        <tbody>
-          <tr><th colspan="7">\u6D82\u9E26\u540C\u76DF</th></tr>
-          ${rows("student")}
-          <tr><th colspan="7">\u7EA2\u7B14\u8054\u76DF</th></tr>
-          ${rows("teacher")}
-        </tbody>
-      </table>
-    `;
+      let html = block("student", "\u6D82\u9E26\u540C\u76DF") + block("teacher", "\u7EA2\u7B14\u8054\u76DF");
+      const neutral = heroes.filter((h) => h.team === "neutral");
+      if (neutral.length) {
+        html += `<section class="board-team neutral"><div class="bt-head"><span class="dot"></span><b>\u4E2D\u7ACB</b><span class="bt-meta">\u5367\u5E95\u4E2D</span></div><div class="board-rows">${neutral.map((h) => {
+          const def = h.heroId ? HEROES[h.heroId] : void 0;
+          return `<div class="board-row"><span class="br-avatar">${def ? this.heroAvatar(def) : ""}</span><span class="br-name">${def?.name ?? h.name}<em>Lv.${h.level}</em></span><span class="br-kda">${h.kills} / ${h.deaths} / ${h.assists}</span><span class="br-gold">${Math.round(h.gold)}</span><span class="br-dmg">${Math.round(h.damageDealt)}</span><span class="br-status"></span></div>`;
+        }).join("")}</div></section>`;
+      }
+      $("board-content").innerHTML = html;
+    }
+    renderResultExtras(w) {
+      const heroes = w.units.filter((u) => u.kind === "hero" && (u.team === "student" || u.team === "teacher"));
+      let mvp = heroes[0];
+      let best = -1;
+      for (const h of heroes) {
+        const score = h.damageDealt + h.kills * 160 + h.assists * 60;
+        if (score > best) {
+          best = score;
+          mvp = h;
+        }
+      }
+      const def = mvp?.heroId ? HEROES[mvp.heroId] : void 0;
+      $("result-mvp").innerHTML = mvp && def ? `
+      <div class="mvp-label">MVP</div>
+      <div class="mvp-main">
+        ${this.heroAvatar(def)}
+        <div><b>${def.name}</b><span>${def.roleLabel} \xB7 ${mvp.kills} / ${mvp.deaths} / ${mvp.assists}</span></div>
+        <div class="mvp-dmg">${Math.round(mvp.damageDealt)}<em>\u4F24\u5BB3</em></div>
+      </div>` : "";
+      const teamCard = (team, name) => {
+        const towers = towersOf(w, team);
+        const core = coreOf(w, team);
+        return `<div class="rt-team ${team}"><div class="rt-name">${name}</div><div class="rt-stats"><span>\u51FB\u6740 <b>${w.kills[team]}</b></span><span>\u5854 <b>${towers.filter((t) => !t.dead).length}/${towers.length}</b></span><span>\u6838\u5FC3 <b>${core ? core.invulnerable ? "\u65E0\u654C" : Math.round(core.hp) : "\u2014"}</b></span></div></div>`;
+      };
+      $("result-teams").innerHTML = teamCard("student", "\u6D82\u9E26\u540C\u76DF") + teamCard("teacher", "\u7EA2\u7B14\u8054\u76DF");
     }
     showResult(w) {
       this.hideAll();
+      this.renderResultExtras(w);
       if (w.playerTeam === "neutral") {
         $("result-stamp").textContent = "\u5367\u5E95";
         $("result-title").textContent = "\u66B4\u9732\u4E86";
@@ -8197,6 +9318,45 @@ ${def.desc}` : id;
     if (scene === "hero") {
       const team = params.get("team") === "teacher" ? "teacher" : "student";
       ui.showHeroSelect(team);
+      return;
+    }
+    if (scene === "board") {
+      const team = params.get("team") === "teacher" ? "teacher" : "student";
+      const heroId = params.get("hero") || heroesOf(team)[0].id;
+      startMatch(team, heroId);
+      const w = world;
+      w.time = 600;
+      for (const h of w.units) {
+        if (h.kind !== "hero") continue;
+        h.kills = Math.max(0, Math.floor(h.id * 7 % 9));
+        h.deaths = Math.max(0, Math.floor(h.id * 3 % 5));
+        h.assists = Math.max(0, Math.floor(h.id * 5 % 7));
+        h.damageDealt = 1200 + h.id * 731 % 6e3;
+        h.gold = 900 + h.id * 311 % 3200;
+      }
+      paused = true;
+      ui.showBoard(true, w);
+      return;
+    }
+    if (scene === "result") {
+      const team = params.get("team") === "teacher" ? "teacher" : "student";
+      const heroId = params.get("hero") || heroesOf(team)[0].id;
+      startMatch(team, heroId);
+      const w = world;
+      w.time = 838;
+      w.state = "over";
+      w.winner = team;
+      w.kills = team === "student" ? { student: 18, teacher: 11 } : { student: 11, teacher: 18 };
+      for (const h of w.units) {
+        if (h.kind !== "hero") continue;
+        h.kills = Math.max(0, Math.floor(h.id * 7 % 10));
+        h.deaths = Math.max(0, Math.floor(h.id * 3 % 6));
+        h.assists = Math.max(0, Math.floor(h.id * 5 % 8));
+        h.damageDealt = 2200 + h.id * 731 % 9e3;
+        h.gold = 1800 + h.id * 311 % 5e3;
+      }
+      paused = true;
+      ui.showResult(w);
       return;
     }
     if (scene === "exam") {
