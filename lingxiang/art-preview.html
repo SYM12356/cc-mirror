@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>铃响之前 · 美术样张</title>
+<style>
+  :root{
+    --ink:#2e2a24; --ink-soft:rgba(46,42,36,.68); --paper:#f6f0df; --paper2:#fffaf0;
+    --teal:#3faf9b; --teal-deep:#247a6c; --red:#d94f3d; --red-deep:#a93627;
+    --gold:#c9a227; --line:rgba(46,42,36,.24);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif}
+  body{background-image:radial-gradient(circle at 12% 8%,rgba(255,255,255,.55),transparent 30%),linear-gradient(rgba(46,42,36,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(46,42,36,.035) 1px,transparent 1px);background-size:auto,30px 30px,30px 30px}
+  .wrap{max-width:1280px;margin:0 auto;padding:28px 26px 54px}
+  .mast{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;border-bottom:2px solid var(--ink);padding-bottom:13px}
+  h1{font-family:"Songti SC","STSong",serif;font-size:44px;letter-spacing:5px;margin:0;line-height:1}
+  .mast .sub{font-size:11px;color:var(--ink-soft);margin-top:7px;letter-spacing:.08em}
+  .stamp{border:1.5px solid var(--ink);border-radius:8px;padding:7px 10px;font-size:10px;font-weight:800;color:var(--ink-soft);transform:rotate(-1.2deg);background:rgba(255,250,240,.7);white-space:nowrap}
+  .stamp b{color:var(--red-deep)}
+  .note{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 20px;font-size:10px;color:var(--ink-soft)}
+  .note span{border:1px dashed var(--line);border-radius:99px;padding:3px 9px;background:rgba(255,250,240,.45)}
+  h2{font-family:"Songti SC",serif;font-size:23px;letter-spacing:2px;margin:26px 0 10px;display:flex;align-items:baseline;gap:9px}
+  h2 em{font-style:normal;font-family:inherit;font-size:9px;letter-spacing:.14em;color:var(--gold);font-weight:900}
+  .heroes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .hero-card{position:relative;border:1.6px solid var(--ink);border-radius:12px;background:var(--paper2);overflow:hidden;box-shadow:5px 5px 0 rgba(46,42,36,.12)}
+  .hero-card::before{content:"";position:absolute;inset:7px;border:1px dashed rgba(46,42,36,.14);border-radius:8px;pointer-events:none}
+  .hero-card.student{border-top:6px solid var(--teal)}
+  .hero-card.teacher{border-top:6px solid var(--red)}
+  .hero-card canvas{display:block;width:100%;height:auto}
+  .hero-meta{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;padding:10px 13px 12px;border-top:1.4px solid var(--ink)}
+  .hero-meta h3{font-family:"Songti SC",serif;font-size:24px;margin:0;letter-spacing:2px}
+  .hero-meta .role{font-size:9px;color:var(--ink-soft);margin-top:2px}
+  .hero-meta .tag{font-size:9px;border:1px solid var(--line);border-radius:99px;padding:2px 7px;color:var(--ink-soft)}
+  .poses{display:flex;gap:4px;padding:0 10px 10px}
+  .poses canvas{width:33.33%;border:1px dashed var(--line);border-radius:6px;background:rgba(246,240,223,.6)}
+  .map-card{border:1.6px solid var(--ink);border-radius:12px;overflow:hidden;background:var(--paper2);box-shadow:5px 5px 0 rgba(46,42,36,.12)}
+  .map-card canvas{display:block;width:100%;height:auto}
+  .map-cap{display:flex;justify-content:space-between;gap:12px;padding:9px 12px;border-top:1.4px solid var(--ink);font-size:10px;color:var(--ink-soft)}
+  .ui-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px}
+  .ui-card{border:1.6px solid var(--ink);border-radius:12px;background:var(--paper2);padding:15px;box-shadow:5px 5px 0 rgba(46,42,36,.12)}
+  .title-card{position:relative;min-height:210px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:radial-gradient(circle at 50% 40%,#fffdf6 0,#f7efdc 62%,#efe3ca 100%)}
+  .title-card:after{content:"";position:absolute;inset:8px;border:1px dashed rgba(46,42,36,.18);border-radius:8px}
+  .title-kicker{font-size:8px;letter-spacing:.24em;color:var(--ink-soft);margin-bottom:5px}
+  .title-logo{font-family:"Songti SC",serif;font-size:52px;letter-spacing:7px;line-height:1;text-shadow:2px 2px 0 rgba(201,162,39,.22)}
+  .title-sub{font-size:10px;color:var(--ink-soft);margin-top:9px;letter-spacing:.08em}
+  .hero-pick{display:flex;gap:12px;align-items:center}
+  .hero-pick canvas{width:108px;height:auto;border:1px dashed var(--line);border-radius:8px;background:rgba(246,240,223,.5)}
+  .hero-pick h3{font-family:"Songti SC",serif;font-size:24px;margin:0;letter-spacing:2px}
+  .hero-pick .small{font-size:9px;color:var(--ink-soft);margin:3px 0 8px}
+  .stat-row{display:flex;gap:5px;flex-wrap:wrap}
+  .stat-row span{font-size:9px;border:1px solid var(--line);border-radius:99px;padding:2px 6px;color:var(--ink-soft)}
+  .skill-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  .skill{display:flex;flex-direction:column;align-items:center;gap:5px}
+  .skill svg{width:58px;height:58px;filter:drop-shadow(2px 2px 0 rgba(46,42,36,.08))}
+  .skill b{font-size:10px;letter-spacing:.04em}
+  .skill span{font-size:8px;color:var(--ink-soft)}
+  .swatches{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+  .swatches i{width:34px;height:22px;border:1px solid var(--ink);border-radius:4px;display:block}
+  .swatches span{font-size:9px;color:var(--ink-soft);align-self:center}
+  .foot{margin-top:26px;border-top:1px dashed var(--line);padding-top:10px;font-size:9px;color:var(--ink-soft);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  @media(max-width:900px){.heroes{grid-template-columns:1fr}.ui-grid{grid-template-columns:1fr}.wrap{padding:18px 14px 34px}h1{font-size:32px}.title-logo{font-size:42px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mast">
+    <div><h1>美术样张</h1><div class="sub">水彩草稿纸 · 铅笔线稿 · 纯 Canvas / SVG 绘制 · 无 AI 生图</div></div>
+    <div class="stamp">STAGE <b>01</b> · 风格审批</div>
+  </div>
+  <div class="note"><span>统一 2.5 头身</span><span>铅笔轮廓 + 水彩淡彩</span><span>学生青绿 / 教师朱红</span><span>道具化剪影</span><span>纸张纤维与折痕</span></div>
+
+  <h2>角色样张 <em>3 / 18</em></h2>
+  <div class="heroes" id="heroes"></div>
+
+  <h2>教室中路 <em>MAP SAMPLE</em></h2>
+  <div class="map-card"><canvas id="mapCanvas"></canvas><div class="map-cap"><span>课桌、椅子、粉笔、纸团、橡皮屑；中路用粉笔虚线，不抢角色。</span><span>1200 × 520 逻辑尺寸</span></div></div>
+
+  <h2>界面样张 <em>UI SAMPLE</em></h2>
+  <div class="ui-grid">
+    <div class="ui-card title-card">
+      <div class="title-kicker">2D · 3v3 / 5v5 · 草稿纸战场</div>
+      <div class="title-logo">铃响之前</div>
+      <div class="title-sub">最后一节自习课，草稿纸活了过来。</div>
+    </div>
+    <div class="ui-card hero-pick" id="heroPick"></div>
+    <div class="ui-card">
+      <div class="skill-grid" id="skills"></div>
+      <div class="swatches"><i style="background:#f6f0df"></i><i style="background:#3faf9b"></i><i style="background:#d94f3d"></i><i style="background:#c9a227"></i><i style="background:#2e2a24"></i><span>纸 / 学生 / 教师 / 金 / 墨</span></div>
+    </div>
+  </div>
+
+  <div class="foot"><span>纯代码绘制，无外部位图。样张通过后再接入正式角色系统。</span><span>SYM 游戏工作室 · 美术方向 v1</span></div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const DPR = Math.min(2, window.devicePixelRatio || 1);
+  const INK = '#2e2a24';
+  const C = {
+    paper:'#f6f0df', paper2:'#fffaf0', ink:'#2e2a24',
+    teal:'#3faf9b', tealDeep:'#247a6c', red:'#d94f3d', redDeep:'#a93627',
+    gold:'#c9a227', skin:'#e6b98e', skinShade:'#cf9d74', hair:'#2b2119',
+    wood:'#b98252', woodDark:'#8b5f3d', green:'#6f8a6a',
+  };
+
+  function mulberry(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  function setup(canvas, w, h) {
+    canvas.width = Math.round(w * DPR);
+    canvas.height = Math.round(h * DPR);
+    canvas.style.aspectRatio = `${w} / ${h}`;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(DPR, DPR);
+    return ctx;
+  }
+
+  function paper(ctx, w, h, seed = 3) {
+    const rnd = mulberry(seed);
+    ctx.fillStyle = C.paper; ctx.fillRect(0, 0, w, h);
+    // fibers
+    for (let i = 0; i < 900; i++) {
+      const x = rnd() * w, y = rnd() * h;
+      ctx.fillStyle = rnd() > 0.5 ? 'rgba(120,103,76,.055)' : 'rgba(255,255,255,.20)';
+      ctx.fillRect(x, y, 1 + rnd() * 2, 0.5 + rnd());
+    }
+    // long fibers
+    for (let i = 0; i < 90; i++) {
+      const x = rnd() * w, y = rnd() * h;
+      ctx.strokeStyle = 'rgba(120,103,76,.06)'; ctx.lineWidth = 0.6;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 12 + rnd() * 20, y - 3 + rnd() * 6, x + 26 + rnd() * 22, y + rnd() * 3); ctx.stroke();
+    }
+    // grid
+    ctx.strokeStyle = 'rgba(46,42,36,.045)'; ctx.lineWidth = 1;
+    for (let x = 0; x <= w; x += 30) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+    for (let y = 0; y <= h; y += 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+    const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * .2, w / 2, h / 2, Math.max(w, h) * .7);
+    g.addColorStop(0, 'rgba(255,255,255,.10)'); g.addColorStop(1, 'rgba(116,95,65,.10)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  }
+
+  function stroke(ctx, path, color = INK, width = 2) {
+    ctx.save();
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    path(); ctx.stroke();
+    ctx.globalAlpha = 0.28; ctx.translate(0.6, 0.5); ctx.lineWidth = Math.max(0.7, width * .55);
+    path(); ctx.stroke();
+    ctx.restore();
+  }
+  function fillStroke(ctx, path, fill, line = INK, lw = 2) {
+    ctx.save(); ctx.fillStyle = fill; path(); ctx.fill(); ctx.restore();
+    stroke(ctx, path, line, lw);
+  }
+  function ellipse(ctx, x, y, rx, ry) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); }
+  function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+
+  // ---------------------------------------------------------
+  // 角色
+  // ---------------------------------------------------------
+  const HEROES = {
+    laokao: {
+      name:'老尻', role:'坦克 / 学生', team:'student', poseName:'坐镇',
+      palette:{ outfit:'#4aa89a', outfitDark:'#2b7d71', trim:'#e8c56a', skin:C.skin, hair:C.hair, accent:'#e8b84b' },
+      build:'heavy', hairStyle:'bowl', prop:'chair',
+    },
+    messi: {
+      name:'梅西', role:'战士 / 学生', team:'student', poseName:'起脚',
+      palette:{ outfit:'#35a894', outfitDark:'#1f7568', trim:'#f51f43', skin:'#e8b98f', hair:'#211a14', accent:'#f2d16b' },
+      build:'small', hairStyle:'spiky', prop:'ball',
+    },
+    shitang: {
+      name:'食堂老头', role:'战士 / 教师', team:'teacher', poseName:'手抖',
+      palette:{ outfit:'#d94f3d', outfitDark:'#a93627', trim:'#f0e6cd', skin:'#d9a878', hair:'#3a2e26', accent:'#e8b84b' },
+      build:'round', hairStyle:'bald', prop:'ladle',
+    },
+  };
+
+  function drawHero(ctx, id, x, y, scale, pose = 'idle', opts = {}) {
+    const h = HEROES[id];
+    const p = h.palette;
+    const heavy = h.build === 'heavy', small = h.build === 'small', round = h.build === 'round';
+    const headR = small ? 19 : heavy ? 22 : 23;
+    const bodyW = heavy ? 62 : small ? 42 : 55;
+    const bodyH = heavy ? 68 : small ? 52 : 60;
+    const legH = small ? 40 : 46;
+    const hipY = -legH;
+    const bodyTop = hipY - bodyH;
+    const headY = bodyTop - headR * .92;
+    const walk = pose === 'walk', attack = pose === 'attack';
+    const phase = walk ? 1 : 0;
+    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+    // shadow
+    ctx.save(); ctx.globalAlpha = .18; ctx.fillStyle = '#5d4a32';
+    ctx.beginPath(); ctx.ellipse(0, 3, bodyW * .72, 8, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+
+    // prop behind
+    if (h.prop === 'chair') drawChair(ctx, bodyW * .65, -12, .85);
+    // legs
+    const legOff = walk ? 9 : 0;
+    const legSwing = walk ? 6 : 0;
+    drawLeg(ctx, -bodyW * .26, hipY, legH, -legOff - legSwing, p);
+    drawLeg(ctx, bodyW * .26, hipY, legH, legOff + legSwing, p);
+
+    // back arm
+    drawArm(ctx, -bodyW * .52, bodyTop + 17, -1, p, attack ? 'back' : 'down', pose);
+    // body
+    const bodyPath = () => {
+      ctx.beginPath();
+      ctx.moveTo(-bodyW * .46, bodyTop + 6);
+      ctx.quadraticCurveTo(-bodyW * .56, bodyTop + bodyH * .45, -bodyW * .42, hipY + 4);
+      ctx.quadraticCurveTo(0, hipY + (round ? 13 : 9), bodyW * .42, hipY + 4);
+      ctx.quadraticCurveTo(bodyW * .56, bodyTop + bodyH * .45, bodyW * .46, bodyTop + 6);
+      ctx.quadraticCurveTo(0, bodyTop - 4, -bodyW * .46, bodyTop + 6);
+    };
+    ctx.save(); ctx.globalAlpha = .40; ctx.fillStyle = p.outfitDark; bodyPath(); ctx.translate(3, 4); ctx.fill(); ctx.restore();
+    fillStroke(ctx, bodyPath, p.outfit, INK, 2.1);
+    // wash highlight
+    ctx.save(); ctx.globalAlpha = .20; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(-bodyW * .15, bodyTop + 18, bodyW * .22, 15, -.4, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    // apron / collar
+    if (id === 'shitang') {
+      const apron = () => { ctx.beginPath(); ctx.moveTo(-bodyW * .33, bodyTop + 17); ctx.lineTo(bodyW * .33, bodyTop + 17); ctx.lineTo(bodyW * .26, hipY + 2); ctx.lineTo(-bodyW * .26, hipY + 2); ctx.closePath(); };
+      fillStroke(ctx, apron, p.trim, INK, 1.3);
+      ctx.strokeStyle = p.outfitDark; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(-bodyW*.22, bodyTop+24); ctx.lineTo(bodyW*.2, bodyTop+24); ctx.stroke();
+    } else {
+      // jersey number / collar
+      ctx.strokeStyle = p.outfitDark; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(-bodyW*.2, bodyTop+9); ctx.quadraticCurveTo(0, bodyTop+17, bodyW*.2, bodyTop+9); ctx.stroke();
+      if (id === 'messi') { ctx.fillStyle = p.trim; ctx.font = '900 17px "Songti SC",serif'; ctx.textAlign='center'; ctx.fillText('10', 0, bodyTop + 48); }
+    }
+    // front arm
+    drawArm(ctx, bodyW * .52, bodyTop + 17, 1, p, attack ? 'raise' : 'down', pose);
+
+    // neck + head
+    ctx.fillStyle = p.skin; ctx.fillRect(-6, headY + headR * .68, 12, 11);
+    const head = () => { ctx.beginPath(); ctx.ellipse(0, headY, headR, headR * 1.06, 0, 0, Math.PI * 2); };
+    fillStroke(ctx, head, p.skin, INK, 2.1);
+    // ears
+    ellipse(ctx, -headR * .92, headY + 1, 4.2, 6.5); ctx.fillStyle = p.skin; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth=1.4; ctx.stroke();
+    ellipse(ctx, headR * .92, headY + 1, 4.2, 6.5); ctx.fill(); ctx.stroke();
+
+    // hair
+    drawHair(ctx, h, headR, headY, p);
+    // face
+    drawFace(ctx, id, headR, headY, pose);
+
+    // prop front
+    if (h.prop === 'ball') drawBall(ctx, bodyW * .62, -9, .9);
+    if (h.prop === 'ladle') drawLadle(ctx, bodyW * .72, bodyTop + 18, attack ? -0.6 : 0.3);
+    if (h.prop === 'chair') drawChair(ctx, bodyW * .62, -12, .85);
+
+    // action marks
+    if (attack) {
+      ctx.save(); ctx.strokeStyle = 'rgba(46,42,36,.40)'; ctx.lineWidth=1.4; ctx.setLineDash([3,4]);
+      ctx.beginPath(); ctx.arc(bodyW*.7, bodyTop+8, 25, -1.1, .1); ctx.stroke(); ctx.restore();
+    }
+    if (walk) {
+      ctx.save(); ctx.globalAlpha=.25; ctx.fillStyle = p.teal || C.teal;
+      ctx.beginPath(); ctx.ellipse(-bodyW*.5, 2, 8, 3, .2, 0, Math.PI*2); ctx.fill(); ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function drawLeg(ctx, x, hipY, legH, swing, p) {
+    ctx.save(); ctx.translate(x, hipY);
+    ctx.rotate(swing * .02);
+    const leg = () => { ctx.beginPath(); ctx.moveTo(-7, 0); ctx.quadraticCurveTo(-9, legH * .55, -6, legH); ctx.lineTo(7, legH); ctx.quadraticCurveTo(8, legH * .55, 7, 0); ctx.closePath(); };
+    fillStroke(ctx, leg, p.outfitDark, INK, 1.8);
+    // shoe
+    roundRect(ctx, -9, legH - 5, 21, 8, 4); ctx.fillStyle = '#3b3127'; ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=1.6; ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawArm(ctx, x, y, side, p, kind, pose) {
+    ctx.save(); ctx.translate(x, y);
+    const angle = kind === 'raise' ? -1.15 : kind === 'back' ? 0.55 : 0.12 + (pose==='walk'?-.15:0);
+    ctx.rotate(angle * side);
+    const arm = () => { ctx.beginPath(); ctx.moveTo(-5, 0); ctx.quadraticCurveTo(-8, 22, -4, 38); ctx.lineTo(5, 38); ctx.quadraticCurveTo(7, 20, 5, 0); ctx.closePath(); };
+    fillStroke(ctx, arm, p.outfit, INK, 1.7);
+    // hand
+    ctx.beginPath(); ctx.ellipse(0, 42, 6, 6.5, 0, 0, Math.PI*2); ctx.fillStyle=p.skin; ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=1.6; ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawHair(ctx, h, r, y, p) {
+    ctx.save();
+    if (h.hairStyle === 'bowl') {
+      ctx.beginPath(); ctx.moveTo(-r*1.02, y-r*.1); ctx.quadraticCurveTo(-r*1.08, y-r*1.12, 0, y-r*1.14); ctx.quadraticCurveTo(r*1.08, y-r*1.12, r*1.02, y-r*.1); ctx.quadraticCurveTo(r*.8, y-r*.4, 0, y-r*.42); ctx.quadraticCurveTo(-r*.8, y-r*.4, -r*1.02, y-r*.1); ctx.closePath();
+      ctx.fillStyle = p.hair; ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=1.8; ctx.stroke();
+      ctx.strokeStyle='rgba(255,255,255,.14)'; ctx.beginPath(); ctx.moveTo(-r*.6,y-r*.85); ctx.quadraticCurveTo(0,y-r*.98,r*.55,y-r*.8); ctx.stroke();
+    } else if (h.hairStyle === 'spiky') {
+      ctx.beginPath(); ctx.moveTo(-r*.9, y-r*.55);
+      const spikes=7; for(let i=0;i<spikes;i++){const t=i/(spikes-1); const xx=-r*.9+t*r*1.8; const yy=y-r*.78-(i%2?r*.28:r*.06); ctx.lineTo(xx,yy);}
+      ctx.lineTo(r*.9,y-r*.45); ctx.quadraticCurveTo(0,y-r*.86,-r*.9,y-r*.55); ctx.fillStyle=p.hair; ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=1.7; ctx.stroke();
+    } else {
+      // bald with side tufts
+      ctx.beginPath(); ctx.ellipse(-r*.92,y-r*.22,5,9,-.2,0,Math.PI*2); ctx.fillStyle=p.hair; ctx.fill();
+      ctx.beginPath(); ctx.ellipse(r*.92,y-r*.22,5,9,.2,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.28)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(-r*.26,y-r*.48,r*.34,3.5,5.1); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawFace(ctx, id, r, y, pose) {
+    ctx.save();
+    ctx.strokeStyle = INK; ctx.fillStyle = INK; ctx.lineWidth=1.8; ctx.lineCap='round';
+    // brows
+    ctx.beginPath(); ctx.moveTo(-r*.45,y-r*.18); ctx.lineTo(-r*.16,y-r*.24); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(r*.16,y-r*.24); ctx.lineTo(r*.45,y-r*.18); ctx.stroke();
+    // eyes
+    ctx.beginPath(); ctx.ellipse(-r*.28,y+1,2.1,2.8,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(r*.28,y+1,2.1,2.8,0,0,Math.PI*2); ctx.fill();
+    // nose
+    ctx.beginPath(); ctx.moveTo(0,y+2); ctx.lineTo(-1.5,y+8); ctx.lineTo(2,y+8); ctx.stroke();
+    // mouth
+    ctx.beginPath();
+    if (id==='shitang') { ctx.arc(0,y+r*.38,5,.2,Math.PI-.2); }
+    else if (pose==='attack') { ctx.arc(0,y+r*.38,5,0,Math.PI); }
+    else { ctx.moveTo(-4,y+r*.36); ctx.quadraticCurveTo(0,y+r*.42,4,y+r*.36); }
+    ctx.stroke();
+    // blush
+    ctx.fillStyle='rgba(217,79,61,.18)'; ctx.beginPath(); ctx.ellipse(-r*.55,y+r*.2,5,2.4,0,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(r*.55,y+r*.2,5,2.4,0,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawChair(ctx, x, y, s) {
+    ctx.save(); ctx.translate(x,y); ctx.scale(s,s); ctx.rotate(-.08);
+    ctx.strokeStyle=INK; ctx.lineWidth=2; ctx.fillStyle=C.wood;
+    roundRect(ctx,-20,-50,40,7,3); ctx.fill(); ctx.stroke();
+    roundRect(ctx,-17,-45,5,35,2); ctx.fill(); ctx.stroke(); roundRect(ctx,12,-45,5,35,2); ctx.fill(); ctx.stroke();
+    roundRect(ctx,-18,-10,36,6,3); ctx.fillStyle=C.woodDark; ctx.fill(); ctx.stroke();
+    ctx.strokeStyle=INK; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(-14,-4); ctx.lineTo(-22,20); ctx.moveTo(14,-4); ctx.lineTo(22,20); ctx.stroke();
+    ctx.restore();
+  }
+  function drawBall(ctx,x,y,s) {
+    ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+    ctx.beginPath(); ctx.arc(0,0,12,0,Math.PI*2); ctx.fillStyle='#f4efe2'; ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=1.8; ctx.stroke();
+    ctx.fillStyle=INK; for(let i=0;i<5;i++){ const a=i*Math.PI*2/5; ctx.beginPath(); ctx.arc(Math.cos(a)*5.5,Math.sin(a)*5.5,2.3,0,Math.PI*2); ctx.fill(); }
+    ctx.beginPath(); ctx.arc(0,0,12,0,Math.PI*2); ctx.strokeStyle='rgba(46,42,36,.35)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.restore();
+  }
+  function drawLadle(ctx,x,y,rot) {
+    ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
+    ctx.strokeStyle=INK; ctx.lineWidth=2.2; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-42); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0,-48,9,7,0,0,Math.PI*2); ctx.fillStyle='#c9c2b2'; ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=1.8; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0,-48,5.5,4,0,0,Math.PI*2); ctx.fillStyle='#8c8476'; ctx.fill();
+    ctx.restore();
+  }
+
+  // ---------------------------------------------------------
+  // 地图
+  // ---------------------------------------------------------
+  function drawMap(canvas) {
+    const W=1200, H=520; const ctx=setup(canvas,W,H);
+    paper(ctx,W,H,8);
+    // torn border
+    stroke(ctx, () => { ctx.beginPath(); ctx.roundRect(18,18,W-36,H-36,12); }, 'rgba(46,42,36,.55)', 2);
+    ctx.save(); ctx.globalAlpha=.08; ctx.fillStyle=C.gold; ctx.beginPath(); ctx.roundRect(24,24,W-48,H-48,8); ctx.fill(); ctx.restore();
+    // floor panels
+    ctx.save(); ctx.strokeStyle='rgba(46,42,36,.10)'; ctx.lineWidth=1;
+    for(let x=70;x<W-40;x+=110){ctx.beginPath();ctx.moveTo(x,40);ctx.lineTo(x,H-40);ctx.stroke();}
+    for(let y=62;y<H-40;y+=92){ctx.beginPath();ctx.moveTo(40,y);ctx.lineTo(W-40,y);ctx.stroke();}
+    ctx.restore();
+    // chalkboard
+    ctx.save(); roundRect(ctx,70,44,330,42,5); ctx.fillStyle='#5c6f5e'; ctx.fill(); stroke(ctx,()=>ctx.roundRect(70,44,330,42,5),INK,2.5);
+    ctx.fillStyle='rgba(255,253,246,.7)'; ctx.font='italic 12px "Songti SC",serif'; ctx.fillText('今天必须讲完这张卷子', 88, 70); ctx.restore();
+    // windows
+    for(let i=0;i<3;i++){ const x=820+i*105; ctx.save(); roundRect(ctx,x,46,82,36,4); ctx.fillStyle='#cfe0dc'; ctx.fill(); stroke(ctx,()=>ctx.roundRect(x,46,82,36,4),INK,2); ctx.beginPath();ctx.moveTo(x+41,46);ctx.lineTo(x+41,82);ctx.moveTo(x,64);ctx.lineTo(x+82,64);ctx.strokeStyle='rgba(46,42,36,.35)';ctx.lineWidth=1;ctx.stroke(); ctx.restore(); }
+    // lane chalk
+    ctx.save(); ctx.strokeStyle='rgba(46,42,36,.34)'; ctx.lineWidth=3; ctx.setLineDash([12,14]);
+    ctx.beginPath(); ctx.moveTo(90,282); ctx.bezierCurveTo(360,260, 820,300, 1110,278); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(90,316); ctx.bezierCurveTo(360,336, 820,292, 1110,320); ctx.stroke();
+    ctx.restore();
+    // lane arrows
+    ctx.save(); ctx.fillStyle='rgba(46,42,36,.30)'; for(const x of [260,600,940]){ctx.beginPath();ctx.moveTo(x-9,296);ctx.lineTo(x+9,296);ctx.lineTo(x,286);ctx.closePath();ctx.fill();}
+    ctx.restore();
+    // towers / cores
+    drawBookTower(ctx, 120, 298, 'student'); drawBookTower(ctx, 1080, 298, 'teacher');
+    // desks top/bottom
+    for(let i=0;i<5;i++) drawDesk(ctx, 210+i*170, 120, .92, i%2===0);
+    for(let i=0;i<5;i++) drawDesk(ctx, 250+i*165, 430, .9, i%2===1);
+    // scattered
+    drawPaperBall(ctx, 380, 230, .8); drawPaperBall(ctx, 720, 360, .65);
+    drawPencil(ctx, 520, 385, -.2); drawEraser(ctx, 840, 225, .1); drawTape(ctx, 650, 90, .2);
+    // desk shadows/overlay
+    // center label
+    ctx.save(); ctx.fillStyle='rgba(255,250,240,.85)'; roundRect(ctx, 516, 246, 168, 24, 12); ctx.fill(); stroke(ctx,()=>ctx.roundRect(516,246,168,24,12),'rgba(46,42,36,.35)',1);
+    ctx.fillStyle=INK; ctx.font='900 10px "PingFang SC",sans-serif'; ctx.textAlign='center'; ctx.fillText('中路 · 粉笔虚线', 600, 262); ctx.restore();
+    // vignette
+    const v=ctx.createRadialGradient(W/2,H/2,180,W/2,H/2,680); v.addColorStop(0,'rgba(0,0,0,0)'); v.addColorStop(1,'rgba(80,58,35,.13)'); ctx.fillStyle=v; ctx.fillRect(0,0,W,H);
+  }
+
+  function drawDesk(ctx,x,y,s,tilted) {
+    ctx.save(); ctx.translate(x,y); ctx.scale(s,s); ctx.rotate(tilted?.05:-.02);
+    ctx.save(); ctx.globalAlpha=.18; ctx.fillStyle='#5d4a32'; ctx.beginPath(); ctx.ellipse(6,18,58,14,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+    roundRect(ctx,-48,-12,96,12,4); ctx.fillStyle=C.wood; ctx.fill(); stroke(ctx,()=>ctx.roundRect(-48,-12,96,12,4),INK,2);
+    ctx.strokeStyle=INK; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-38,0); ctx.lineTo(-44,22); ctx.moveTo(38,0); ctx.lineTo(44,22); ctx.moveTo(-30,0); ctx.lineTo(-28,22); ctx.moveTo(30,0); ctx.lineTo(28,22); ctx.stroke();
+    // books
+    roundRect(ctx,-28,-22,30,9,2); ctx.fillStyle='#6f8a6a'; ctx.fill(); stroke(ctx,()=>ctx.roundRect(-28,-22,30,9,2),INK,1.4);
+    roundRect(ctx,-24,-27,26,7,2); ctx.fillStyle='#d9b35e'; ctx.fill(); stroke(ctx,()=>ctx.roundRect(-24,-27,26,7,2),INK,1.2);
+    ctx.restore();
+  }
+
+  function drawBookTower(ctx,x,y,team) {
+    const col=team==='student'?C.teal:C.red;
+    ctx.save(); ctx.translate(x,y);
+    ctx.save(); ctx.globalAlpha=.18; ctx.fillStyle='#5d4a32'; ctx.beginPath(); ctx.ellipse(0,42,42,12,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+    for(let i=0;i<4;i++){
+      const w=56-i*5,h=14;
+      roundRect(ctx,-w/2,30-i*15,w,h,3); ctx.fillStyle=i%2? '#d9b35e':col; ctx.fill(); stroke(ctx,()=>ctx.roundRect(-w/2,30-i*15,w,h,3),INK,1.7);
+      ctx.strokeStyle='rgba(46,42,36,.35)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(-w/2+7,34-i*15); ctx.lineTo(w/2-7,34-i*15); ctx.stroke();
+    }
+    // flag
+    ctx.strokeStyle=INK; ctx.lineWidth=1.8; ctx.beginPath(); ctx.moveTo(0,-30); ctx.lineTo(0,-58); ctx.stroke();
+    ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(0,-58); ctx.lineTo(24,-51); ctx.lineTo(0,-44); ctx.closePath(); ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=1.2; ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawPaperBall(ctx,x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.beginPath();ctx.moveTo(-8,2);ctx.lineTo(-3,-8);ctx.lineTo(7,-5);ctx.lineTo(9,4);ctx.lineTo(1,9);ctx.closePath();ctx.fillStyle='#fffaf0';ctx.fill();ctx.strokeStyle=INK;ctx.lineWidth=1.4;ctx.stroke();ctx.beginPath();ctx.moveTo(-3,-6);ctx.lineTo(0,1);ctx.lineTo(6,2);ctx.strokeStyle='rgba(46,42,36,.35)';ctx.stroke();ctx.restore();}
+  function drawPencil(ctx,x,y,rot){ctx.save();ctx.translate(x,y);ctx.rotate(rot);roundRect(ctx,-24,-3,48,6,2);ctx.fillStyle='#e0b34e';ctx.fill();ctx.strokeStyle=INK;ctx.lineWidth=1.4;ctx.stroke();ctx.beginPath();ctx.moveTo(24,-3);ctx.lineTo(33,0);ctx.lineTo(24,3);ctx.closePath();ctx.fillStyle='#f2d7b4';ctx.fill();ctx.stroke();ctx.restore();}
+  function drawEraser(ctx,x,y,rot){ctx.save();ctx.translate(x,y);ctx.rotate(rot);roundRect(ctx,-12,-7,24,14,3);ctx.fillStyle='#e9d7b8';ctx.fill();ctx.strokeStyle=INK;ctx.lineWidth=1.4;ctx.stroke();ctx.fillStyle='#6f8a6a';ctx.fillRect(-12,-2,24,4);ctx.restore();}
+  function drawTape(ctx,x,y,rot){ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.globalAlpha=.6;ctx.fillStyle='#efe2bf';ctx.fillRect(-22,-6,44,12);ctx.strokeStyle='rgba(46,42,36,.3)';ctx.setLineDash([3,3]);ctx.strokeRect(-22,-6,44,12);ctx.restore();}
+
+  // ---------------------------------------------------------
+  // 卡片和界面
+  // ---------------------------------------------------------
+  function heroCard(id) {
+    const h=HEROES[id];
+    const card=document.createElement('div'); card.className=`hero-card ${h.team}`;
+    card.innerHTML=`<canvas></canvas><div class="hero-meta"><div><h3>${h.name}</h3><div class="role">${h.role} · ${h.poseName}</div></div><span class="tag">${h.team==='student'?'涂鸦同盟':'红笔联盟'}</span></div><div class="poses"><canvas></canvas><canvas></canvas><canvas></canvas></div>`;
+    const main=card.querySelector('canvas'); const ctx=setup(main, 340, 360); paper(ctx,340,360,id.length+4);
+    // border arch
+    ctx.save(); ctx.strokeStyle='rgba(46,42,36,.18)'; ctx.lineWidth=1.2; ctx.setLineDash([4,5]); ctx.beginPath(); ctx.arc(170,210,110,Math.PI*1.12,Math.PI*1.88); ctx.stroke(); ctx.restore();
+    drawHero(ctx,id,170,298,1.42,'idle');
+    const poses=card.querySelectorAll('.poses canvas');
+    ['walk','attack','idle'].forEach((pose,i)=>{const c=poses[i]; const pc=setup(c,110,150); paper(pc,110,150,id.length+i); drawHero(pc,id,55,126,.62,pose);});
+    return card;
+  }
+
+  function heroPickHTML() {
+    const h=HEROES.messi;
+    return `<canvas id="pickCanvas"></canvas><div><h3>梅西</h3><div class="small">战士 / 突进 · 学生</div><div class="stat-row"><span>难度 ★★</span><span>生命 760</span><span>攻击 72</span><span>射程 175</span></div><div class="stat-row" style="margin-top:6px"><span>大肘子</span><span>飞踢</span><span>雷霆歌声</span></div></div>`;
+  }
+
+  function skillSVG(kind, label, name) {
+    const color = kind==='q' ? '#3faf9b' : kind==='e' ? '#c9a227' : kind==='r' ? '#d94f3d' : kind==='t' ? '#8b6fd8' : '#7a7263';
+    let art='';
+    if(kind==='q') art='<path d="M18 42 Q34 18 43 24 L35 48 Z" fill="#e0b34e"/><path d="M43 24 L49 20" stroke="#2e2a24" stroke-width="3"/>';
+    if(kind==='e') art='<path d="M18 34 L44 22 L38 36 L48 32 L32 44 L36 35 Z" fill="#fffaf0"/>';
+    if(kind==='r') art='<path d="M36 16 Q46 28 44 38 L28 38 Q26 28 36 16Z" fill="#d94f3d"/><path d="M30 40h12" stroke="#2e2a24" stroke-width="3"/>';
+    if(kind==='t') art='<path d="M32 16 L48 40 L16 40 Z" fill="none"/><circle cx="32" cy="34" r="9" fill="#8b6fd8" opacity=".6"/>';
+    if(kind==='p') art='<path d="M32 17 L37 29 L49 30 L40 38 L43 50 L32 43 L21 50 L24 38 L15 30 L27 29Z" fill="#e8c56a"/>';
+    return `<div class="skill"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="${color}22" stroke="#2e2a24" stroke-width="2.3"/><circle cx="32" cy="32" r="22" fill="none" stroke="rgba(46,42,36,.18)" stroke-width="1" stroke-dasharray="3 4"/><path d="M14 32 Q18 20 32 18" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2"/>${art}<text x="32" y="60" text-anchor="middle" font-size="7" fill="#2e2a24" font-weight="700">${label}</text></svg><b>${name}</b><span>${kind.toUpperCase()}</span></div>`;
+  }
+
+  // init
+  const heroes=document.getElementById('heroes');
+  for(const id of ['laokao','messi','shitang']) heroes.appendChild(heroCard(id));
+  drawMap(document.getElementById('mapCanvas'));
+  document.getElementById('heroPick').innerHTML=heroPickHTML();
+  const pick=document.getElementById('pickCanvas'); const pctx=setup(pick,220,240); paper(pctx,220,240,13); drawHero(pctx,'messi',110,208,1.12,'attack');
+  const skills=document.getElementById('skills');
+  skills.innerHTML=skillSVG('p','被动','球王')+skillSVG('q','J','大肘子')+skillSVG('e','K','飞踢')+skillSVG('r','L','雷霆')+skillSVG('t','U','头皮雪');
+})();
+</script>
+</body>
+</html>

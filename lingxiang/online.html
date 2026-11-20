@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>铃响之前 · 联机原型</title>
+<style>
+  :root{--ink:#2e2a24;--paper:#f5f0e2;--paper2:#fffdf6;--teal:#3faf9b;--red:#d94f3d;--gold:#c9a227;--line:rgba(46,42,36,.22)}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif}
+  body{background-image:linear-gradient(rgba(46,42,36,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(46,42,36,.045) 1px,transparent 1px);background-size:26px 26px}
+  button{font-family:inherit;cursor:pointer}
+  .hidden{display:none!important}
+  .wrap{max-width:980px;margin:0 auto;padding:22px 18px 40px}
+  .head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:1.5px solid var(--ink);padding-bottom:10px;margin-bottom:14px}
+  h1{font-family:"Songti SC",serif;font-size:34px;margin:0;letter-spacing:3px}
+  .sub{font-size:11px;color:rgba(46,42,36,.62)}
+  .tag{font-size:9px;border:1px solid var(--line);border-radius:99px;padding:3px 8px;color:rgba(46,42,36,.6)}
+  .panel{border:1.5px solid var(--ink);border-radius:10px;background:var(--paper2);box-shadow:4px 4px 0 rgba(46,42,36,.12);padding:14px;margin-bottom:12px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  input{font:inherit;font-size:13px;padding:8px 10px;border:1.3px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);min-width:0}
+  input:focus{outline:2px solid rgba(63,175,155,.25);border-color:var(--teal)}
+  .btn{font-size:12px;font-weight:800;padding:9px 13px;border:1.4px solid var(--ink);border-radius:7px;background:var(--paper);color:var(--ink)}
+  .btn.primary{background:var(--ink);color:var(--paper2)}
+  .btn.teal{background:var(--teal);color:#fff;border-color:#247a6c}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .code{font-family:ui-monospace,monospace;font-size:20px;letter-spacing:6px;font-weight:900}
+  .slots{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .team{border:1.2px dashed var(--line);border-radius:8px;padding:8px}
+  .team h3{margin:0 0 6px;font-size:12px;letter-spacing:1px}
+  .slot{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;padding:6px 7px;border-bottom:1px dotted var(--line)}
+  .slot:last-child{border-bottom:0}
+  .slot .who{font-weight:800}
+  .slot.ai .who{color:rgba(46,42,36,.45);font-weight:500}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--line);display:inline-block;margin-right:5px}
+  .dot.on{background:var(--teal)}
+  .status{font-size:11px;color:rgba(46,42,36,.65);min-height:16px;margin-top:8px}
+  .note{font-size:10px;line-height:1.7;color:rgba(46,42,36,.58)}
+  #gameView{position:relative}
+  #arena{width:100%;height:auto;display:block;border:1.5px solid var(--ink);border-radius:10px;background:#fbf6e8}
+  .hud{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:12px}
+  .score{font-family:ui-monospace,monospace;font-weight:900;font-size:18px}
+  .score .s{color:#247a6c}.score .t{color:#a93627}
+  .pill{border:1px solid var(--line);border-radius:99px;padding:3px 8px;font-size:10px;background:var(--paper2)}
+  .result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,253,246,.88);border-radius:10px;flex-direction:column;gap:8px;text-align:center}
+  .result h2{font-family:"Songti SC",serif;font-size:30px;margin:0}
+  .mobilePad{display:none;position:fixed;left:14px;bottom:18px;width:110px;height:110px;border:1.5px solid rgba(46,42,36,.35);border-radius:50%;background:rgba(255,253,246,.55);touch-action:none;z-index:9}
+  .mobilePad i{position:absolute;left:50%;top:50%;width:42px;height:42px;margin:-21px;border-radius:50%;background:rgba(46,42,36,.16)}
+  body.touch .mobilePad{display:block}
+  @media(max-width:640px){.slots{grid-template-columns:1fr}h1{font-size:26px}.wrap{padding:14px 12px 30px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div><h1>铃响之前</h1><div class="sub">联机原型 0.1 · 3v3 · AI 补位 · 同城 P2P</div></div>
+    <div class="tag">免费 · 不实名 · 同城</div>
+  </div>
+
+  <div id="lobbyView">
+    <div class="panel">
+      <div class="row">
+        <input id="name" maxlength="8" placeholder="你的名字" value="同学" style="width:120px" />
+        <button id="btnCreate" class="btn primary">创建房间</button>
+        <input id="roomCode" maxlength="4" placeholder="房间码" style="width:90px;text-transform:uppercase" />
+        <button id="btnJoin" class="btn">加入房间</button>
+      </div>
+      <div id="lobbyStatus" class="status">输入名字，创建房间或加入房间。</div>
+      <div id="roomInfo" class="hidden" style="margin-top:12px">
+        <div class="row"><span class="note">房间码</span><span id="codeShow" class="code">----</span><span id="roleShow" class="pill">房主</span></div>
+        <div id="status" class="status">正在连接信令…</div>
+      </div>
+      <div id="slotsWrap" class="hidden">
+        <div class="slots">
+          <div class="team"><h3>涂鸦同盟</h3><div id="slotsS"></div></div>
+          <div class="team"><h3>红笔联盟</h3><div id="slotsT"></div></div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="btnStart" class="btn teal">开始（空位 AI 补）</button>
+          <span class="note">1 人也能开；最多 6 人；AI 由房主模拟。</span>
+        </div>
+      </div>
+      <div id="err" class="status" style="color:#a93627"></div>
+    </div>
+    <div class="panel">
+      <div class="note">
+        玩法：WASD / 方向键移动，靠近自动攻击。测试的是房间码、P2P 直连、RTT 和 AI 补位，不是完整 MOBA。
+        信令使用 PeerJS 公共服务器；不登录、不实名。仅建议同城使用。
+      </div>
+    </div>
+  </div>
+
+  <div id="gameView" class="hidden">
+    <div class="hud">
+      <div class="score"><span class="s" id="scoreS">0</span> : <span class="t" id="scoreT">0</span></div>
+      <div class="row"><span class="pill" id="timeLeft">03:00</span><span class="pill" id="ping">PING —</span><span class="pill" id="seat">座位 —</span></div>
+      <button id="btnLeave" class="btn">离开</button>
+    </div>
+    <canvas id="arena" width="960" height="540"></canvas>
+    <div id="result" class="result hidden"><h2 id="resultTitle">时间到</h2><div id="resultSub" class="note"></div><button id="btnAgain" class="btn primary">回大厅</button></div>
+    <div class="note" style="margin-top:8px">AI 补位由房主模拟；掉线后该座位会自动转为 AI（原型暂不支持重连）。</div>
+  </div>
+</div>
+<div id="pad" class="mobilePad"><i></i></div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const isTouch = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+  if (isTouch) document.body.classList.add('touch');
+  if (isTouch) document.querySelector('#name').value = '手机同学';
+  const ICE = { iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }, { urls: 'stun:stun.l.google.com:19302' }] };
+  const TEAM_SLOTS = ['student','student','student','teacher','teacher','teacher'];
+  const state = {
+    role: null, code: '', peer: null, conns: new Map(), selfSlot: -1,
+    slots: Array.from({length:6}, (_,i) => ({ slot:i, team:TEAM_SLOTS[i], name:'AI', ai:true })),
+    started:false, over:false, score:{student:0,teacher:0}, timeLeft:180,
+    units:[], lastSnap:null, inputs:new Map(), keys:new Set(), pad:{x:0,y:0},
+    pingMs:null, startedAt:0, timer:null, tickTimer:null, pingTimer:null,
+  };
+
+  function status(text, isErr=false){ $('status').textContent = text; $('lobbyStatus').textContent = text; $('err').textContent = isErr ? text : ''; }
+  function setView(game){ $('lobbyView').classList.toggle('hidden', game); $('gameView').classList.toggle('hidden', !game); }
+  function code4(){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:4},()=>A[Math.floor(Math.random()*A.length)]).join(''); }
+  function name(){ return ($('name').value || '同学').slice(0,8); }
+
+  function renderSlots(){
+    for (const team of ['student','teacher']){
+      const box = team==='student'?$('slotsS'):$('slotsT');
+      box.innerHTML = state.slots.filter(s=>s.team===team).map(s=>{
+        const me = s.slot===state.selfSlot;
+        const label = s.ai ? 'AI 补位' : (me ? s.name+'（你）' : s.name);
+        return `<div class="slot ${s.ai?'ai':''}"><span class="who"><span class="dot ${s.ai?'':'on'}"></span>${label}</span><span class="note">${s.team==='student'?'学生':'教师'}</span></div>`;
+      }).join('');
+    }
+    $('btnStart').disabled = state.role!=='host' || state.started;
+    if (state.role==='host'){
+      $('btnStart').textContent = `开始（${state.slots.filter(s=>!s.ai).length} 人 + ${state.slots.filter(s=>s.ai).length} AI）`;
+    }
+  }
+
+  function showRoom(){
+    $('roomInfo').classList.remove('hidden');
+    $('slotsWrap').classList.remove('hidden');
+    $('codeShow').textContent = state.code;
+    $('roleShow').textContent = state.role==='host'?'房主':'玩家';
+    renderSlots();
+  }
+
+  function broadcast(msg, except){
+    for (const [id, conn] of state.conns) if (conn.open && id!==except) conn.send(msg);
+  }
+  function sendLobby(){
+    for (const [,conn] of state.conns) if (conn.open) conn.send({type:'lobby', slots:state.slots.map(({slot,team,name,ai})=>({slot,team,name,ai})), started:state.started});
+  }
+
+  // ---------- host ----------
+  function hostCreate(){
+    const code = code4();
+    state.role='host'; state.code=code; state.selfSlot=0;
+    state.slots[0] = { slot:0, team:'student', name:name(), ai:false };
+    const id = 'lx-'+code;
+    state.peer = new Peer(id, { config: ICE, debug: 0 });
+    status('正在创建房间…');
+    state.peer.on('open', () => { showRoom(); status('房间已创建，等待玩家。'); });
+    state.peer.on('error', (err) => {
+      if (String(err).includes('unavailable-id')) { status('房间码冲突，请重试。', true); return; }
+      status('信令错误：'+err.type, true);
+    });
+    state.peer.on('connection', (conn) => {
+      conn.on('open', () => {
+        conn._lx = { slot:-1 };
+        state.conns.set(conn.peer, conn);
+        conn.on('data', (data) => hostData(conn, data));
+        conn.on('close', () => hostDrop(conn));
+        conn.send({type:'hello', slots:state.slots.map(({slot,team,name,ai})=>({slot,team,name,ai})), started:state.started});
+      });
+    });
+  }
+
+  function hostData(conn, data){
+    if (!data || typeof data!=='object') return;
+    if (data.type==='join'){
+      if (state.started){ conn.send({type:'reject', reason:'已经开局'}); return; }
+      let slot = state.slots.findIndex(s=>s.ai && s.slot!==0);
+      if (slot<0){ conn.send({type:'reject', reason:'房间已满'}); return; }
+      state.slots[slot] = { slot, team:TEAM_SLOTS[slot], name:String(data.name||'玩家').slice(0,8), ai:false };
+      conn._lx = { slot };
+      conn.send({type:'welcome', slot, slots:state.slots.map(({slot,team,name,ai})=>({slot,team,name,ai}))});
+      sendLobby(); renderSlots(); status(`${state.slots[slot].name} 加入了 ${TEAM_SLOTS[slot]==='student'?'学生':'教师'}队。`);
+    } else if (data.type==='input'){
+      const slot = conn._lx?.slot;
+      if (slot>=0) state.inputs.set(slot, data.input);
+    } else if (data.type==='ping'){
+      conn.send({type:'pong', t:data.t});
+    }
+  }
+
+  function hostDrop(conn){
+    const slot = conn._lx?.slot;
+    state.conns.delete(conn.peer);
+    if (slot>0 && state.slots[slot]) {
+      state.slots[slot].ai = true; state.slots[slot].name = 'AI';
+      state.inputs.delete(slot);
+      const unit = state.units.find((u) => u.slot === slot);
+      if (unit) unit.ai = true;
+    }
+    sendLobby(); renderSlots();
+    if (!state.started) status('有玩家离开，空位自动 AI 补位。');
+  }
+
+  // ---------- client ----------
+  function clientJoin(){
+    const code = ($('roomCode').value||'').trim().toUpperCase();
+    if (!/^[A-Z0-9]{4}$/.test(code)) { status('请输入 4 位房间码。', true); return; }
+    state.role='client'; state.code=code;
+    state.peer = new Peer('lx-'+code+'-'+Math.random().toString(36).slice(2,7), { config: ICE, debug: 0 });
+    status('正在连接房间…');
+    state.peer.on('open', () => {
+      const conn = state.peer.connect('lx-'+code, { reliable: true });
+      state.conns.set('host', conn);
+      conn.on('open', () => { conn.send({type:'join', name:name()}); status('已连接，等待房主分配座位…'); });
+      conn.on('data', clientData);
+      conn.on('close', () => { status('与房主断开。', true); if (state.started) endGame('连接断开'); });
+      conn.on('error', (e) => status('连接失败：'+e.type, true));
+    });
+    state.peer.on('error', (err) => status('信令错误：'+err.type, true));
+  }
+
+  function clientData(data){
+    if (!data || typeof data!=='object') return;
+    if (data.type==='welcome'){
+      state.selfSlot = data.slot;
+      state.slots = data.slots;
+      showRoom(); status('已入座，等待房主开始。');
+      renderSlots();
+    } else if (data.type==='lobby'){
+      state.slots = data.slots; renderSlots();
+      if (data.started && !state.started) startClient();
+    } else if (data.type==='reject'){ status(data.reason||'无法加入', true); }
+    else if (data.type==='start'){ state.slots=data.slots; startClient(); }
+    else if (data.type==='snap'){ applySnap(data); }
+    else if (data.type==='pong'){ if (typeof data.t==='number') state.pingMs = Math.max(1, Math.round(performance.now()-data.t)); }
+    else if (data.type==='end'){ endGame(data.text||'对局结束'); }
+  }
+
+  // ---------- game ----------
+  function startHost(){
+    if (state.started) return;
+    state.started = true; state.over=false; state.score={student:0,teacher:0}; state.timeLeft=180;
+    state.units = state.slots.map((s) => ({
+      id:s.slot, slot:s.slot, team:s.team, name:s.name, ai:s.ai,
+      x: s.team==='student' ? 140 : 820, y: 130 + (s.slot%3)*110,
+      hp:100, maxHp:100, dead:false, respawnAt:0, atkAt:0, human:!s.ai,
+    }));
+    state.inputs.clear();
+    setView(true); renderSlots();
+    $('seat').textContent = '房主 · 学生';
+    for (const [,conn] of state.conns) if (conn.open) conn.send({type:'start', slots:state.slots.map(({slot,team,name,ai})=>({slot,team,name,ai}))});
+    if (state.tickTimer) clearInterval(state.tickTimer);
+    if (state.timer) clearInterval(state.timer);
+    let last = performance.now();
+    state.timer = setInterval(() => {
+      const now=performance.now(); const dt=Math.min(0.1,(now-last)/1000); last=now;
+      if (!state.over) { tickHost(dt); state.timeLeft -= dt; if (state.timeLeft<=0) endHost(); }
+      draw();
+      if (now - (state.lastSnap||0) > 66) { state.lastSnap=now; broadcastSnap(); }
+    }, 1000/30);
+  }
+
+  function tickHost(dt){
+    // keep slots/AI in sync if players leave
+    for (const u of state.units){
+      if (u.dead) { if (performance.now()/1000 >= u.respawnAt) { u.dead=false; u.hp=u.maxHp; u.x=u.team==='student'?140:820; u.y=130+(u.slot%3)*110; } continue; }
+      const input = u.slot===0 ? hostLocalInput() : state.inputs.get(u.slot);
+      if (input && !u.ai){ const l=Math.hypot(input.x||0,input.y||0)||1; u.x += (input.x/l)*120*dt; u.y += (input.y/l)*120*dt; }
+      else { // AI
+        const target = state.units.filter(t=>t.team!==u.team && !t.dead).sort((a,b)=>Math.hypot(a.x-u.x,a.y-u.y)-Math.hypot(b.x-u.x,b.y-u.y))[0];
+        if (target){ const dx=target.x-u.x,dy=target.y-u.y,d=Math.hypot(dx,dy)||1; if(d>50){u.x+=dx/d*80*dt;u.y+=dy/d*80*dt;} }
+      }
+      u.x=Math.max(24,Math.min(936,u.x)); u.y=Math.max(30,Math.min(510,u.y));
+      // auto attack
+      if (performance.now()/1000 >= u.atkAt){
+        const target = state.units.filter(t=>t.team!==u.team && !t.dead).sort((a,b)=>Math.hypot(a.x-u.x,a.y-u.y)-Math.hypot(b.x-u.x,b.y-u.y))[0];
+        if (target && Math.hypot(target.x-u.x,target.y-u.y)<52){
+          target.hp -= 12; u.atkAt=performance.now()/1000+0.45;
+          if (target.hp<=0){ target.dead=true; target.hp=0; target.respawnAt=performance.now()/1000+3; state.score[u.team]++; }
+        }
+      }
+    }
+  }
+  function hostLocalInput(){
+    let x=0,y=0;
+    if (state.keys.has('w')||state.keys.has('arrowup')) y-=1;
+    if (state.keys.has('s')||state.keys.has('arrowdown')) y+=1;
+    if (state.keys.has('a')||state.keys.has('arrowleft')) x-=1;
+    if (state.keys.has('d')||state.keys.has('arrowright')) x+=1;
+    x+=state.pad.x; y+=state.pad.y;
+    return {x,y};
+  }
+  function broadcastSnap(){
+    const snap = {type:'snap', score:state.score, timeLeft:state.timeLeft, units:state.units.map(u=>({id:u.id,slot:u.slot,team:u.team,name:u.name,x:Math.round(u.x),y:Math.round(u.y),hp:u.hp,maxHp:u.maxHp,dead:u.dead}))};
+    broadcast(snap);
+  }
+  function endHost(){
+    state.over=true;
+    const w = state.score.student===state.score.teacher ? null : state.score.student>state.score.teacher?'student':'teacher';
+    const text = w ? (w==='student'?'涂鸦同盟获胜':'红笔联盟获胜') : '平局';
+    broadcast({type:'end', text, score:state.score});
+    endGame(text);
+  }
+  function endGame(text){
+    state.over=true;
+    $('resultTitle').textContent = text;
+    $('resultSub').textContent = `比分 ${state.score.student} : ${state.score.teacher} · 本局结束`;
+    $('result').classList.remove('hidden');
+  }
+
+  function startClient(){
+    state.started=true; state.over=false;
+    setView(true);
+    $('seat').textContent = `座位 ${state.selfSlot+1} · ${TEAM_SLOTS[state.selfSlot]==='student'?'学生':'教师'}`;
+    if (state.pingTimer) clearInterval(state.pingTimer);
+    state.pingTimer=setInterval(()=>{ const c=state.conns.get('host'); if(c&&c.open) c.send({type:'ping',t:performance.now()}); },1000);
+    let lastSend=0;
+    const loop=()=>{ if(state.started&&!state.over){ const now=performance.now(); if(now-lastSend>33){lastSend=now; sendInput();} draw(); } requestAnimationFrame(loop); };
+    requestAnimationFrame(loop);
+  }
+  function sendInput(){
+    const c=state.conns.get('host'); if(!c||!c.open) return;
+    c.send({type:'input', input: hostLocalInput()});
+  }
+  function applySnap(data){
+    state.score=data.score||state.score; state.timeLeft=Math.max(0,data.timeLeft||0);
+    if (data.units) state.units = data.units.map(u=>({...u, maxHp:u.maxHp||100}));
+    state.over = state.timeLeft<=0;
+  }
+
+  // ---------- render ----------
+  const canvas=$('arena'), ctx=canvas.getContext('2d');
+  function draw(){
+    const w=canvas.width,h=canvas.height;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle='#fbf6e8'; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle='rgba(46,42,36,.12)'; ctx.lineWidth=1;
+    for(let x=0;x<w;x+=48){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+    for(let y=0;y<h;y+=48){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+    ctx.strokeStyle='rgba(46,42,36,.28)';ctx.setLineDash([7,7]);ctx.beginPath();ctx.moveTo(w/2,20);ctx.lineTo(w/2,h-20);ctx.stroke();ctx.setLineDash([]);
+    for(const u of state.units){
+      if(u.dead) continue;
+      const c=u.team==='student'?'#3faf9b':'#d94f3d';
+      ctx.beginPath();ctx.arc(u.x,u.y,20,0,Math.PI*2);ctx.fillStyle=c;ctx.fill();
+      ctx.lineWidth=2;ctx.strokeStyle='#2e2a24';ctx.stroke();
+      ctx.fillStyle='#fffdf6';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillText(u.name.slice(0,4),u.x,u.y-30);
+      ctx.fillStyle='#2e2a24';ctx.fillRect(u.x-22,u.y+25,44,4);
+      ctx.fillStyle='#4caf50';ctx.fillRect(u.x-22,u.y+25,44*Math.max(0,u.hp/u.maxHp),4);
+    }
+    $('scoreS').textContent=state.score.student;$('scoreT').textContent=state.score.teacher;
+    const sec=Math.max(0,Math.ceil(state.timeLeft));$('timeLeft').textContent=`${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;
+    $('ping').textContent = state.role==='host' ? 'PING 0ms' : (state.pingMs==null?'PING —':`PING ${state.pingMs}ms`);
+  }
+
+  // ---------- input ----------
+  window.addEventListener('keydown',(e)=>{ const k=e.key.toLowerCase(); if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){e.preventDefault();state.keys.add(k);} });
+  window.addEventListener('keyup',(e)=>{ state.keys.delete(e.key.toLowerCase()); });
+  if (isTouch){
+    const pad=$('pad'); let id=null;
+    const move=(e)=>{ const r=pad.getBoundingClientRect(); const dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2); const l=Math.hypot(dx,dy)||1; const m=Math.min(1,l/40); state.pad.x=dx/l*m;state.pad.y=dy/l*m; };
+    pad.addEventListener('pointerdown',(e)=>{e.preventDefault();id=e.pointerId;pad.setPointerCapture(id);move(e);});
+    pad.addEventListener('pointermove',(e)=>{if(e.pointerId===id){e.preventDefault();move(e);}});
+    const end=(e)=>{if(e.pointerId===id){id=null;state.pad.x=0;state.pad.y=0;}};
+    pad.addEventListener('pointerup',end);pad.addEventListener('pointercancel',end);
+  }
+
+  // ---------- buttons ----------
+  if (typeof Peer === 'undefined') { status('PeerJS 加载失败，请检查网络后刷新。', true); }
+  $('btnCreate').addEventListener('click', hostCreate);
+  $('btnJoin').addEventListener('click', clientJoin);
+  $('btnStart').addEventListener('click', startHost);
+  $('btnLeave').addEventListener('click', ()=>location.reload());
+  $('btnAgain').addEventListener('click', ()=>location.reload());
+  $('roomCode').addEventListener('keydown',(e)=>{if(e.key==='Enter')clientJoin();});
+  $('name').addEventListener('keydown',(e)=>{if(e.key==='Enter')hostCreate();});
+  draw();
+})();
+</script>
+</body>
+</html>
