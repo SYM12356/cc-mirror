@@ -2211,6 +2211,19 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
 .title-mode-row .title-item { width: 100%; justify-content: space-between; }
 @media (max-width: 420px) { .title-mode-row { grid-template-columns: 1fr; } }
 
+/* 联机 1v1 */
+.online-sheet { width: min(430px, 92vw); }
+.online-or { text-align: center; font-size: 9px; color: var(--muted); margin: 7px 0; letter-spacing: .1em; }
+.online-join-row { display: flex; gap: 6px; }
+.online-join-row input { flex: 1; min-width: 0; text-transform: uppercase; letter-spacing: .2em; font-weight: 800; }
+.online-code-wrap { display: flex; align-items: baseline; justify-content: center; gap: 9px; margin: 10px 0 4px; }
+.online-code-wrap span { font-size: 9px; color: var(--muted); }
+.online-code-wrap b { font-family: ui-monospace, monospace; font-size: 30px; letter-spacing: .18em; color: var(--red-deep); }
+.online-status { text-align: center; font-size: 10px; color: var(--ink-soft); min-height: 18px; margin: 5px 0 8px; }
+.online-tip { text-align: center; margin-top: 8px; }
+.online-mode #btn-shop, .online-mode #touch-shop, .online-mode #touch-pause { display: none !important; }
+.online-mode #hint { display: none !important; }
+
 </style>
 </head>
 <body>
@@ -2331,12 +2344,13 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
         </section>
         <section class="title-group secondary">
           <div class="title-group-label">设置及其他</div>
+          <button id="btn-online" class="title-item">联机 1v1</button>
           <button id="btn-settings" class="title-item">设置</button>
           <button id="btn-help" class="title-item">帮助</button>
         </section>
       </div>
 
-      <div class="title-foot">v0.17.0 · 原创校园类 MOBA · 单机 3v3 / 5v5 · 无需联网 · <button id="btn-changelog" class="title-link">更新日志</button></div>
+      <div class="title-foot">v0.20.0 · 原创校园类 MOBA · 单机 3v3 / 5v5 · 无需联网 · <button id="btn-changelog" class="title-link">更新日志</button></div>
     </div>
   </div>
 
@@ -2634,7 +2648,7 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
       <div class="changelog-head">
         <div>
           <h3>更新日志</h3>
-          <p class="tiny">0.9.0 之前的条目按开发阶段补录 · 当前 v0.17.0</p>
+          <p class="tiny">0.9.0 之前的条目按开发阶段补录 · 当前 v0.20.0</p>
         </div>
         <button id="btn-changelog-close" class="btn ghost">关闭</button>
       </div>
@@ -7221,6 +7235,148 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
     return map[code] ?? code;
   }
 
+  // src/online.ts
+  function loadPeer() {
+    const w = window;
+    if (w.Peer) return Promise.resolve(w.Peer);
+    return new Promise((resolve, reject) => {
+      const existing = document.getElementById("peerjs-lib");
+      if (existing) {
+        existing.addEventListener("load", () => resolve(window.Peer));
+        existing.addEventListener("error", () => reject(new Error("PeerJS \u52A0\u8F7D\u5931\u8D25")));
+        return;
+      }
+      const s = document.createElement("script");
+      s.id = "peerjs-lib";
+      s.src = "https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js";
+      s.async = true;
+      const timer = window.setTimeout(() => reject(new Error("PeerJS \u52A0\u8F7D\u8D85\u65F6")), 12e3);
+      s.onload = () => {
+        window.clearTimeout(timer);
+        resolve(window.Peer);
+      };
+      s.onerror = () => {
+        window.clearTimeout(timer);
+        reject(new Error("PeerJS \u52A0\u8F7D\u5931\u8D25"));
+      };
+      document.head.appendChild(s);
+    });
+  }
+  function randomCode() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let s = "";
+    for (let i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    return s;
+  }
+  var OnlineDuel = class {
+    constructor(role, cb) {
+      this.cb = cb;
+      __publicField(this, "role");
+      __publicField(this, "code", "");
+      __publicField(this, "peer", null);
+      __publicField(this, "conn", null);
+      __publicField(this, "closed", false);
+      this.role = role;
+    }
+    async create() {
+      const Peer = await loadPeer();
+      if (this.closed) throw new Error("\u5DF2\u5173\u95ED");
+      this.code = randomCode();
+      this.cb.onStatus("\u6B63\u5728\u521B\u5EFA\u623F\u95F4\u2026");
+      return new Promise((resolve, reject) => {
+        this.peer = new Peer(`lxd-${this.code}`, { debug: 0 });
+        const timer = window.setTimeout(() => reject(new Error("\u521B\u5EFA\u623F\u95F4\u8D85\u65F6")), 15e3);
+        this.peer.on("open", () => {
+          window.clearTimeout(timer);
+          this.cb.onStatus(`\u623F\u95F4 ${this.code} \u5DF2\u521B\u5EFA\uFF0C\u7B49\u5F85\u5BF9\u624B\u2026`);
+          resolve(this.code);
+        });
+        this.peer.on("connection", (conn) => {
+          if (this.conn) {
+            conn.close();
+            return;
+          }
+          this.attach(conn);
+        });
+        this.peer.on("error", (err) => {
+          const msg = String(err?.type ?? err?.message ?? err);
+          if (msg.includes("unavailable-id")) {
+            this.cb.onError("\u623F\u95F4\u7801\u88AB\u5360\u7528\uFF0C\u8BF7\u91CD\u8BD5");
+            reject(new Error("\u623F\u95F4\u7801\u88AB\u5360\u7528"));
+          } else {
+            this.cb.onError(`\u8054\u673A\u9519\u8BEF\uFF1A${msg}`);
+            reject(err);
+          }
+        });
+      });
+    }
+    async join(code) {
+      const Peer = await loadPeer();
+      if (this.closed) throw new Error("\u5DF2\u5173\u95ED");
+      this.code = code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
+      if (this.code.length !== 4) throw new Error("\u623F\u95F4\u7801\u5E94\u4E3A 4 \u4F4D");
+      this.cb.onStatus("\u6B63\u5728\u8FDE\u63A5\u623F\u95F4\u2026");
+      return new Promise((resolve, reject) => {
+        this.peer = new Peer({ debug: 0 });
+        const timer = window.setTimeout(() => reject(new Error("\u8FDE\u63A5\u623F\u95F4\u8D85\u65F6")), 18e3);
+        this.peer.on("open", () => {
+          this.conn = this.peer.connect(`lxd-${this.code}`, { reliable: true });
+          this.attach(this.conn);
+          this.conn.on("open", () => {
+            window.clearTimeout(timer);
+            resolve();
+          });
+        });
+        this.peer.on("error", (err) => {
+          window.clearTimeout(timer);
+          const msg = String(err?.type ?? err?.message ?? err);
+          if (msg.includes("peer-unavailable")) {
+            this.cb.onError("\u627E\u4E0D\u5230\u8FD9\u4E2A\u623F\u95F4\uFF0C\u786E\u8BA4\u623F\u4E3B\u5DF2\u521B\u5EFA");
+            reject(new Error("\u627E\u4E0D\u5230\u623F\u95F4"));
+          } else {
+            this.cb.onError(`\u8054\u673A\u9519\u8BEF\uFF1A${msg}`);
+            reject(err);
+          }
+        });
+      });
+    }
+    attach(conn) {
+      this.conn = conn;
+      conn.on("open", () => {
+        if (this.closed) return;
+        this.cb.onConnected();
+      });
+      conn.on("data", (data) => {
+        if (!this.closed) this.cb.onData(data);
+      });
+      conn.on("close", () => {
+        if (!this.closed) this.cb.onClosed("\u8FDE\u63A5\u5DF2\u65AD\u5F00");
+      });
+      conn.on("error", (err) => {
+        this.cb.onError(`\u8FDE\u63A5\u9519\u8BEF\uFF1A${String(err?.message ?? err)}`);
+      });
+    }
+    send(data) {
+      try {
+        if (this.conn?.open) this.conn.send(data);
+      } catch {
+      }
+    }
+    close() {
+      this.closed = true;
+      try {
+        this.conn?.close();
+      } catch {
+      }
+      try {
+        this.peer?.destroy();
+      } catch {
+      }
+      this.conn = null;
+      this.peer = null;
+    }
+  };
+
   // src/render.ts
   function createCamera() {
     return { x: WORLD_W / 2, y: WORLD_H / 2, zoom: 1.15 };
@@ -9646,6 +9802,7 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
     updateExam(w, dt);
     if (w.story?.mode === "race") applyStoryCC(w);
     processQueue(w);
+    processNetCommands(w);
     updateChannels(w, dt);
     updateAuras(w, dt);
     thinkBots(w);
@@ -9763,6 +9920,19 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
       else if (item.type === "recall") tryRecall(w, p);
     }
   }
+  function processNetCommands(w) {
+    for (const u of w.units) {
+      const cmds = u.netCommands ? [...u.netCommands] : [];
+      if (!cmds.length) continue;
+      u.netCommands = [];
+      for (const cmd of cmds) {
+        if (cmd.type === "cast") tryCast(w, u, cmd.slot, cmd.aim);
+        else if (cmd.type === "recall") tryRecall(w, u);
+        else if (cmd.type === "release") releaseChannel(w, u);
+        else if (cmd.type === "item") useItem(w, u, cmd.slot);
+      }
+    }
+  }
   function updateChannels(w, dt) {
     for (const u of w.units) {
       const ch = u.channel;
@@ -9838,10 +10008,11 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
     if (u.kind === "minion") {
       minionThink(w, u);
     }
-    if (u.isPlayer) {
-      dx = w.input.moveX;
-      dy = w.input.moveY;
-      const aim = { x: w.input.aimX - u.pos.x, y: w.input.aimY - u.pos.y };
+    const inp = u.isPlayer ? w.input : u.netInput;
+    if (inp) {
+      dx = inp.moveX;
+      dy = inp.moveY;
+      const aim = { x: inp.aimX - u.pos.x, y: inp.aimY - u.pos.y };
       if (len(aim) > 12) u.facing = norm(aim);
     } else if (u.moveTo) {
       const d = sub(u.moveTo, u.pos);
@@ -10521,14 +10692,28 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
   }
 
   // src/data/changelog.ts
-  var CURRENT_VERSION = "0.19.0";
+  var CURRENT_VERSION = "0.20.0";
   var CHANGELOG = [
+    {
+      version: "0.20.0",
+      date: "2026.11.20",
+      title: "\u8054\u673A 1v1",
+      tags: ["\u8054\u673A", "1v1"],
+      latest: true,
+      items: [
+        "\u6807\u9898\u9875\u65B0\u589E\u300C\u8054\u673A 1v1\u300D\uFF1APeerJS \u623F\u95F4\u7801\uFF0C\u623F\u4E3B\u521B\u5EFA\u3001\u53E6\u4E00\u65B9\u52A0\u5165\u3002",
+        "\u771F\u5B9E\u82F1\u96C4\u5BF9\u5C40\uFF1A\u623F\u4E3B\u63A7\u5236\u6885\u897F\uFF0C\u5BA2\u6237\u7AEF\u63A7\u5236\u98DF\u5802\u8001\u5934\uFF0C\u53CC\u65B9\u5404\u81EA\u672C\u5730\u89C6\u89D2\u3002",
+        "\u4E3B\u673A\u5B9A\u5E8F\u8F93\u5165\u9501\u6B65\uFF1A\u79FB\u52A8\u3001\u666E\u653B\u3001\u6280\u80FD\u3001\u56DE\u57CE\u3001\u5F15\u5BFC\u6280\u80FD\u91CA\u653E\u90FD\u540C\u6B65\u3002",
+        "\u53CC\u65B9\u65F6\u949F\u540C\u6B65\uFF0C\u652F\u6301\u771F\u5B9E\u7684\u4F24\u5BB3\u3001\u51B7\u5374\u3001\u590D\u6D3B\u548C 5 \u6740\u7ED3\u7B97\u3002",
+        "\u8054\u673A\u5BF9\u5C40\u7981\u7528\u5546\u5E97\u3001\u6682\u505C\u548C\u5929\u8D4B\uFF0C\u907F\u514D\u4E2D\u9014\u6539\u53D8\u6A21\u62DF\u72B6\u6001\u3002",
+        "\u8054\u673A\u6A21\u5F0F\u6309\u9700\u4ECE CDN \u52A0\u8F7D PeerJS\uFF1B\u79BB\u7EBF\u5355\u673A\u73A9\u6CD5\u4E0D\u53D7\u5F71\u54CD\u3002"
+      ]
+    },
     {
       version: "0.19.0",
       date: "2026.11.19",
       title: "\u6CFC\u58A8\u5F0F\u6280\u80FD\u7279\u6548",
       tags: ["\u7F8E\u672F", "\u7279\u6548"],
-      latest: true,
       items: [
         "\u547D\u4E2D\u53CD\u9988\u6539\u4E3A\u6CFC\u58A8\uFF1A\u4E0D\u89C4\u5219\u58A8\u56E2\u3001\u98DE\u6E85\u58A8\u70B9\u3001\u5E72\u7B14\u98DE\u767D\uFF0C\u6309\u7269\u7406/\u9B54\u6CD5/\u771F\u5B9E\u4F24\u5BB3\u4F7F\u7528\u4E0D\u540C\u58A8\u8272\u3002",
         "\u65BD\u6CD5\u6539\u4E3A\u811A\u4E0B\u843D\u58A8 + \u653E\u5C04\u58A8\u70B9\uFF0C\u5E76\u4FDD\u7559\u6DE1\u58A8\u5706\u73AF\u3002",
@@ -12005,6 +12190,21 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
   var quickPending = false;
   var pendingDuel = false;
   var pendingTeamSize = 3;
+  var onlineSession = null;
+  var onlineHost = false;
+  var onlineActive = false;
+  var onlineStarting = false;
+  var onlineReady = false;
+  var onlineConnected = false;
+  var onlineHostUnitId = 0;
+  var onlineClientUnitId = 0;
+  var onlineTick = 0;
+  var onlineTimer = 0;
+  var onlineInputTimer = 0;
+  var onlineLocalCmds = [];
+  var onlineRemoteCmds = [];
+  var onlineRemoteInput = { moveX: 0, moveY: 0, aimX: 0, aimY: 0 };
+  var zeroInput = { moveX: 0, moveY: 0, aimX: 0, aimY: 0 };
   var talentOpen = false;
   var eyeCare = params.get("eyecare") === "1";
   try {
@@ -12048,6 +12248,11 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
     canvas.style.height = `${cssH}px`;
     syncOrientation();
   }
+  document.getElementById("btn-online")?.addEventListener("click", () => {
+    initAudio();
+    sfx("click");
+    showOnlineModal();
+  });
   window.addEventListener("resize", resize);
   window.addEventListener("orientationchange", () => setTimeout(() => {
     resize();
@@ -12167,6 +12372,7 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
         return;
       }
       if (to === "title") {
+        closeOnlineSession();
         pendingStory = null;
         quickPending = false;
         pendingDuel = false;
@@ -12222,6 +12428,10 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
   });
   function toggleShop(force) {
     if (!world || world.state !== "playing") return;
+    if (onlineActive) {
+      ui.toast("\u8054\u673A\u5BF9\u5C40\u6682\u4E0D\u652F\u6301\u5546\u5E97");
+      return;
+    }
     const next = force ?? !shopOpen;
     if (next === shopOpen) return;
     if (next) {
@@ -12237,6 +12447,7 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
     }
   }
   function quitToTitle() {
+    closeOnlineSession();
     pendingStory = null;
     quickPending = false;
     pendingDuel = false;
@@ -12274,6 +12485,12 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
     if (!world) return;
     params.set("difficulty", world.config.difficulty);
     pendingTeamSize = world.config.teamSize === 5 ? 5 : 3;
+    if (world.config.story?.id === "online-duel") {
+      closeOnlineSession();
+      ui.showTitle(true);
+      startAttract();
+      return;
+    }
     if (world.config.story?.id === "tutorial") {
       startTutorial();
       return;
@@ -12291,6 +12508,7 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
     }
   }
   function startMatch(team, heroId, seedOverride, story) {
+    if (!onlineStarting) closeOnlineSession();
     clearTutorial();
     attractWorld = null;
     const seed = seedOverride ?? (Number(params.get("seed")) || Math.floor(Math.random() * 1e9));
@@ -12355,6 +12573,10 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
   }
   function setPaused(v) {
     if (!world || world.state === "over") return;
+    if (onlineActive) {
+      ui.toast("\u8054\u673A\u5BF9\u5C40\u4E0D\u80FD\u6682\u505C");
+      return;
+    }
     paused = v;
     ui.showPause(v);
   }
@@ -12365,6 +12587,9 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
     devFps = devFps * 0.9 + 1 / Math.max(1e-3, dt) * 0.1;
     devFrameMs = devFrameMs * 0.9 + dt * 1e3 * 0.1;
     if (world) {
+      if (onlineActive) {
+        for (const u of world.units) if (u.kind === "hero") u.ai = false;
+      }
       const devP = playerOf(world);
       if (devGod && devP) devP.invulnerable = true;
       if (devMana && devP) devP.mp = devP.maxMp;
@@ -12373,7 +12598,7 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
       world.input.aimX = screenToWorld(camera, mouse.x, mouse.y, cssW, cssH).x;
       world.input.aimY = screenToWorld(camera, mouse.x, mouse.y, cssW, cssH).y;
       updateMoveInput(world);
-      if (!paused && world.state === "playing") {
+      if (!onlineActive && !paused && world.state === "playing") {
         acc += dt * speed;
         let n = 0;
         while (acc >= DT && n < 20) {
@@ -12385,7 +12610,7 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
         drainEvents(world);
       }
       if (tutorial && !paused && world.state === "playing") updateTutorial(world);
-      if (world.state === "playing" && !paused && !shopOpen && !talentOpen) {
+      if (!onlineActive && world.state === "playing" && !paused && !shopOpen && !talentOpen) {
         const p = playerOf(world);
         if (p?.pendingTalent != null) {
           const tier = p.pendingTalent;
@@ -12516,6 +12741,318 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
     pendingDuel = false;
     pendingTeamSize = 3;
     startMatch("student", heroId, void 0, story);
+  }
+  function makeOnlineStory() {
+    return {
+      id: "online-duel",
+      no: "VS",
+      title: "\u8054\u673A 1v1",
+      tag: "\u8054\u673A",
+      desc: "\u540C\u57CE P2P\uFF0C\u771F\u5B9E\u82F1\u96C4\uFF0C\u5148\u62FF 5 \u4E2A\u4EBA\u5934\u3002",
+      mode: "duel",
+      heroPool: [],
+      allyIds: [],
+      enemyIds: ["shitang"],
+      killTarget: 5,
+      intro: "\u8054\u673A 1v1\uFF1A\u4F60\u63A7\u5236\u4E00\u540D\u82F1\u96C4\uFF0C\u5148\u62FF 5 \u4E2A\u4EBA\u5934\u3002",
+      winTitle: "\u8054\u673A\u80DC\u5229",
+      loseTitle: "\u8054\u673A\u5931\u8D25",
+      winSub: "\u8FD9\u4E00\u573A\u8054\u673A\u5355\u6311\u62FF\u4E0B\u4E86\u3002",
+      loseSub: "\u5BF9\u624B\u66F4\u5FEB\u4E00\u70B9\u3002"
+    };
+  }
+  function onlineStatus(text) {
+    const el = document.getElementById("online-status");
+    if (el) el.textContent = text;
+  }
+  function onlineRoomCode(code, canStart = false) {
+    const el = document.getElementById("online-code-label");
+    if (el) el.textContent = code;
+    const begin = document.getElementById("online-begin");
+    if (begin) begin.classList.toggle("hidden", !canStart);
+  }
+  function closeOnlineSession() {
+    if (onlineTimer) {
+      window.clearInterval(onlineTimer);
+      onlineTimer = 0;
+    }
+    if (onlineInputTimer) {
+      window.clearInterval(onlineInputTimer);
+      onlineInputTimer = 0;
+    }
+    onlineActive = false;
+    onlineStarting = false;
+    onlineReady = false;
+    onlineConnected = false;
+    onlineSession?.close();
+    onlineSession = null;
+    onlineHost = false;
+    onlineLocalCmds = [];
+    onlineRemoteCmds = [];
+    document.body.classList.remove("online-mode");
+  }
+  function onlineCloseLobby() {
+    document.getElementById("online-modal")?.remove();
+    if (!onlineActive) closeOnlineSession();
+  }
+  function onlineHandleError(text) {
+    onlineStatus(text);
+    console.warn("[online]", text);
+  }
+  function onlineApplyTick(data, side) {
+    if (!world) return;
+    const a = world.units.find((u) => u.id === onlineHostUnitId);
+    const b = world.units.find((u) => u.id === onlineClientUnitId);
+    const ai = sanitizeOnlineInput(data?.a?.input);
+    const bi = sanitizeOnlineInput(data?.b?.input);
+    if (a) {
+      a.ai = false;
+      a.netInput = ai;
+      a.netCommands = Array.isArray(data?.a?.cmds) ? data.a.cmds : [];
+    }
+    if (b) {
+      b.ai = false;
+      b.netInput = bi;
+      b.netCommands = Array.isArray(data?.b?.cmds) ? data.b.cmds : [];
+    }
+    world.input = side === "host" ? { ...ai } : { ...bi };
+  }
+  function sanitizeOnlineInput(raw) {
+    const n = (v, fallback = 0) => Number.isFinite(Number(v)) ? Number(v) : fallback;
+    return {
+      moveX: Math.max(-1, Math.min(1, n(raw?.moveX))),
+      moveY: Math.max(-1, Math.min(1, n(raw?.moveY))),
+      aimX: n(raw?.aimX, 2048),
+      aimY: n(raw?.aimY, 1536)
+    };
+  }
+  function onlineQueue(cmd) {
+    if (!onlineActive) return false;
+    onlineLocalCmds.push(cmd);
+    return true;
+  }
+  function onlineFinish() {
+    if (!onlineActive) return;
+    onlineActive = false;
+    if (onlineTimer) {
+      window.clearInterval(onlineTimer);
+      onlineTimer = 0;
+    }
+    if (onlineInputTimer) {
+      window.clearInterval(onlineInputTimer);
+      onlineInputTimer = 0;
+    }
+    onlineSession?.send({ t: "end" });
+  }
+  function onlineStartClientInput() {
+    if (onlineInputTimer) window.clearInterval(onlineInputTimer);
+    onlineInputTimer = window.setInterval(() => {
+      if (!onlineActive || !world || !onlineSession) return;
+      onlineSession.send({
+        t: "input",
+        input: { ...world.input },
+        cmds: onlineLocalCmds.splice(0)
+      });
+    }, 33);
+  }
+  function onlineStartHostLoop() {
+    if (onlineTimer) window.clearInterval(onlineTimer);
+    onlineTimer = window.setInterval(() => {
+      if (!onlineActive || !world || !onlineSession) return;
+      if (world.state !== "playing") {
+        onlineFinish();
+        return;
+      }
+      const a = { input: { ...world.input }, cmds: onlineLocalCmds.splice(0) };
+      const b = { input: { ...onlineRemoteInput }, cmds: onlineRemoteCmds.splice(0) };
+      onlineSession.send({ t: "tick", n: ++onlineTick, a, b });
+      onlineApplyTick({ a, b }, "host");
+      step(world, DT);
+      drainEvents(world);
+      if (world.state !== "playing") onlineFinish();
+    }, 33);
+  }
+  function startOnlineWorld(seed) {
+    if (!onlineSession) return;
+    document.getElementById("online-modal")?.remove();
+    onlineActive = true;
+    onlineStarting = true;
+    startMatch("student", "messi", seed, makeOnlineStory());
+    onlineStarting = false;
+    if (!world) return;
+    const a = world.units.find((u) => u.kind === "hero" && u.team === "student" && u.heroId === "messi");
+    const b = world.units.find((u) => u.kind === "hero" && u.team === "teacher" && u.heroId === "shitang");
+    if (!a || !b) {
+      onlineStatus("\u82F1\u96C4\u521D\u59CB\u5316\u5931\u8D25");
+      onlineActive = false;
+      return;
+    }
+    onlineHostUnitId = a.id;
+    onlineClientUnitId = b.id;
+    onlineTick = 0;
+    onlineReady = false;
+    onlineLocalCmds = [];
+    onlineRemoteCmds = [];
+    onlineRemoteInput = { ...zeroInput };
+    world.config.talents = false;
+    a.ai = false;
+    b.ai = false;
+    a.netInput = { ...zeroInput };
+    b.netInput = { ...zeroInput };
+    a.netCommands = [];
+    b.netCommands = [];
+    if (onlineHost) {
+      a.isPlayer = true;
+      b.isPlayer = false;
+      world.playerId = a.id;
+      world.playerTeam = "student";
+      ui.setHero(a);
+    } else {
+      a.isPlayer = false;
+      b.isPlayer = true;
+      world.playerId = b.id;
+      world.playerTeam = "teacher";
+      ui.setHero(b);
+      camera.x = b.pos.x;
+      camera.y = b.pos.y;
+    }
+    world.input = { ...zeroInput };
+    ui.updateHud(world);
+    document.body.classList.add("online-mode");
+    ui.announce(onlineHost ? "\u8054\u673A 1v1\uFF1A\u4F60\u63A7\u5236\u6885\u897F" : "\u8054\u673A 1v1\uFF1A\u4F60\u63A7\u5236\u98DF\u5802\u8001\u5934");
+    if (onlineHost) {
+      onlineStatus("\u5BF9\u624B\u5DF2\u8FDB\u5165\uFF0C\u7B49\u5F85\u5BF9\u624B\u8F7D\u5165\u2026");
+    } else {
+      onlineStatus("\u5DF2\u8FDB\u5165\u5BF9\u5C40");
+      onlineStartClientInput();
+      onlineSession.send({ t: "ready" });
+    }
+  }
+  function onlineHandleData(data) {
+    if (!data || typeof data !== "object") return;
+    if (data.t === "start" && !onlineHost) {
+      startOnlineWorld(Number(data.seed) || 1);
+    } else if (data.t === "ready" && onlineHost) {
+      if (onlineReady) return;
+      onlineReady = true;
+      onlineStatus("\u5BF9\u5C40\u5F00\u59CB");
+      onlineStartHostLoop();
+    } else if (data.t === "input" && onlineHost) {
+      onlineRemoteInput = sanitizeOnlineInput(data.input);
+      if (Array.isArray(data.cmds)) onlineRemoteCmds.push(...data.cmds);
+    } else if (data.t === "tick" && !onlineHost && onlineActive && world) {
+      onlineApplyTick(data, "client");
+      step(world, DT);
+      drainEvents(world);
+      ui.updateHud(world);
+      if (world.state !== "playing") onlineFinish();
+    } else if (data.t === "end" && !onlineHost && onlineActive) {
+      onlineActive = false;
+      if (onlineTimer) {
+        window.clearInterval(onlineTimer);
+        onlineTimer = 0;
+      }
+      if (onlineInputTimer) {
+        window.clearInterval(onlineInputTimer);
+        onlineInputTimer = 0;
+      }
+    }
+  }
+  function showOnlineModal() {
+    if (document.getElementById("online-modal")) return;
+    const modal = document.createElement("div");
+    modal.id = "online-modal";
+    modal.className = "modal";
+    modal.innerHTML = `
+    <div class="sheet online-sheet">
+      <h3>\u8054\u673A 1v1</h3>
+      <p class="tiny">\u540C\u57CE P2P \xB7 \u771F\u5B9E\u82F1\u96C4 \xB7 \u65E0 AI \u8865\u4F4D<br/>\u53CC\u65B9\u90FD\u9700\u8981\u4FDD\u6301\u9875\u9762\u6253\u5F00\u3002</p>
+      <div id="online-connect-view">
+        <button id="online-create" class="btn primary">\u521B\u5EFA\u623F\u95F4</button>
+        <div class="online-or">\u6216</div>
+        <div class="online-join-row">
+          <input id="online-code-input" maxlength="4" autocomplete="off" spellcheck="false" placeholder="4 \u4F4D\u623F\u95F4\u7801" />
+          <button id="online-join" class="btn ghost">\u52A0\u5165</button>
+        </div>
+      </div>
+      <div id="online-room-view" class="hidden">
+        <div class="online-code-wrap"><span>\u623F\u95F4\u7801</span><b id="online-code-label">----</b></div>
+        <div id="online-status" class="online-status">\u6B63\u5728\u8FDE\u63A5\u2026</div>
+        <button id="online-begin" class="btn primary hidden">\u5F00\u59CB\u5BF9\u5C40</button>
+      </div>
+      <button id="online-close" class="btn ghost">\u5173\u95ED</button>
+      <p class="tiny online-tip">\u623F\u4E3B\u5148\u521B\u5EFA\uFF0C\u53E6\u4E00\u65B9\u8F93\u5165\u623F\u95F4\u7801\u52A0\u5165\uFF1B\u623F\u4E3B\u70B9\u5F00\u59CB\u3002</p>
+    </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector("#online-close")?.addEventListener("click", onlineCloseLobby);
+    modal.addEventListener("pointerdown", (e) => {
+      if (e.target === modal) onlineCloseLobby();
+    });
+    modal.querySelector("#online-create")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      document.getElementById("online-connect-view")?.classList.add("hidden");
+      document.getElementById("online-room-view")?.classList.remove("hidden");
+      onlineHost = true;
+      onlineSession = new OnlineDuel("host", {
+        onStatus: onlineStatus,
+        onConnected: () => {
+          onlineConnected = true;
+          onlineStatus("\u5BF9\u624B\u5DF2\u8FDE\u63A5\uFF0C\u53EF\u4EE5\u5F00\u59CB");
+          onlineRoomCode(onlineSession?.code ?? "", true);
+        },
+        onData: onlineHandleData,
+        onClosed: (reason) => {
+          onlineStatus(reason);
+          if (onlineActive) onlineFinish();
+        },
+        onError: onlineHandleError
+      });
+      onlineSession.create().then((code) => onlineRoomCode(code, false)).catch((err) => {
+        onlineStatus(String(err?.message ?? err));
+        btn.disabled = false;
+      });
+    });
+    modal.querySelector("#online-join")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const input = document.getElementById("online-code-input");
+      const code = (input?.value ?? "").toUpperCase().trim();
+      if (code.length !== 4) {
+        onlineStatus("\u8BF7\u8F93\u5165 4 \u4F4D\u623F\u95F4\u7801");
+        return;
+      }
+      e.currentTarget.disabled = true;
+      document.getElementById("online-connect-view")?.classList.add("hidden");
+      document.getElementById("online-room-view")?.classList.remove("hidden");
+      onlineHost = false;
+      onlineSession = new OnlineDuel("client", {
+        onStatus: onlineStatus,
+        onConnected: () => {
+          onlineConnected = true;
+          onlineStatus("\u5DF2\u8FDE\u63A5\uFF0C\u7B49\u5F85\u623F\u4E3B\u5F00\u59CB");
+        },
+        onData: onlineHandleData,
+        onClosed: (reason) => {
+          onlineStatus(reason);
+          if (onlineActive) onlineFinish();
+        },
+        onError: onlineHandleError
+      });
+      onlineSession.join(code).then(() => onlineRoomCode(code, false)).catch((err) => {
+        onlineStatus(String(err?.message ?? err));
+        e.currentTarget.disabled = false;
+      });
+    });
+    modal.querySelector("#online-begin")?.addEventListener("click", () => {
+      if (!onlineHost || !onlineSession || !onlineConnected) return;
+      const seed = Math.floor(Math.random() * 1e9);
+      onlineSession.send({ t: "start", seed });
+      startOnlineWorld(seed);
+    });
+    modal.querySelector("#online-code-input")?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") modal.querySelector("#online-join")?.click();
+    });
   }
   function startTutorial() {
     quickPending = false;
@@ -12691,15 +13228,19 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
     const aim = screenToWorld(camera, mouse.x, mouse.y, cssW, cssH);
     const slot = code === km.q ? "q" : code === km.e ? "e" : code === km.r ? "r" : code === km.t ? "t" : null;
     if (slot) {
+      if (onlineQueue({ type: "cast", slot, aim })) return;
       if (slot === "r" && p.heroId === "chengyaojin") {
         tryCast(world, p, "r", aim);
       } else {
         world.queued.push({ type: "cast", slot, aim });
       }
     } else if (code === km.recall) {
+      if (onlineQueue({ type: "recall" })) return;
       world.queued.push({ type: "recall" });
     } else if (/^Digit[1-6]$/.test(code)) {
-      useItem(world, p, Number(code.slice(5)) - 1);
+      const itemSlot = Number(code.slice(5)) - 1;
+      if (onlineQueue({ type: "item", slot: itemSlot })) return;
+      useItem(world, p, itemSlot);
     }
   });
   window.addEventListener("keyup", (e) => {
@@ -12716,6 +13257,10 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
     else if (code === km.right) moveHeld.right = false;
     if (e.key === "Alt" || code === "AltLeft" || code === "AltRight") keys.delete("alt");
     if (code === km.r && world) {
+      if (onlineActive) {
+        onlineQueue({ type: "release" });
+        return;
+      }
       const p = playerOf(world);
       if (p?.channel?.hold) releaseChannel(world, p);
     }
@@ -13057,11 +13602,16 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
         const p = playerOf(world);
         if (!p) return;
         const aim = touchAim(p, slot);
+        if (onlineQueue({ type: "cast", slot, aim })) return;
         if (slot === "r" && p.heroId === "chengyaojin") tryCast(world, p, "r", aim);
         else world.queued.push({ type: "cast", slot, aim });
       });
       const release = () => {
         if (!world) return;
+        if (onlineActive) {
+          onlineQueue({ type: "release" });
+          return;
+        }
         const p = playerOf(world);
         if (p?.channel?.hold) releaseChannel(world, p);
       };
@@ -13092,6 +13642,7 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
     });
     onTap("touch-recall", () => {
       if (!world || paused) return;
+      if (onlineQueue({ type: "recall" })) return;
       world.queued.push({ type: "recall" });
     });
     onTap("touch-item", () => {
@@ -13099,7 +13650,10 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
       const p = playerOf(world);
       const btn = document.getElementById("touch-item");
       const slot = Number(btn?.dataset.slot);
-      if (p && Number.isFinite(slot)) useItem(world, p, slot);
+      if (p && Number.isFinite(slot)) {
+        if (onlineQueue({ type: "item", slot })) return;
+        useItem(world, p, slot);
+      }
     });
     canvas.addEventListener("pointerdown", (e) => {
       if (e.pointerType !== "touch") return;

@@ -1,0 +1,2686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>爆震空间 · 混沌弹道</title>
+<style>
+:root{
+  --bg:#05070f; --panel:rgba(255,255,255,.035); --panel2:rgba(255,255,255,.06);
+  --line:rgba(140,170,255,.14); --line2:rgba(140,170,255,.28);
+  --text:#e9eefc; --muted:#8b95b2;
+  --cyan:#22d3ee; --violet:#a78bfa; --gold:#e8b84b; --pink:#f472b6;
+  --green:#34d399; --red:#ff6b81;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--bg);color:var(--text);overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+  font-size:14px;user-select:none;-webkit-user-select:none;
+  background-image:
+    radial-gradient(45% 38% at 12% 0%,rgba(34,120,210,.16),transparent 70%),
+    radial-gradient(40% 38% at 92% 8%,rgba(120,80,220,.13),transparent 70%),
+    radial-gradient(55% 45% at 55% 100%,rgba(10,60,130,.14),transparent 70%);
+}
+button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:none}
+button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+/* ---------- 顶栏 ---------- */
+#topbar{display:flex;align-items:center;gap:10px;padding:7px 12px;flex:none;border-bottom:1px solid var(--line);background:rgba(6,9,20,.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.brand{font-weight:700;letter-spacing:2px;font-size:14px;white-space:nowrap}
+.brand span{color:var(--muted);font-weight:400;font-size:11px;letter-spacing:1px;margin-left:4px}
+#turn-badge{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 12px;white-space:nowrap}
+#turn-badge b{color:var(--cyan)}
+#turn-badge.p2 b{color:var(--pink)}
+.tools{display:flex;gap:6px;flex:none}
+.tool-btn{font-size:11px;padding:5px 10px;border:1px solid var(--line);border-radius:8px;color:var(--muted);transition:.15s;white-space:nowrap}
+.tool-btn:hover{color:var(--text);border-color:var(--line2);background:var(--panel)}
+.tool-btn.on{color:var(--cyan);border-color:rgba(34,211,238,.5);background:rgba(34,211,238,.1)}
+.tool-btn.off{color:var(--muted);text-decoration:line-through}
+
+/* ---------- 玩家条 ---------- */
+#players{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:7px 10px 0;flex:none}
+.pcard{display:flex;align-items:center;gap:9px;padding:6px 9px;border:1px solid var(--line);border-radius:12px;background:var(--panel);min-width:0;transition:.2s}
+.pcard.active{border-color:rgba(34,211,238,.55);background:rgba(34,211,238,.07);box-shadow:0 0 22px rgba(34,211,238,.09)}
+.pcard.p2.active{border-color:rgba(244,114,182,.55);background:rgba(244,114,182,.07);box-shadow:0 0 22px rgba(244,114,182,.09)}
+.pcard.dead{opacity:.45}
+.pcard .avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:15px;flex:none;color:#05070f}
+.pcard .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.pcard .row1{display:flex;align-items:baseline;gap:6px;min-width:0}
+.pcard .pname{font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard .pweapon{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hpbar{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.hpfill{height:100%;width:100%;background:linear-gradient(90deg,var(--green),var(--cyan));transition:width .3s ease}
+.hpfill.low{background:linear-gradient(90deg,#ff6b81,#c0392b)}
+.chips{display:flex;gap:7px;flex-wrap:wrap;font-size:10px;color:var(--muted);font-family:var(--mono)}
+.chips b{color:var(--text);font-weight:600}
+.chips .warn b{color:var(--red)}
+.pcard .badges{display:flex;gap:3px;flex:none}
+.badge{font-size:9px;padding:1px 4px;border-radius:4px;background:rgba(255,255,255,.07);color:var(--muted)}
+
+/* ---------- 地图 ---------- */
+#stage{flex:1;min-height:0;display:flex;flex-direction:column;padding:7px 10px 0}
+#map-wrap{position:relative;flex:1;min-height:0;overflow:auto;display:flex;padding:2px;scrollbar-width:thin}
+#map-wrap::-webkit-scrollbar{width:8px;height:8px}
+#map-wrap::-webkit-scrollbar-thumb{background:rgba(140,170,255,.2);border-radius:4px}
+#map{margin:auto;display:block;flex:none;border-radius:10px;touch-action:none;cursor:crosshair}
+#hint{flex:none;margin-top:5px;min-height:25px;padding:4px 10px;border-radius:8px;background:rgba(5,8,18,.85);border:1px solid var(--line);font-size:11px;line-height:17px;font-family:var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;opacity:0;transition:opacity .15s}
+#hint.show{opacity:1}
+#hint b{color:var(--text)}
+#hint .good{color:var(--green)} #hint .bad{color:var(--red)} #hint .warn{color:var(--gold)}
+
+/* ---------- 底部 ---------- */
+#dock{flex:none;padding:6px 10px 8px;display:flex;flex-direction:column;gap:6px}
+.act-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+#focus{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.pips{display:flex;gap:3px}
+.pip{width:9px;height:9px;border-radius:50%;border:1px solid rgba(34,211,238,.45);background:transparent}
+.pip.on{background:var(--cyan);box-shadow:0 0 7px rgba(34,211,238,.65)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--text);font-size:12px;padding:7px 10px;transition:.15s;white-space:nowrap}
+.btn:hover:not(:disabled){border-color:var(--line2);background:var(--panel2)}
+.btn:disabled{opacity:.32;cursor:not-allowed}
+.btn.small{padding:5px 8px;font-size:11px}
+.btn.icon{width:36px;height:36px;padding:0;font-size:14px}
+.btn.rot{width:34px;height:34px;padding:0;border-radius:8px;color:var(--cyan);border-color:rgba(34,211,238,.3);background:rgba(34,211,238,.07);font-size:15px}
+.btn.rot:hover{background:rgba(34,211,238,.16)}
+#end-turn{margin-left:auto;background:linear-gradient(120deg,#22d3ee,#38bdf8);color:#04060e;border:none;font-weight:700;letter-spacing:1px;padding:9px 20px;font-size:13px;border-radius:10px}
+#end-turn:hover:not(:disabled){filter:brightness(1.1);box-shadow:0 0 22px rgba(34,211,238,.4)}
+#end-turn:disabled{background:rgba(255,255,255,.08);color:var(--muted);filter:none;box-shadow:none}
+#items{display:flex;gap:5px}
+.item-btn{font-size:11px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.03);color:var(--muted)}
+.item-btn b{color:var(--text)}
+.item-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+#hand{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:2px 1px 4px;min-height:84px;scrollbar-width:thin}
+#hand::-webkit-scrollbar{height:5px}
+#hand::-webkit-scrollbar-thumb{background:rgba(140,170,255,.2);border-radius:3px}
+.card{width:108px;min-height:78px;flex:none;display:flex;flex-direction:column;gap:3px;padding:7px 8px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.015));text-align:left;transition:.15s;position:relative}
+.card:hover{transform:translateY(-3px);border-color:var(--line2)}
+.card .cname{font-size:12px;font-weight:600;line-height:1.25}
+.card .cdesc{font-size:10px;color:var(--muted);line-height:1.3;flex:1}
+.card .cfoot{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:9.5px;color:var(--muted)}
+.card .ccost{color:var(--cyan);font-weight:700}
+.card.reaction{border-color:rgba(167,139,250,.45);background:linear-gradient(160deg,rgba(167,139,250,.12),rgba(167,139,250,.02))}
+.card.reaction .ccost{color:var(--violet)}
+.card.skill{border-color:rgba(232,184,75,.4);background:linear-gradient(160deg,rgba(232,184,75,.1),rgba(232,184,75,.02))}
+.card.skill .ccost{color:var(--gold)}
+.card.disabled{opacity:.35;cursor:not-allowed;transform:none}
+.card.sel{border-color:var(--gold);box-shadow:0 0 16px rgba(232,184,75,.3)}
+.empty-hand{color:var(--muted);font-size:11px;padding:28px 10px;font-family:var(--mono)}
+
+#log{flex:none;height:54px;overflow-y:auto;border:1px solid var(--line);border-radius:9px;background:rgba(0,0,0,.18);padding:4px 9px;font-size:10.5px;line-height:1.5;font-family:var(--mono);color:var(--muted);scrollbar-width:thin}
+#log div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log-hit{color:#ff9aa7} .log-miss{color:#6d7690} .log-event{color:var(--gold)} .log-turn{color:var(--cyan)} .log-good{color:var(--green)}
+
+/* ---------- 提示/特效 ---------- */
+#toast{position:fixed;left:50%;top:106px;transform:translateX(-50%) translateY(-8px);padding:8px 18px;border-radius:10px;background:rgba(8,12,24,.94);border:1px solid var(--gold);color:var(--gold);font-size:12.5px;letter-spacing:1px;opacity:0;pointer-events:none;transition:.25s;z-index:80;white-space:nowrap;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#transition{position:fixed;inset:0;display:none;place-items:center;background:rgba(3,6,14,.55);backdrop-filter:blur(3px);z-index:70;pointer-events:none}
+#transition.show{display:grid}
+#transition .tbox{text-align:center;animation:pop .3s ease}
+#transition .t1{font-size:22px;font-weight:700;letter-spacing:5px;color:var(--cyan)}
+#transition .t2{font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:2px;font-family:var(--mono)}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ---------- 弹窗 ---------- */
+.modal{position:fixed;inset:0;display:none;place-items:center;padding:16px;background:rgba(3,6,14,.84);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:90;overflow:auto}
+.modal.show{display:grid}
+.panel{width:min(760px,96vw);max-height:90vh;overflow:auto;border:1px solid var(--line2);border-radius:18px;background:linear-gradient(160deg,rgba(14,19,40,.98),rgba(7,10,22,.98));padding:20px 22px;box-shadow:0 30px 90px rgba(0,0,0,.7),0 0 70px rgba(34,211,238,.06)}
+.panel h2{font-size:18px;letter-spacing:3px;color:var(--cyan);margin-bottom:3px}
+.panel .sub{font-size:10.5px;color:var(--muted);margin-bottom:10px;letter-spacing:1px}
+.panel h3{font-size:11.5px;color:var(--gold);letter-spacing:2px;margin:10px 0 5px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.panel p,.panel li{font-size:11.5px;line-height:1.65;color:#c9d2e8}
+.panel ul{padding-left:18px}
+.panel .kv{display:grid;grid-template-columns:88px 1fr;gap:4px 10px;font-size:12px;line-height:1.7}
+.panel .kv dt{color:var(--muted)}
+.panel .kv dd{color:var(--text)}
+.panel .close-row{display:flex;justify-content:flex-end;margin-top:16px}
+.panel code{font-family:var(--mono);color:var(--cyan);font-size:11px}
+
+/* ---------- 选角 ---------- */
+#select-screen{position:fixed;inset:0;display:grid;place-items:center;padding:14px;background:rgba(3,6,14,.92);backdrop-filter:blur(10px);z-index:60;overflow:auto}
+#select-panel{width:min(860px,96vw);max-height:94vh;overflow:auto;text-align:center;border:1px solid var(--line2);border-radius:20px;padding:20px;background:radial-gradient(80% 60% at 50% 0%,rgba(34,211,238,.09),transparent 70%),rgba(8,12,24,.94)}
+#select-panel h1{font-size:23px;letter-spacing:6px;color:var(--cyan);text-shadow:0 0 26px rgba(34,211,238,.4)}
+#select-panel .tagline{font-size:11px;color:var(--muted);letter-spacing:3px;margin:4px 0 12px}
+#select-step{font-size:13px;color:var(--gold);letter-spacing:1px;min-height:20px;margin-bottom:10px}
+#char-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}
+.char-card{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03);padding:9px 8px;text-align:left;transition:.15s;display:flex;flex-direction:column;gap:3px}
+.char-card:hover{border-color:var(--line2);background:rgba(255,255,255,.06);transform:translateY(-2px)}
+.char-card.sel{border-color:var(--gold);background:rgba(232,184,75,.1);box-shadow:0 0 20px rgba(232,184,75,.18)}
+.char-card.taken{opacity:.35;pointer-events:none}
+.char-card .cname{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.char-card .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.char-card .cmeta{font-size:10px;color:var(--muted);font-family:var(--mono);line-height:1.45}
+#char-detail{border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.22);padding:11px 13px;text-align:left;font-size:11.5px;color:#c9d2e8;line-height:1.7;min-height:86px}
+#char-detail .dt{color:var(--gold);font-size:12px;letter-spacing:1px;margin-bottom:3px}
+#char-detail .sk{color:var(--violet)}
+#start-btn{margin-top:12px;background:linear-gradient(120deg,#22d3ee,#38bdf8);color:#04060e;font-weight:700;letter-spacing:2px;padding:11px 34px;border-radius:999px;font-size:14px}
+#start-btn:disabled{background:rgba(255,255,255,.08);color:var(--muted);cursor:not-allowed}
+#continue-btn{margin-top:12px;margin-left:8px;padding:10px 18px;border:1px solid var(--line2);border-radius:999px;font-size:12px;color:var(--gold)}
+.hidden{display:none!important}
+
+/* ---------- 反应条 ---------- */
+#reaction{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:95;display:none;align-items:center;gap:10px;padding:10px 14px;border:1px solid rgba(167,139,250,.6);border-radius:14px;background:rgba(14,10,32,.96);box-shadow:0 16px 50px rgba(0,0,0,.6),0 0 34px rgba(167,139,250,.15);max-width:94vw}
+#reaction.show{display:flex}
+#reaction .rtxt{font-size:12px;line-height:1.5}
+#reaction .rtxt b{color:var(--violet)}
+#reaction .rsub{font-size:10px;color:var(--muted)}
+
+@media (max-width:760px){
+  #stage{flex:0 0 auto;padding-top:9px}
+  #map-wrap{flex:0 0 auto; min-height:0}
+  #dock{flex:1 1 auto; min-height:0}
+  #log{flex:1 1 auto; height:auto; min-height:46px; max-height:150px}
+}
+@media (max-width:760px),(max-height:720px){
+  body{font-size:13px}
+  #topbar{padding:5px 8px;gap:6px}
+  #toast{top:88px;font-size:11px;padding:6px 12px}
+  .brand{font-size:12px;letter-spacing:1px}
+  .brand span{display:none}
+  #turn-badge{font-size:10px;padding:3px 8px}
+  .tool-btn{font-size:10px;padding:4px 7px}
+  #players{gap:5px;padding:5px 6px 0}
+  .pcard{padding:5px 6px;gap:6px;border-radius:10px}
+  .pcard .avatar{width:26px;height:26px;font-size:12px}
+  .pcard .pweapon{display:none}
+  .chips{font-size:9px;gap:5px}
+  #stage{padding:5px 6px 0}
+  #dock{padding:4px 6px 6px;gap:5px}
+  .btn{padding:6px 8px;font-size:11px}
+  .btn.icon{width:32px;height:32px}
+  .btn.rot{width:30px;height:30px}
+  #end-turn{padding:8px 14px;font-size:12px}
+  .card{width:96px;min-height:72px;padding:6px}
+  .card .cname{font-size:11px}
+  .card .cdesc{font-size:9.5px}
+  #log{height:46px;font-size:9.5px}
+  #hand{min-height:76px}
+  #char-grid{grid-template-columns:repeat(2,1fr)}
+  #select-panel h1{font-size:18px;letter-spacing:3px}
+  #reaction{padding:8px 10px;gap:7px;width:92vw}
+  #reaction .rtxt{font-size:11px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="brand">爆震空间<span>混沌弹道</span></div>
+    <div id="turn-badge">等待开始</div>
+    <div class="tools">
+      <button class="tool-btn" id="rules-btn" title="规则">规则</button>
+      <button class="tool-btn on" id="sound-btn" title="音效">音效</button>
+      <button class="tool-btn" id="restart-btn" title="重新开始">重开</button>
+      <button class="tool-btn hidden" id="dev-btn" title="调试">≡</button>
+    </div>
+  </header>
+
+  <div id="players">
+    <section class="pcard" id="pcard-0"></section>
+    <section class="pcard p2" id="pcard-1"></section>
+  </div>
+
+  <main id="stage">
+    <div id="map-wrap">
+      <canvas id="map" width="900" height="420"></canvas>
+    </div>
+    <div id="hint"></div>
+  </main>
+
+  <footer id="dock">
+    <div class="act-row">
+      <div id="focus"><span>专注</span><div class="pips" id="pips"></div><b id="focus-num">0/0</b></div>
+      <div id="rotate-group" style="display:flex;gap:3px">
+        <button class="btn rot" data-rot="left" title="左转 90° (A)">◀</button>
+        <button class="btn rot" data-rot="up" title="转身 (W)">▲</button>
+        <button class="btn rot" data-rot="down" title="转身 (S)">▼</button>
+        <button class="btn rot" data-rot="right" title="右转 90° (D)">▶</button>
+      </div>
+      <button class="btn small" id="reload-btn">换弹 <span class="c">1</span></button>
+      <div id="items"></div>
+      <button id="end-turn">结束回合</button>
+    </div>
+    <div id="hand"></div>
+    <div id="log"></div>
+  </footer>
+</div>
+
+<div id="reaction">
+  <div>
+    <div class="rtxt" id="reaction-text"></div>
+    <div class="rsub" id="reaction-sub"></div>
+  </div>
+  <button class="btn small" id="reaction-use" style="border-color:rgba(167,139,250,.6);color:var(--violet)">使用</button>
+  <button class="btn small" id="reaction-skip">不用</button>
+</div>
+
+<div id="toast"></div>
+<div id="transition"><div class="tbox"><div class="t1" id="trans-t1"></div><div class="t2" id="trans-t2"></div></div></div>
+
+<div id="select-screen">
+  <div id="select-panel">
+    <h1>爆震空间</h1>
+    <div class="tagline">CHAOS BALLISTICS · 双人热座战术</div>
+    <div id="select-step">玩家 1 选择角色</div>
+    <div id="char-grid"></div>
+    <div id="char-detail">选择一个角色查看详情</div>
+    <button id="start-btn" disabled>开始战斗</button>
+    <button id="continue-btn" class="hidden">继续上局</button>
+  </div>
+</div>
+
+<div class="modal" id="rules-modal">
+  <div class="panel">
+    <h2>规则速查</h2>
+    <div class="sub">一局大约 10 分钟 · 双人热座</div>
+    <h3>回合</h3>
+    <p>每回合开始：专注回满、护甲恢复、过热 -1、压力 -1、抽 2 张牌。用完的专注不保留。</p>
+    <ul>
+      <li><b>移动</b>：1 专注，走到范围内任意可达格（最多等于移动力）。</li>
+      <li><b>射击</b>：1 专注，每回合 1 次，对射界内、有视线的敌人开火；每发消耗 1 弹药、累积过热。卡牌可以追加射击。</li>
+      <li><b>转身</b>：1 专注，可转 90° 或 180°；移动会自动转向。</li>
+      <li><b>换弹</b>：1 专注，装满弹药并冷却 2 点。</li>
+      <li><b>道具</b>：每回合免费使用 1 次，不消耗专注。</li>
+    </ul>
+    <h3>命中</h3>
+    <p>每把武器投若干 D6，掷出 ≥ 命中值的骰子记为 1 次命中。命中值从 <code>4+</code> 起算：</p>
+    <ul>
+      <li>距离超过短射程 +1，超过中射程再 +2；</li>
+      <li>半掩体 +1，全掩体 +2（全掩体还会挡住视线）；</li>
+      <li>从侧翼攻击 +1，从背后攻击 +2；</li>
+      <li>回避高 +1，命中高 -1；目标闪避加值额外 +2；</li>
+      <li>命中值最终限制在 3~6，永远不会"必中"或"必空"。</li>
+    </ul>
+    <p>命中值 4+ 即每颗骰 50%。<b>0 次命中 = 0 伤害</b>；有命中时护甲减免伤害，但至少造成 1 点。</p>
+    <h3>伤害与护甲</h3>
+    <p>伤害 = 命中数 × 武器伤害 + 暴击数 × 2（掷出 6 即暴击）。护甲是固定减伤，每回合开始恢复到角色基础值。</p>
+    <h3>压力</h3>
+    <p>受到伤害会累积压力。回合开始时若压力已满，会<b>崩溃</b>：弃 1 张手牌、失去 1 专注，压力清零。</p>
+    <h3>反应</h3>
+    <p>手牌里的紫色反应牌，在<b>被射击时</b>可以打出：花专注提升自己的回避，或削减对手一颗骰。由防守方现场选择是否使用。</p>
+    <h3>胜负</h3>
+    <p>先把对手打到 0 HP 获胜。双方同时倒下算平局。</p>
+    <div class="close-row"><button class="btn" data-close="rules-modal">知道了</button></div>
+  </div>
+</div>
+
+<div class="modal" id="over-modal">
+  <div class="panel" style="text-align:center">
+    <h2 id="over-title">战斗结束</h2>
+    <div class="sub" id="over-sub"></div>
+    <div id="over-stats" style="margin:14px 0;font-family:var(--mono);font-size:12px;color:var(--muted);line-height:2"></div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn" id="over-again" style="border-color:var(--cyan);color:var(--cyan)">再来一局</button>
+      <button class="btn" id="over-select">重选角色</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="confirm-modal">
+  <div class="panel" style="max-width:420px;text-align:center">
+    <h2 style="font-size:16px;letter-spacing:2px">确认</h2>
+    <p id="confirm-text" style="margin:12px 0 18px"></p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn" id="confirm-yes" style="border-color:var(--gold);color:var(--gold)">确定</button>
+      <button class="btn" id="confirm-no">取消</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="dev-modal">
+  <div class="panel" style="max-width:640px">
+    <h2>调试台</h2>
+    <div class="sub">仅 <code>?dev=1</code> 时可用 · 输入 /h 查看指令</div>
+    <input id="dev-input" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.3);color:var(--text);font-family:var(--mono);font-size:12px" placeholder="/h">
+    <div id="dev-msg" style="min-height:18px;margin-top:8px;font-size:11px;color:var(--gold);font-family:var(--mono)"></div>
+    <div class="close-row"><button class="btn" data-close="dev-modal">关闭</button></div>
+  </div>
+</div>
+
+<script>
+/*__RULES_START__*/
+var BlastRules = (function () {
+  'use strict';
+
+  var COLS = 21, ROWS = 10;
+
+  var MAP_ART = [
+    "      0000000        ",
+    "    00000000000      ",
+    "   00000000000000    ",
+    "  0000000000000000   ",
+    " 0000000   00000000  ",
+    "  00000000   0000000 ",
+    "   0000000000000000  ",
+    "    00000000000000   ",
+    "      00000000000    ",
+    "        0000000      "
+  ];
+
+  var TERRAIN = {
+    walls:  [[3,7],[6,13],[3,13],[6,7],[1,9],[8,11],[4,5],[5,15],[2,11],[7,9]],
+    half:   [[1,7],[8,13],[2,5],[7,15],[3,9],[6,11],[4,13],[5,7],[4,3],[5,17],[2,14],[7,6]],
+    full:   [[3,11],[6,9],[1,12],[8,8],[4,16],[5,4],[2,8],[7,12]],
+    supply: [[0,7],[9,13],[3,4],[6,16],[4,18],[5,2]],
+    spawns: [[0,9],[9,11],[3,2],[6,18]]
+  };
+
+  var TILE = { EMPTY: 0, WALL: 1, HALF: 2, FULL: 3, SUPPLY: 4 };
+  var DIRS = ['up', 'right', 'down', 'left'];
+  var DELTA = { up: [-1, 0], right: [0, 1], down: [1, 0], left: [0, -1] };
+
+  var CHARACTERS = {
+    '突击兵': {
+      name: '突击兵', hp: 16, armor: 1, mov: 4, acc: 4, eva: 3, focus: 5, stressMax: 6,
+      weapon: '突击步枪', color: '#4d96ff', tag: '均衡',
+      skill: '战斗冲锋', skillDesc: '移动 3 格，随后立刻以 +1 骰射击一次。',
+      desc: '正中路推进的多面手，能靠冲锋卡快速抢占掩体后开火。'
+    },
+    '重装兵': {
+      name: '重装兵', hp: 22, armor: 1, mov: 2, acc: 3, eva: 2, focus: 4, stressMax: 8,
+      weapon: '轻机枪', color: '#ff8c42', tag: '坦克',
+      skill: '钢铁壁垒', skillDesc: '本回合护甲 +2，硬扛一轮集火。',
+      desc: '血量与护甲最高，走位慢。适合卡住通道、用压制火力逼对手换位。'
+    },
+    '侦察兵': {
+      name: '侦察兵', hp: 13, armor: 0, mov: 5, acc: 4, eva: 4, focus: 6, stressMax: 5,
+      weapon: '冲锋枪', color: '#4ecdc4', tag: '游击',
+      skill: '潜行', skillDesc: '2 回合内，距离 2 格以外的敌人无法选中你。',
+      desc: '最快、最灵活，回避最高但很脆。依靠侧翼和潜行绕后。'
+    },
+    '狙击手': {
+      name: '狙击手', hp: 13, armor: 0, mov: 3, acc: 4, eva: 2, focus: 5, stressMax: 5,
+      weapon: '狙击枪', color: '#95e1d3', tag: '远程',
+      skill: '致命瞄准', skillDesc: '本次射击 +2 骰并无视掩体。',
+      desc: '单发伤害最高，两枪即可击杀脆皮。弹药少、过热快，怕近身。'
+    },
+    '医疗兵': {
+      name: '医疗兵', hp: 15, armor: 1, mov: 3, acc: 3, eva: 3, focus: 5, stressMax: 6,
+      weapon: '手枪', color: '#f9ed69', tag: '续航',
+      skill: '战地治疗', skillDesc: '回复 3 HP，压力 -2。',
+      desc: '靠治疗和止血拖长对局，适合消耗战。手枪伤害不低但射程短。'
+    },
+    '工程师': {
+      name: '工程师', hp: 15, armor: 1, mov: 3, acc: 3, eva: 2, focus: 5, stressMax: 6,
+      weapon: '手枪', color: '#d4a574', tag: '控场',
+      skill: '部署哨戒炮', skillDesc: '在相邻空格放置一座炮塔，回合结束时自动开火。',
+      desc: '用炮塔封锁射界，逼对手绕路。炮塔本身也能被击毁。'
+    }
+  };
+
+  var WEAPONS = {
+    '手枪':     { name: '手枪',     dice: 2, dmg: 3, range: [3, 6, 9],  ammo: 12, heat: 1, heatMax: 6, desc: '中近距离，单发高伤' },
+    '冲锋枪':   { name: '冲锋枪',   dice: 4, dmg: 2, range: [3, 7, 11], ammo: 30, heat: 1, heatMax: 8, desc: '近距离弹幕，骰数多' },
+    '突击步枪': { name: '突击步枪', dice: 3, dmg: 2, range: [5, 9, 13], ammo: 24, heat: 1, heatMax: 7, desc: '中距离全能' },
+    '轻机枪':   { name: '轻机枪',   dice: 3, dmg: 3, range: [6, 10, 14], ammo: 30, heat: 2, heatMax: 9, desc: '远距离压制，单发高伤' },
+    '狙击枪':   { name: '狙击枪',   dice: 2, dmg: 4, range: [9, 13, 15], ammo: 6,  heat: 2, heatMax: 4, desc: '超远距，单发致命' },
+    '霰弹枪':   { name: '霰弹枪',   dice: 4, dmg: 1, range: [2, 4, 6],  ammo: 8,  heat: 2, heatMax: 5, desc: '贴脸爆发' }
+  };
+
+  var ITEMS = {
+    '医疗包':   { name: '医疗包',   desc: '回复 3 HP，压力 -1' },
+    '护甲板':   { name: '护甲板',   desc: '直到下回合，护甲 +2' },
+    '破片手雷': { name: '破片手雷', desc: '6 格内 3×3 范围，4 点伤害' },
+    '烟雾弹':   { name: '烟雾弹',   desc: '3×3 烟雾 2 回合，阻挡视线' }
+  };
+
+  var BASE_CARDS = [
+    { id: 'move2', name: '战术跃进', cost: 1, type: 'action', desc: '移动 2 格', effect: 'move', params: { steps: 2 } },
+    { id: 'dodge_roll', name: '翻滚躲避', cost: 1, type: 'action', desc: '移动 1 格，获得 +2 闪避', effect: 'move_dodge', params: { steps: 1, dodge: 2 } },
+    { id: 'aimed', name: '瞄准射击', cost: 2, type: 'action', desc: '本次射击 +1 骰', effect: 'shoot', params: { extraDice: 1 } },
+    { id: 'suppress', name: '火力压制', cost: 3, type: 'action', desc: '3×3 范围射击', effect: 'aoe', params: { radius: 1, extraDice: 0 } },
+    { id: 'reload', name: '快速装填', cost: 1, type: 'action', desc: '装满弹药，冷却 2', effect: 'reload', params: {} },
+    { id: 'stance', name: '稳固架势', cost: 0, type: 'action', desc: '护甲 +1 直到下回合', effect: 'stance', params: { armor: 1 } },
+    { id: 'react_dodge', name: '回避反应', cost: 1, type: 'reaction', desc: '受击时：本发命中值 +2', effect: 'react_dodge', params: { bonus: 2 } },
+    { id: 'react_block', name: '拦截火力', cost: 1, type: 'reaction', desc: '受击时：攻击者少 1 骰', effect: 'react_block', params: { dice: 1 } },
+    { id: 'adrenaline', name: '肾上腺素', cost: 1, type: 'action', desc: '立刻 +2 专注', effect: 'adrenaline', params: { focus: 2 } },
+    { id: 'patch', name: '战地包扎', cost: 1, type: 'action', desc: '回复 2 HP，压力 -1', effect: 'heal', params: { hp: 2, stress: 1 } }
+  ];
+
+  var SIGNATURE = {
+    '突击兵': [
+      { id: 'charge', name: '战斗冲锋', cost: 2, type: 'skill', desc: '移动 3 格后以 +1 骰射击', effect: 'charge', params: { steps: 3, extraDice: 1 } },
+      { id: 'full_auto', name: '火力全开', cost: 2, type: 'skill', desc: '本次射击 +2 骰', effect: 'shoot', params: { extraDice: 2 } }
+    ],
+    '重装兵': [
+      { id: 'heavy_suppress', name: '压制射击', cost: 3, type: 'skill', desc: '5×5 范围射击', effect: 'aoe', params: { radius: 2, extraDice: 0 } },
+      { id: 'iron_wall', name: '钢铁壁垒', cost: 1, type: 'skill', desc: '护甲 +2 直到下回合', effect: 'stance', params: { armor: 2 } }
+    ],
+    '侦察兵': [
+      { id: 'stealth', name: '潜行', cost: 2, type: 'skill', desc: '2 回合内远距离无法被选中', effect: 'stealth', params: { turns: 2 } },
+      { id: 'sprint', name: '疾跑', cost: 1, type: 'skill', desc: '移动 5 格', effect: 'move', params: { steps: 5 } }
+    ],
+    '狙击手': [
+      { id: 'deadly', name: '致命瞄准', cost: 3, type: 'skill', desc: '本次射击 +2 骰并无视掩体', effect: 'shoot', params: { extraDice: 2, ignoreCover: true } },
+      { id: 'steady', name: '稳手', cost: 0, type: 'skill', desc: '本次射击 +1 骰', effect: 'shoot', params: { extraDice: 1 } }
+    ],
+    '医疗兵': [
+      { id: 'field_heal', name: '战地治疗', cost: 2, type: 'skill', desc: '回复 3 HP，压力 -2', effect: 'heal', params: { hp: 3, stress: 2 } },
+      { id: 'triage', name: '止血', cost: 0, type: 'skill', desc: '回复 1 HP，压力 -2', effect: 'heal', params: { hp: 1, stress: 2 } }
+    ],
+    '工程师': [
+      { id: 'turret', name: '部署哨戒炮', cost: 3, type: 'skill', desc: '在相邻空格放置炮塔', effect: 'turret', params: {} },
+      { id: 'repair', name: '修复', cost: 1, type: 'skill', desc: '炮塔 +3 HP，否则护甲 +1', effect: 'repair', params: { armor: 1 } }
+    ]
+  };
+
+  var ALL_CARDS = (function () {
+    var m = {};
+    BASE_CARDS.forEach(function (c) { m[c.id] = c; });
+    Object.keys(SIGNATURE).forEach(function (k) {
+      SIGNATURE[k].forEach(function (c) { m[c.id] = c; });
+    });
+    return m;
+  })();
+
+  var EVENTS = [
+    { id: 1, name: '空投补给', desc: '战场随机位置空投了一个补给箱' },
+    { id: 2, name: '电磁干扰', desc: '双方武器过热 +2' },
+    { id: 3, name: '烟雾弥漫', desc: '随机区域升起浓烟' },
+    { id: 4, name: '增援抵达', desc: '双方专注 +1' },
+    { id: 5, name: '地震', desc: '双方被震离原位' },
+    { id: 6, name: '幸运星', desc: '当前玩家专注 +2 并抽 1 张牌' }
+  ];
+
+  var SPAWN_OPTIONS = [
+    { r: 0, c: 9, label: '北部', dir: 'down' },
+    { r: 9, c: 11, label: '南部', dir: 'up' },
+    { r: 3, c: 2, label: '西部', dir: 'right' },
+    { r: 6, c: 18, label: '东部', dir: 'left' }
+  ];
+
+  /* ---------- 地图 ---------- */
+  function buildMap() {
+    var shape = [], tiles = [];
+    for (var r = 0; r < ROWS; r++) {
+      shape[r] = []; tiles[r] = [];
+      for (var c = 0; c < COLS; c++) {
+        var ch = (MAP_ART[r] || '')[c] || '.';
+        var on = ch === '0';
+        shape[r][c] = on;
+        tiles[r][c] = on ? TILE.EMPTY : null;
+      }
+    }
+    function place(list, t) {
+      list.forEach(function (p) {
+        if (tiles[p[0]] && tiles[p[0]][p[1]] !== null) tiles[p[0]][p[1]] = t;
+      });
+    }
+    place(TERRAIN.walls, TILE.WALL);
+    place(TERRAIN.half, TILE.HALF);
+    place(TERRAIN.full, TILE.FULL);
+    place(TERRAIN.supply, TILE.SUPPLY);
+    return { shape: shape, tiles: tiles, spawns: TERRAIN.spawns.slice(), terrain: TERRAIN };
+  }
+
+  /* ---------- 几何 ---------- */
+  function cheb(a, b) { return Math.max(Math.abs(a.r - b.r), Math.abs(a.c - b.c)); }
+  function same(a, b) { return a.r === b.r && a.c === b.c; }
+
+  function inCone(from, to, dir) {
+    if (same(from, to)) return true;
+    var dr = to.r - from.r, dc = to.c - from.c;
+    var d = DELTA[dir];
+    var dot = dr * d[0] + dc * d[1];
+    if (dot <= 0) return false;
+    return Math.abs(dr * d[1] - dc * d[0]) <= dot;
+  }
+
+  function inRearCone(from, to, dir) {
+    var back = DIRS[(DIRS.indexOf(dir) + 2) % 4];
+    return inCone(from, to, back);
+  }
+
+  function facingOf(from, to, dir) {
+    if (inRearCone(from, to, dir)) return 'rear';
+    if (!inCone(from, to, dir)) return 'flank';
+    return 'front';
+  }
+
+  function blocksSight(map, r, c) {
+    var t = map.tiles[r] && map.tiles[r][c];
+    return t === TILE.WALL || t === TILE.FULL;
+  }
+
+  function hasLoS(map, a, b, extraBlock) {
+    var dr = b.r - a.r, dc = b.c - a.c;
+    var steps = Math.max(Math.abs(dr), Math.abs(dc));
+    if (steps === 0) return true;
+    for (var i = 1; i < steps; i++) {
+      var t = i / steps;
+      var r = Math.round(a.r + dr * t);
+      var c = Math.round(a.c + dc * t);
+      if (r === a.r && c === a.c) continue;
+      if (blocksSight(map, r, c)) return false;
+      if (extraBlock && extraBlock(r, c)) return false;
+    }
+    return true;
+  }
+
+  function tileAt(map, r, c) {
+    if (!map.tiles[r]) return null;
+    return map.tiles[r][c];
+  }
+
+  function coverAt(map, r, c) {
+    var t = tileAt(map, r, c);
+    return t === TILE.HALF ? 1 : t === TILE.FULL ? 2 : 0;
+  }
+
+  function isOpen(map, r, c) {
+    return map.shape[r] && map.shape[r][c] && tileAt(map, r, c) !== TILE.WALL;
+  }
+
+  /* ---------- 寻路 ---------- */
+  function reachable(map, from, steps, blocked) {
+    var seen = {}, out = [];
+    var q = [{ r: from.r, c: from.c, d: 0, prev: null }];
+    seen[from.r + ',' + from.c] = true;
+    while (q.length) {
+      var n = q.shift();
+      if (n.d > 0) out.push({ r: n.r, c: n.c, d: n.d, prev: n.prev });
+      if (n.d >= steps) continue;
+      for (var i = 0; i < 4; i++) {
+        var nr = n.r + DELTA[DIRS[i]][0], nc = n.c + DELTA[DIRS[i]][1];
+        var k = nr + ',' + nc;
+        if (seen[k]) continue;
+        if (!isOpen(map, nr, nc)) continue;
+        if (blocked && blocked.has(k)) continue;
+        seen[k] = true;
+        q.push({ r: nr, c: nc, d: n.d + 1, prev: n });
+      }
+    }
+    return out;
+  }
+
+  function pathTo(map, from, to, blocked) {
+    var seen = {}; seen[from.r + ',' + from.c] = true;
+    var q = [{ r: from.r, c: from.c, prev: null }], goal = null;
+    while (q.length) {
+      var n = q.shift();
+      if (n.r === to.r && n.c === to.c) { goal = n; break; }
+      for (var i = 0; i < 4; i++) {
+        var nr = n.r + DELTA[DIRS[i]][0], nc = n.c + DELTA[DIRS[i]][1];
+        var k = nr + ',' + nc;
+        if (seen[k] || !isOpen(map, nr, nc)) continue;
+        if (blocked && blocked.has(k)) continue;
+        seen[k] = true;
+        q.push({ r: nr, c: nc, prev: n });
+      }
+    }
+    if (!goal) return null;
+    var path = [];
+    for (var p = goal; p; p = p.prev) path.unshift({ r: p.r, c: p.c });
+    return path;
+  }
+
+  /* ---------- 命中 ---------- */
+  function shotProfile(attacker, defender, map, opts) {
+    opts = opts || {};
+    var w = attacker.weapon;
+    var out = {
+      valid: false, reason: '', need: 0, dist: 0, cover: 0, facing: 'front',
+      range: 0, dice: w.dice, extraDice: opts.extraDice || 0, reasons: []
+    };
+    var dist = cheb(attacker, defender);
+    out.dist = dist;
+    if (dist > w.range[2]) { out.reason = '超出射程（' + dist + ' > ' + w.range[2] + '）'; return out; }
+    if (!opts.ignoreCone && !inCone(attacker, defender, attacker.dir)) { out.reason = '不在射界内，需要转身'; return out; }
+    var smokeBlocked = opts.smokeAt && opts.smokeAt(defender.r, defender.c);
+    if (smokeBlocked) { out.reason = '目标被烟雾遮蔽'; return out; }
+    if (!opts.isSplash && !hasLoS(map, attacker, defender, opts.extraBlock)) { out.reason = '被墙体或全掩体遮挡'; return out; }
+    if (defender.stealth && defender.stealth.turns > 0 && dist > 2 && !opts.ignoreStealth) {
+      out.reason = '目标处于潜行，距离过远'; return out;
+    }
+
+    var need = 4;
+    var reasons = [];
+    var eva = defender.char.eva, acc = attacker.char.acc;
+    var evaMod = eva - 3, accMod = acc - 3;
+    if (evaMod) {
+      need += evaMod;
+      if (evaMod > 0) reasons.push({ label: '目标回避高', v: evaMod });
+    }
+    if (accMod) {
+      need -= accMod;
+      if (accMod < 0) reasons.push({ label: '命中劣势', v: -accMod });
+      else if (accMod > 0) reasons.push({ label: '命中加成', v: accMod });
+    }
+
+    var rangePen = dist > w.range[1] ? 2 : dist > w.range[0] ? 1 : 0;
+    if (rangePen) { need += rangePen; reasons.push({ label: rangePen === 2 ? '远距' : '距离', v: rangePen }); }
+    out.range = rangePen;
+
+    var cover = opts.ignoreCover ? 0 : coverAt(map, defender.r, defender.c);
+    if (cover) { need += cover; reasons.push({ label: cover === 2 ? '全掩体' : '半掩体', v: cover }); }
+    out.cover = cover;
+
+    var face = 'front', faceMod = 0;
+    if (!opts.ignoreCone) {
+      face = facingOf(attacker, defender, attacker.dir);
+      if (face === 'rear') { faceMod = 2; reasons.push({ label: '背后', v: 2 }); }
+      else if (face === 'flank') { faceMod = 1; reasons.push({ label: '侧翼', v: 1 }); }
+      need += faceMod;
+    }
+    out.facing = face;
+
+    if (defender.dodge) { need += defender.dodge; reasons.push({ label: '闪避', v: defender.dodge }); }
+
+    need = Math.max(3, Math.min(6, Math.round(need)));
+    out.need = need;
+    out.reasons = reasons;
+    out.valid = true;
+    out.dice = Math.max(1, w.dice + out.extraDice - (opts.blockDice || 0));
+    out.hitChance = 1 - Math.pow((need - 1) / 6, out.dice);
+    out.reason = '命中值 ' + need + '+ · ' + out.dice + 'D6';
+    return out;
+  }
+
+  function rollShot(profile, weapon, rng) {
+    rng = rng || Math.random;
+    var rolls = [], hits = 0, crits = 0;
+    for (var i = 0; i < profile.dice; i++) {
+      var v = 1 + Math.floor(rng() * 6);
+      rolls.push(v);
+      if (v >= profile.need) hits++;
+      if (v === 6) crits++;
+    }
+    var total = (hits + crits) * weapon.dmg;
+    return { rolls: rolls, hits: hits, crits: crits, total: total };
+  }
+
+  function damageAfterArmor(total, armor) {
+    if (total <= 0) return 0;
+    return Math.max(1, total - (armor || 0));
+  }
+
+  function expectedDamage(profile, weapon, armor) {
+    if (!profile.valid) return { avg: 0, anyHit: 0, max: 0 };
+    var n = Math.pow(6, profile.dice);
+    var buckets = {};
+    (function rec(i, h, c) {
+      if (i === profile.dice) {
+        var t = (h + c) * weapon.dmg;
+        buckets[t] = (buckets[t] || 0) + 1;
+        return;
+      }
+      for (var v = 1; v <= 6; v++) rec(i + 1, h + (v >= profile.need ? 1 : 0), c + (v === 6 ? 1 : 0));
+    })(0, 0, 0);
+    var sum = 0, any = 0, max = 0;
+    Object.keys(buckets).forEach(function (k) {
+      var t = +k, p = buckets[k] / n;
+      if (t > 0) { any += p; sum += damageAfterArmor(t, armor) * p; if (t > max) max = t; }
+    });
+    return { avg: sum, anyHit: any, max: max };
+  }
+
+  /* ---------- 牌组 ---------- */
+  function buildDeck(charName) {
+    var list = BASE_CARDS.concat(SIGNATURE[charName] || []);
+    return list.map(function (c) { return { id: c.id, name: c.name, cost: c.cost, type: c.type, desc: c.desc, effect: c.effect, params: c.params }; });
+  }
+
+  function shuffle(arr, rng) {
+    rng = rng || Math.random;
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function deckCounts(name) {
+    var cards = buildDeck(name), m = {};
+    cards.forEach(function (c) { m[c.id] = (m[c.id] || 0) + 1; });
+    return m;
+  }
+
+  return {
+    COLS: COLS, ROWS: ROWS, MAP_ART: MAP_ART, TERRAIN: TERRAIN, TILE: TILE,
+    DIRS: DIRS, DELTA: DELTA, CHARACTERS: CHARACTERS, WEAPONS: WEAPONS,
+    ITEMS: ITEMS, BASE_CARDS: BASE_CARDS, SIGNATURE: SIGNATURE, ALL_CARDS: ALL_CARDS,
+    EVENTS: EVENTS, SPAWN_OPTIONS: SPAWN_OPTIONS,
+    buildMap: buildMap, cheb: cheb, same: same, inCone: inCone, inRearCone: inRearCone,
+    facingOf: facingOf, blocksSight: blocksSight, hasLoS: hasLoS, tileAt: tileAt,
+    coverAt: coverAt, isOpen: isOpen, reachable: reachable, pathTo: pathTo,
+    shotProfile: shotProfile, rollShot: rollShot, damageAfterArmor: damageAfterArmor,
+    expectedDamage: expectedDamage, buildDeck: buildDeck, shuffle: shuffle, deckCounts: deckCounts
+  };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = BlastRules;
+/*__RULES_END__*/
+
+(function () {
+  'use strict';
+  var R = BlastRules;
+  var COLS = R.COLS, ROWS = R.ROWS;
+  var $ = function (s) { return document.querySelector(s); };
+
+  /* =====================================================================
+     状态
+     ===================================================================== */
+  var S = {
+    phase: 'select',
+    map: null,
+    players: [],
+    active: 0,
+    firstPlayer: 0,
+    round: 1,
+    sel: { step: 'p1char', p1: null, p2: null, s1: null, s2: null },
+    setup: null,
+    hover: null,
+    pending: null,
+    moveCells: [],
+    itemCells: [],
+    targets: [],
+    smoke: [],
+    turrets: [],
+    supplyUsed: {},
+    drops: [],
+    effects: [],
+    anim: null,
+    logLines: [],
+    reaction: null,
+    over: false,
+    sound: true,
+    dirty: true,
+    cell: 44,
+    pad: 18,
+    dpr: 1,
+    shakeUntil: 0,
+    busy: false,
+    timer: null,
+    stats: { turns: 0, shots: 0, damage: 0 },
+    dev: /[?&]dev=1/.test(location.search)
+  };
+
+  var canvas = $('#map'), ctx = canvas.getContext('2d');
+  var staticCanvas = document.createElement('canvas'), sctx = staticCanvas.getContext('2d');
+  var wrap = $('#map-wrap');
+  var hintEl = $('#hint');
+
+  /* =====================================================================
+     小工具
+     ===================================================================== */
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function armorOf(p) { return p.char.armor + (p.armorBonus || 0); }
+  function isSmoke(r, c) { return S.smoke.some(function (s) { return s.r === r && s.c === c && s.rem > 0; }); }
+  function blockedSet(self) {
+    var set = {};
+    S.players.forEach(function (p) { if (p !== self && p.alive) set[p.r + ',' + p.c] = true; });
+    S.turrets.forEach(function (t) { set[t.r + ',' + t.c] = true; });
+    return { has: function (k) { return !!set[k]; } };
+  }
+  function playerAt(r, c) {
+    for (var i = 0; i < S.players.length; i++) {
+      var p = S.players[i];
+      if (p.alive && p.r === r && p.c === c) return p;
+    }
+    return null;
+  }
+  function turretAt(r, c) {
+    for (var i = 0; i < S.turrets.length; i++) if (S.turrets[i].r === r && S.turrets[i].c === c) return S.turrets[i];
+    return null;
+  }
+  function activePlayer() { return S.players[S.active] || null; }
+  function otherPlayer() { return S.players[1 - S.active] || null; }
+  function hpPct(p) { return clamp(p.hp / p.maxHp, 0, 1); }
+  function pct(x) { return Math.round(x * 100) + '%'; }
+  function cardFromId(id) {
+    var c = R.ALL_CARDS[id];
+    if (!c) return null;
+    return { id: c.id, name: c.name, cost: c.cost, type: c.type, desc: c.desc, effect: c.effect, params: c.params };
+  }
+  function toast(msg, ms) {
+    var el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.classList.remove('show'); }, ms || 1600);
+  }
+  function log(msg, cls) {
+    S.logLines.push({ msg: msg, cls: cls || '' });
+    if (S.logLines.length > 80) S.logLines.shift();
+    var el = $('#log');
+    el.innerHTML = '';
+    S.logLines.slice(-6).forEach(function (l) {
+      var d = document.createElement('div');
+      d.className = l.cls;
+      d.textContent = l.msg;
+      el.appendChild(d);
+    });
+    el.scrollTop = el.scrollHeight;
+  }
+  function invalidate() { S.dirty = true; }
+
+  /* =====================================================================
+     音效（WebAudio 合成，无外部资源）
+     ===================================================================== */
+  var actx = null;
+  function initAudio() {
+    if (actx || !S.sound) return;
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; }
+  }
+  function beep(freq, dur, type, vol, slide) {
+    if (!S.sound) return;
+    initAudio();
+    if (!actx) return;
+    try {
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'square';
+      o.frequency.setValueAtTime(freq, actx.currentTime);
+      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq * slide), actx.currentTime + dur);
+      g.gain.setValueAtTime(vol == null ? 0.05 : vol, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+      o.connect(g); g.connect(actx.destination);
+      o.start(); o.stop(actx.currentTime + dur);
+    } catch (e) {}
+  }
+  function sfx(name) {
+    if (name === 'shoot') beep(220, 0.09, 'square', 0.045, 0.4);
+    else if (name === 'hit') { beep(110, 0.16, 'sawtooth', 0.06, 0.5); beep(70, 0.2, 'triangle', 0.05, 0.6); }
+    else if (name === 'miss') beep(140, 0.07, 'sine', 0.03, 0.8);
+    else if (name === 'turn') { beep(520, 0.09, 'sine', 0.04); setTimeout(function () { beep(680, 0.1, 'sine', 0.035); }, 90); }
+    else if (name === 'card') beep(760, 0.06, 'triangle', 0.035);
+    else if (name === 'event') { beep(330, 0.12, 'sine', 0.045); setTimeout(function () { beep(495, 0.16, 'sine', 0.04); }, 110); }
+    else if (name === 'click') beep(600, 0.03, 'sine', 0.02);
+  }
+
+  /* =====================================================================
+     选角
+     ===================================================================== */
+  function buildCharCards() {
+    var grid = $('#char-grid');
+    grid.innerHTML = '';
+    Object.keys(R.CHARACTERS).forEach(function (name) {
+      var d = R.CHARACTERS[name];
+      var b = document.createElement('button');
+      b.className = 'char-card';
+      b.style.textAlign = 'left';
+      b.innerHTML =
+        '<div class="cname"><span class="dot" style="background:' + d.color + '"></span>' + name +
+        '<span style="margin-left:auto;font-size:9px;color:var(--muted);font-weight:400">' + d.tag + '</span></div>' +
+        '<div class="cmeta">HP ' + d.hp + ' · 护甲 ' + d.armor + ' · 移动 ' + d.mov + '</div>' +
+        '<div class="cmeta">命中 ' + d.acc + ' · 回避 ' + d.eva + ' · 专注 ' + d.focus + '</div>';
+      b.onmouseenter = function () { showCharDetail(name); };
+      b.onclick = function () { pickChar(name); };
+      b.dataset.char = name;
+      grid.appendChild(b);
+      if (S.sel.p1 === name || S.sel.p2 === name) b.classList.add('sel');
+    });
+    if (S.sel.p1) showCharDetail(S.sel.p2 || S.sel.p1);
+  }
+
+  function showCharDetail(name) {
+    var d = R.CHARACTERS[name];
+    if (!d) return;
+    var w = R.WEAPONS[d.weapon];
+    $('#char-detail').innerHTML =
+      '<div class="dt">' + name + ' · ' + d.tag + '</div>' +
+      d.desc + '<br>' +
+      '武器 <b style="color:var(--text)">' + w.name + '</b>：' + w.dice + 'D6 · 伤害 ' + w.dmg +
+      ' · 射程 ' + w.range[0] + '/' + w.range[1] + '/' + w.range[2] + ' · 弹匣 ' + w.ammo + ' · 过热 ' + w.heat + '/' + w.heatMax + '<br>' +
+      '<span class="sk">专属【' + d.skill + '】</span>' + d.skillDesc;
+  }
+
+  function pickChar(name) {
+    if (S.sel.step === 'p1char') {
+      S.sel.p1 = name; S.sel.step = 'p2char';
+      $('#select-step').textContent = '玩家 2 选择角色';
+      buildCharCards();
+    } else if (S.sel.step === 'p2char') {
+      S.sel.p2 = name; S.sel.step = 'p1spawn';
+      $('#select-step').textContent = '玩家 1 选择出生点';
+      buildSpawnCards();
+    }
+    sfx('click');
+    updateStartBtn();
+  }
+
+  function buildSpawnCards() {
+    var grid = $('#char-grid');
+    grid.innerHTML = '';
+    grid.style.gridTemplateColumns = 'repeat(2,1fr)';
+    R.SPAWN_OPTIONS.forEach(function (sp) {
+      var opponent = S.sel.step === 'p2spawn' ? S.sel.s1 : null;
+      var taken = !!(opponent && opponent.label === sp.label);
+      var mine = (S.sel.s1 && S.sel.s1.label === sp.label && !opponent) ||
+                 (S.sel.s2 && S.sel.s2.label === sp.label && S.sel.step === 'p2spawn');
+      var b = document.createElement('button');
+      b.className = 'char-card' + (taken ? ' taken' : '') + (mine ? ' sel' : '');
+      b.innerHTML =
+        '<div class="cname"><span class="dot" style="background:var(--gold)"></span>' + sp.label + '</div>' +
+        '<div class="cmeta">坐标 (' + sp.r + ',' + sp.c + ') · 朝向 ' + ({ up: '↑', down: '↓', left: '←', right: '→' }[sp.dir]) + '</div>' +
+        '<div class="cmeta">' + (taken ? '已被占用' : '可选') + '</div>';
+      b.onclick = function () {
+        if (S.sel.step === 'p1spawn') {
+          S.sel.s1 = sp; S.sel.step = 'p2spawn';
+          $('#select-step').textContent = '玩家 2 选择出生点';
+        } else if (S.sel.step === 'p2spawn') {
+          S.sel.s2 = sp;
+          $('#select-step').textContent = '双方就位，准备开始';
+        }
+        sfx('click');
+        buildSpawnCards();
+        updateStartBtn();
+      };
+      grid.appendChild(b);
+    });
+    $('#char-detail').innerHTML = '<div class="dt">出生点</div>地图是 180° 对称的，双方出生点互为镜像。后选出生点的一方可以看到对方的选择再决定。';
+  }
+
+  function updateStartBtn() {
+    var b = $('#start-btn');
+    if (S.sel.p1 && S.sel.p2 && S.sel.s1 && S.sel.s2) {
+      b.disabled = false; b.textContent = '开始战斗';
+    } else if (S.sel.p1 && S.sel.p2) {
+      b.disabled = true; b.textContent = '选择出生点…';
+    } else {
+      b.disabled = true; b.textContent = '开始战斗';
+    }
+  }
+
+  function resetSelect() {
+    if (S.timer) { clearTimeout(S.timer); S.timer = null; }
+    S.phase = 'select';
+    S.busy = false; S.anim = null; S.effects = []; S.smoke = []; S.turrets = [];
+    hideTransition(); hideReaction();
+    S.sel = { step: 'p1char', p1: null, p2: null, s1: null, s2: null };
+    S.players = []; S.over = false; S.pending = null; S.reaction = null;
+    $('#select-step').textContent = '玩家 1 选择角色';
+    $('#char-grid').style.gridTemplateColumns = '';
+    buildCharCards();
+    updateStartBtn();
+    $('#select-screen').classList.remove('hidden');
+    $('#over-modal').classList.remove('show');
+    $('#char-detail').textContent = '选择一个角色查看详情';
+  }
+
+  /* =====================================================================
+     开局
+     ===================================================================== */
+  function makePlayer(idx, charName, spawn) {
+    var ch = R.CHARACTERS[charName];
+    var w = R.WEAPONS[ch.weapon];
+    var p = {
+      idx: idx, char: ch, weapon: {
+        name: w.name, dice: w.dice, dmg: w.dmg, range: w.range.slice(),
+        ammo: w.ammo, heat: w.heat, heatMax: w.heatMax, desc: w.desc
+      },
+      hp: ch.hp, maxHp: ch.hp, r: spawn.r, c: spawn.c, dir: spawn.dir,
+      focus: ch.focus, heat: 0, ammo: w.ammo, stress: 0,
+      armorBonus: 0, dodge: 0, stealth: { turns: 0 },
+      hand: [], deck: [], discard: [], items: ['医疗包', '破片手雷'],
+      shots: 0, itemsUsed: 0, alive: true, dealt: 0, taken: 0
+    };
+    p.deck = R.shuffle(R.buildDeck(charName));
+    return p;
+  }
+
+  function initGame() {
+    var s = S.sel;
+    if (!(s.p1 && s.p2 && s.s1 && s.s2)) return;
+    S.setup = { p1: s.p1, p2: s.p2, s1: s.s1, s2: s.s2 };
+    if (S.timer) { clearTimeout(S.timer); S.timer = null; }
+    S.map = R.buildMap();
+    S.players = [makePlayer(0, s.p1, s.s1), makePlayer(1, s.p2, s.s2)];
+    S.active = Math.random() < 0.5 ? 0 : 1;
+    S.firstPlayer = S.active;
+    S.round = 1;
+    S.smoke = []; S.turrets = []; S.supplyUsed = {}; S.drops = [];
+    S.effects = []; S.anim = null; S.over = false;
+    S.logLines = []; S.stats = { turns: 0, shots: 0, damage: 0 };
+    S.pending = null; S.reaction = null;
+    S.players.forEach(function (p) { drawCards(p, 3, true); });
+    $('#log').innerHTML = '';
+    $('#select-screen').classList.add('hidden');
+    S.phase = 'playing';
+    resize();
+    log('对局开始：' + s.p1 + ' vs ' + s.p2, 'log-turn');
+    log('玩家' + (S.active + 1) + ' 先手', 'log-turn');
+    toast('玩家' + (S.active + 1) + ' 先手');
+    startTurn(S.active, true);
+    saveGame();
+    setTimeout(function () {
+      resize();
+      centerOn(activePlayer());
+      if (window.matchMedia && matchMedia('(pointer:coarse)').matches) {
+        toast('拖动地图查看全图 · 点击格子移动/攻击', 2800);
+      }
+    }, 60);
+  }
+
+  function drawCards(p, n, silent) {
+    var got = 0;
+    for (var i = 0; i < n; i++) {
+      if (p.hand.length >= 6) { if (!silent) log(p.char.name + ' 手牌已满，弃置 1 张', 'log-miss'); break; }
+      if (!p.deck.length) {
+        if (!p.discard.length) break;
+        p.deck = R.shuffle(p.discard);
+        p.discard = [];
+        log(p.char.name + ' 的牌库已洗回', 'log-event');
+      }
+      p.hand.push(p.deck.shift());
+      got++;
+    }
+    if (got && !silent) log(p.char.name + ' 抽了 ' + got + ' 张牌');
+    return got;
+  }
+
+  /* =====================================================================
+     回合
+     ===================================================================== */
+  function startTurn(idx, first) {
+    var p = S.players[idx];
+    if (!p || !p.alive) return;
+    S.active = idx;
+    S.phase = 'playing';
+    S.busy = false;
+    S.pending = null;
+    S.anim = null;
+    p.focus = p.char.focus;
+    p.armorBonus = 0;
+    p.heat = Math.max(0, p.heat - 1);
+    p.stress = Math.max(0, p.stress - 1);
+    p.dodge = 0;
+    p.shots = 0;
+    p.itemsUsed = 0;
+    if (p.stealth.turns > 0) p.stealth.turns--;
+
+    log('—— 第 ' + S.round + ' 回合 · 玩家' + (idx + 1) + '（' + p.char.name + '）——', 'log-turn');
+
+    if (p.stress >= p.char.stressMax) {
+      p.stress = 0;
+      p.focus = Math.max(0, p.focus - 1);
+      if (p.hand.length) {
+        var lost = p.hand.splice(Math.floor(Math.random() * p.hand.length), 1)[0];
+        p.discard.push(lost);
+        log(p.char.name + ' 压力崩溃！弃置【' + lost.name + '】，专注 -1', 'log-hit');
+        toast('压力崩溃：弃牌 + 专注 -1');
+      } else {
+        log(p.char.name + ' 压力崩溃！专注 -1', 'log-hit');
+      }
+    }
+
+    drawCards(p, 2);
+    rollEvent();
+    refreshRanges();
+    updateAll();
+    centerOn(p);
+    if (!first) sfx('turn');
+    saveGame();
+  }
+
+  function endTurn() {
+    if (S.phase !== 'playing' || S.busy || S.over) return;
+    if (S.pending) {
+      askConfirm('还有未结算的行动，确定结束回合？', function () { finishEndTurn(); });
+      return;
+    }
+    finishEndTurn();
+  }
+
+  function finishEndTurn() {
+    var p = activePlayer();
+    if (!p) return;
+    S.phase = 'transition';
+    S.busy = true;
+    S.pending = null;
+    S.reaction = null;
+    hideReaction();
+
+    turretFire(p);
+    if (S.over) { S.busy = false; return; }
+
+    p.dodge = 0;
+    S.smoke.forEach(function (s) { if (s.rem > 0) s.rem--; });
+    S.smoke = S.smoke.filter(function (s) { return s.rem > 0; });
+
+    var next = 1 - S.active;
+    showTransition('玩家' + (next + 1) + ' 回合', 'ROUND ' + (next === S.firstPlayer ? S.round + 1 : S.round));
+    S.timer = setTimeout(function () {
+      hideTransition();
+      if (next === S.firstPlayer) S.round++;
+      S.stats.turns++;
+      startTurn(next);
+    }, 640);
+  }
+
+  function turretFire(owner) {
+    S.turrets.forEach(function (t) {
+      if (t.owner !== owner.idx || t.hp <= 0) return;
+      var foe = null;
+      for (var i = 0; i < S.players.length; i++) {
+        var e = S.players[i];
+        if (e === owner || !e.alive) continue;
+        if (R.cheb(t, e) > 8) continue;
+        if (!R.inCone(t, e, t.dir)) continue;
+        if (!R.hasLoS(S.map, t, e, isSmoke)) continue;
+        if (e.stealth.turns > 0 && R.cheb(t, e) > 2) continue;
+        foe = e; break;
+      }
+      if (!foe) return;
+      var raw = 2;
+      var dmg = R.damageAfterArmor(raw, armorOf(foe));
+      effectBeam(t, foe, '#22d3ee');
+      applyDamage(foe, dmg, owner);
+      log('哨戒炮命中 ' + foe.char.name + ' -' + dmg + ' HP', 'log-hit');
+      sfx('shoot');
+    });
+    checkOver();
+  }
+
+  /* =====================================================================
+     事件骰
+     ===================================================================== */
+  function emptyCells() {
+    var out = [];
+    for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) {
+      if (!R.isOpen(S.map, r, c)) continue;
+      if (playerAt(r, c) || turretAt(r, c)) continue;
+      if (S.drops.some(function (d) { return d.r === r && d.c === c; })) continue;
+      out.push({ r: r, c: c });
+    }
+    return out;
+  }
+  function randomEmpty() {
+    var cells = emptyCells();
+    return cells.length ? cells[Math.floor(Math.random() * cells.length)] : null;
+  }
+
+  function rollEvent() {
+    var roll = 1 + Math.floor(Math.random() * 6);
+    var ev = R.EVENTS[roll - 1];
+    var p = activePlayer();
+    toast('事件骰 ' + roll + ' · ' + ev.name, 2000);
+    log('事件骰 ' + roll + '：' + ev.name + ' —— ' + ev.desc, 'log-event');
+    sfx('event');
+
+    if (roll === 1) {
+      var cell = randomEmpty();
+      if (cell) {
+        var items = Object.keys(R.ITEMS);
+        var it = items[Math.floor(Math.random() * items.length)];
+        S.drops.push({ r: cell.r, c: cell.c, item: it });
+        log('补给箱落在 (' + cell.r + ',' + cell.c + ')', 'log-event');
+      }
+    } else if (roll === 2) {
+      S.players.forEach(function (q) {
+        q.heat += 2;
+        log(q.char.name + ' 武器过热 +2（' + q.heat + '/' + q.weapon.heatMax + '）', 'log-event');
+      });
+    } else if (roll === 3) {
+      var c2 = randomEmpty();
+      if (c2) {
+        for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) {
+          var nr = c2.r + dr, nc = c2.c + dc;
+          if (R.isOpen(S.map, nr, nc)) S.smoke.push({ r: nr, c: nc, rem: 3 });
+        }
+        log('浓烟在 (' + c2.r + ',' + c2.c + ') 升起', 'log-event');
+      }
+    } else if (roll === 4) {
+      S.players.forEach(function (q) {
+        q.focus = Math.min(q.char.focus, q.focus + 1);
+      });
+      log('双方专注 +1', 'log-event');
+    } else if (roll === 5) {
+      S.players.forEach(function (q) {
+        var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+        var opts = dirs.filter(function (d) {
+          var nr = q.r + d[0], nc = q.c + d[1];
+          return R.isOpen(S.map, nr, nc) && !playerAt(nr, nc) && !turretAt(nr, nc);
+        });
+        if (!opts.length) return;
+        var d = opts[Math.floor(Math.random() * opts.length)];
+        q.r += d[0]; q.c += d[1];
+        pickupAt(q);
+        log(q.char.name + ' 被震到 (' + q.r + ',' + q.c + ')', 'log-event');
+      });
+    } else if (roll === 6) {
+      p.focus = Math.min(p.char.focus, p.focus + 2);
+      drawCards(p, 1);
+      log(p.char.name + ' 获得幸运星：专注 +2，抽 1 张', 'log-event');
+    }
+  }
+
+  /* =====================================================================
+     范围计算
+     ===================================================================== */
+  function profileOpts(extra) {
+    var o = { smokeAt: isSmoke, extraBlock: isSmoke };
+    if (extra) for (var k in extra) o[k] = extra[k];
+    return o;
+  }
+
+  function makeProfile(attacker, target, extra) {
+    var def = target.type === 'player' ? target.p : {
+      r: target.t.r, c: target.t.c, char: { eva: 2 }, dodge: 0, stealth: { turns: 0 }
+    };
+    return R.shotProfile(attacker, def, S.map, profileOpts(extra));
+  }
+
+  function collectTargets(p, extra) {
+    var list = [];
+    S.players.forEach(function (q) {
+      if (q === p || !q.alive) return;
+      var prof = R.shotProfile(p, q, S.map, profileOpts(extra));
+      list.push({ type: 'player', p: q, r: q.r, c: q.c, prof: prof });
+    });
+    S.turrets.forEach(function (t) {
+      if (t.owner === p.idx || t.hp <= 0) return;
+      var prof = R.shotProfile(p, { r: t.r, c: t.c, char: { eva: 2 }, dodge: 0, stealth: { turns: 0 } },
+        S.map, profileOpts(extra));
+      list.push({ type: 'turret', t: t, r: t.r, c: t.c, prof: prof });
+    });
+    return list;
+  }
+
+  function refreshRanges() {
+    S.moveCells = [];
+    S.targets = [];
+    S.itemCells = [];
+    var p = activePlayer();
+    if (!p || S.phase !== 'playing') return;
+
+    if (S.pending && S.pending.kind === 'move') {
+      S.moveCells = R.reachable(S.map, p, S.pending.steps, blockedSet(p));
+      return;
+    }
+    if (S.pending && S.pending.kind === 'build') {
+      return;
+    }
+    if (S.pending && S.pending.kind === 'item-target') {
+      var rad = S.pending.range || 6;
+      for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) {
+        if (!R.isOpen(S.map, r, c)) continue;
+        if (R.cheb(p, { r: r, c: c }) <= rad) {
+          S.itemCells.push({ r: r, c: c, d: R.cheb(p, { r: r, c: c }) });
+        }
+      }
+      return;
+    }
+
+    var extra = S.pending && S.pending.kind === 'shoot' ? {
+      extraDice: S.pending.extraDice || 0,
+      ignoreCover: !!S.pending.ignoreCover,
+      ignoreCone: false
+    } : null;
+    S.targets = collectTargets(p, extra);
+
+    if (!S.pending) {
+      S.moveCells = R.reachable(S.map, p, p.char.mov, blockedSet(p));
+    }
+  }
+
+  /* =====================================================================
+     行动
+     ===================================================================== */
+  function rotate(dir) {
+    var p = activePlayer();
+    if (!p || S.phase !== 'playing' || S.busy) return;
+    if (p.dir === dir) { hintShow('已经朝向这个方向'); return; }
+    if (p.focus < 1) { hintShow('专注不足（转身需要 1 点）'); return; }
+    p.focus -= 1;
+    p.dir = dir;
+    sfx('click');
+    refreshRanges();
+    updateAll();
+  }
+
+  function reload() {
+    var p = activePlayer();
+    if (!p || S.phase !== 'playing' || S.busy) return;
+    if (p.focus < 1) { hintShow('专注不足（换弹需要 1 点）'); return; }
+    if (p.ammo >= p.weapon.ammo && p.heat <= 0) { hintShow('弹药已满，冷却也已归零'); return; }
+    p.focus -= 1;
+    p.ammo = p.weapon.ammo;
+    p.heat = Math.max(0, p.heat - 2);
+    log(p.char.name + ' 换弹并冷却（' + p.ammo + '/' + p.weapon.ammo + '，热度 ' + p.heat + '）', 'log-good');
+    sfx('card');
+    updateAll();
+  }
+
+  function playCard(index) {
+    var p = activePlayer();
+    if (!p || S.phase !== 'playing' || S.busy) return;
+    var card = p.hand[index];
+    if (!card) return;
+    if (card.type === 'reaction') { hintShow('反应牌只能在被射击时使用'); return; }
+    if (p.focus < card.cost) { hintShow('专注不足：需要 ' + card.cost + ' 点'); return; }
+    if (!canPlay(p, card)) return;
+
+    p.focus -= card.cost;
+    p.hand.splice(index, 1);
+    p.discard.push(card);
+    sfx('card');
+    log(p.char.name + ' 使用【' + card.name + '】', 'log-good');
+    execCard(p, card);
+    refreshRanges();
+    updateAll();
+  }
+
+  function canPlay(p, card) {
+    var e = card.effect, pr = card.params || {};
+    if (e === 'move') {
+      if (!R.reachable(S.map, p, pr.steps, blockedSet(p)).length) { hintShow('没有可移动的格子'); return false; }
+    } else if (e === 'move_dodge') {
+      if (!R.reachable(S.map, p, pr.steps, blockedSet(p)).length) { hintShow('没有可移动的格子'); return false; }
+    } else if (e === 'shoot') {
+      var ts = collectTargets(p, { extraDice: pr.extraDice || 0, ignoreCover: !!pr.ignoreCover });
+      if (!ts.some(function (t) { return t.prof.valid; })) { hintShow('当前没有可用目标（射界/视线/射程）'); return false; }
+    } else if (e === 'aoe') {
+      var ts2 = collectTargets(p, { extraDice: pr.extraDice || 0 });
+      if (!ts2.some(function (t) { return t.prof.valid && t.type === 'player'; })) { hintShow('当前没有可用目标'); return false; }
+    } else if (e === 'reload') {
+      if (p.ammo >= p.weapon.ammo && p.heat <= 0) { hintShow('弹药已满'); return false; }
+    } else if (e === 'heal') {
+      if (p.hp >= p.maxHp) { hintShow('生命已满'); return false; }
+    } else if (e === 'turret') {
+      if (S.turrets.filter(function (t) { return t.owner === p.idx; }).length >= 2) { hintShow('炮塔数量已达上限（2）'); return false; }
+      if (!adjacentEmpty(p).length) { hintShow('周围没有空格放置炮塔'); return false; }
+    } else if (e === 'charge') {
+      if (!R.reachable(S.map, p, pr.steps, blockedSet(p)).length) { hintShow('没有可移动的格子'); return false; }
+    }
+    return true;
+  }
+
+  function adjacentEmpty(p) {
+    var out = [];
+    [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(function (d) {
+      var nr = p.r + d[0], nc = p.c + d[1];
+      if (R.isOpen(S.map, nr, nc) && !playerAt(nr, nc) && !turretAt(nr, nc)) out.push({ r: nr, c: nc });
+    });
+    return out;
+  }
+
+  function execCard(p, card) {
+    var e = card.effect, pr = card.params || {};
+    if (e === 'move') {
+      S.pending = { kind: 'move', steps: pr.steps, free: true, label: card.name };
+    } else if (e === 'move_dodge') {
+      S.pending = { kind: 'move', steps: pr.steps, free: true, dodge: pr.dodge || 2, label: card.name };
+    } else if (e === 'shoot') {
+      S.pending = { kind: 'shoot', extraDice: pr.extraDice || 0, ignoreCover: !!pr.ignoreCover, free: true, label: card.name };
+    } else if (e === 'aoe') {
+      S.pending = { kind: 'shoot', radius: pr.radius || 1, extraDice: pr.extraDice || 0, free: true, label: card.name };
+    } else if (e === 'reload') {
+      p.ammo = p.weapon.ammo;
+      p.heat = Math.max(0, p.heat - 2);
+      log('装填完成，武器冷却', 'log-good');
+    } else if (e === 'stance') {
+      p.armorBonus += pr.armor || 1;
+      log('护甲提升至 ' + armorOf(p), 'log-good');
+    } else if (e === 'adrenaline') {
+      if (p.focus >= p.char.focus) { hintShow('专注已满'); return false; }
+      p.focus = Math.min(p.char.focus, p.focus + (pr.focus || 2));
+      log('专注提升至 ' + p.focus, 'log-good');
+    } else if (e === 'heal') {
+      var before = p.hp;
+      p.hp = Math.min(p.maxHp, p.hp + (pr.hp || 2));
+      p.stress = Math.max(0, p.stress - (pr.stress || 1));
+      log('回复 ' + (p.hp - before) + ' HP，压力 ' + p.stress, 'log-good');
+      effectFloat(p.r, p.c, '+' + (p.hp - before), '#34d399');
+    } else if (e === 'charge') {
+      S.pending = { kind: 'move', steps: pr.steps, free: true, thenShoot: { extraDice: pr.extraDice || 1 }, label: card.name };
+    } else if (e === 'stealth') {
+      p.stealth.turns = pr.turns || 2;
+      log('进入潜行（' + p.stealth.turns + ' 回合）', 'log-good');
+    } else if (e === 'turret') {
+      var spot = adjacentEmpty(p)[0];
+      S.turrets.push({ r: spot.r, c: spot.c, dir: p.dir, hp: 3, maxHp: 3, owner: p.idx });
+      log('哨戒炮部署在 (' + spot.r + ',' + spot.c + ')', 'log-good');
+    } else if (e === 'repair') {
+      var t = null;
+      for (var i = 0; i < S.turrets.length; i++) {
+        var tt = S.turrets[i];
+        if (tt.owner === p.idx && Math.abs(tt.r - p.r) + Math.abs(tt.c - p.c) === 1) { t = tt; break; }
+      }
+      if (t) {
+        t.hp = Math.min(t.maxHp, t.hp + 3);
+        log('修复炮塔至 ' + t.hp + ' HP', 'log-good');
+      } else {
+        p.armorBonus += pr.armor || 1;
+        log('护甲提升至 ' + armorOf(p), 'log-good');
+      }
+    }
+  }
+
+  /* =====================================================================
+     移动
+     ===================================================================== */
+  function doMove(dest) {
+    var p = activePlayer();
+    if (!p) return;
+    var pending = S.pending;
+    if (!pending && p.focus < 1) { hintShow('专注不足（移动需要 1 点）'); return; }
+    var path = R.pathTo(S.map, p, dest, blockedSet(p));
+    if (!path || path.length < 2) { hintShow('无法到达该格'); return; }
+    if (!pending) p.focus -= 1;
+
+    var from = { r: p.r, c: p.c };
+    S.anim = { idx: p.idx, from: from, to: dest, t0: performance.now(), dur: 180 };
+    p.r = dest.r; p.c = dest.c;
+    var prev = path[path.length - 2];
+    if (dest.r < prev.r) p.dir = 'up';
+    else if (dest.r > prev.r) p.dir = 'down';
+    else if (dest.c < prev.c) p.dir = 'left';
+    else if (dest.c > prev.c) p.dir = 'right';
+
+    if (pending && pending.dodge) {
+      p.dodge = (p.dodge || 0) + pending.dodge;
+      log('获得 +' + pending.dodge + ' 闪避', 'log-good');
+    }
+    pickupAt(p);
+    sfx('click');
+    log(p.char.name + ' 移动到 (' + p.r + ',' + p.c + ')');
+
+    var thenShoot = pending && pending.thenShoot;
+    S.pending = null;
+    if (thenShoot) {
+      S.pending = { kind: 'shoot', extraDice: thenShoot.extraDice || 1, free: true, label: '战斗冲锋' };
+      log('冲锋就绪：选择射击目标', 'log-good');
+    }
+    refreshRanges();
+    updateAll();
+    checkOver();
+  }
+
+  function pickupAt(p) {
+    var key = p.r + ',' + p.c;
+    if (!S.supplyUsed[key] && R.tileAt(S.map, p.r, p.c) === R.TILE.SUPPLY) {
+      if (p.items.length >= 3) { hintShow('背包已满，无法拾取补给'); }
+      else {
+      var it = R.shuffle(Object.keys(R.ITEMS))[0];
+      p.items.push(it);
+      S.supplyUsed[key] = true;
+      log('拾取补给：' + it, 'log-good');
+      toast('拾取 ' + it);
+      effectFloat(p.r, p.c, it, '#e8b84b');
+      sfx('card');
+      }
+    }
+    for (var i = S.drops.length - 1; i >= 0; i--) {
+      var d = S.drops[i];
+      if (d.r === p.r && d.c === p.c) {
+        if (p.items.length < 3) {
+          p.items.push(d.item);
+          log('拾取空投：' + d.item, 'log-good');
+          toast('拾取 ' + d.item);
+        } else {
+          log('背包已满，空投留在原地', 'log-miss');
+          continue;
+        }
+        S.drops.splice(i, 1);
+      }
+    }
+  }
+
+  /* =====================================================================
+     射击
+     ===================================================================== */
+  function baseShotAllowed(p) {
+    if (p.shots >= 1) { hintShow('每回合最多进行 1 次基础射击（卡牌可追加）'); return false; }
+    if (p.ammo <= 0) { hintShow('弹药不足，需要换弹'); return false; }
+    if (p.heat >= p.weapon.heatMax) { hintShow('武器过热，需要换弹冷却'); return false; }
+    if (p.focus < 1) { hintShow('专注不足（射击需要 1 点）'); return false; }
+    return true;
+  }
+
+  function beginAttack(target) {
+    var p = activePlayer();
+    if (!p || !target) return;
+    var pending = S.pending;
+    var free = !!(pending && pending.free);
+
+    if (!free && !baseShotAllowed(p)) return;
+    if (free && (p.ammo <= 0 || p.heat >= p.weapon.heatMax)) {
+      hintShow(p.ammo <= 0 ? '弹药不足' : '武器过热');
+      return;
+    }
+    if (!target.prof || !target.prof.valid) {
+      hintShow((target.prof && target.prof.reason) || '目标不可攻击');
+      return;
+    }
+
+    var extra = {
+      extraDice: pending ? (pending.extraDice || 0) : 0,
+      ignoreCover: pending ? !!pending.ignoreCover : false
+    };
+
+    if (pending && pending.radius) {
+      fireAoe(p, target, pending.radius, extra, free);
+      return;
+    }
+
+    if (target.type === 'player') {
+      var def = target.p;
+      var ri = reactionIndex(def);
+      if (ri >= 0) {
+        showReaction(def, ri, function (mod) {
+          fireShot(p, target, extra, free, mod);
+        });
+        return;
+      }
+    }
+    fireShot(p, target, extra, free, null);
+  }
+
+  function reactionIndex(def) {
+    if (!def || def.focus < 1) return -1;
+    for (var i = 0; i < def.hand.length; i++) {
+      if (def.hand[i].type === 'reaction' && def.focus >= def.hand[i].cost) return i;
+    }
+    return -1;
+  }
+
+  function showReaction(def, idx, cb) {
+    var card = def.hand[idx];
+    S.reaction = { def: def, card: card, idx: idx, cb: cb, busy: true };
+    var extra = card.effect === 'react_dodge' ? ('本发命中值 +' + (card.params.bonus || 2)) : ('攻击者少 ' + (card.params.dice || 1) + ' 颗骰');
+    $('#reaction-text').innerHTML = '玩家' + (def.idx + 1) + ' 被射击 —— 是否使用 <b>' + card.name + '</b>？';
+    $('#reaction-sub').textContent = '消耗 ' + card.cost + ' 专注 · ' + extra + ' · 剩余专注 ' + def.focus;
+    $('#reaction').classList.add('show');
+    S.busy = true;
+    invalidate();
+  }
+
+  function hideReaction() {
+    $('#reaction').classList.remove('show');
+  }
+
+  function resolveReaction(use) {
+    var r = S.reaction;
+    if (!r) return;
+    hideReaction();
+    S.busy = false;
+    var mod = null;
+    if (use) {
+      var def = r.def;
+      if (def.focus < r.card.cost) { hintShow('专注不足'); mod = null; }
+      else {
+        def.focus -= r.card.cost;
+        def.hand.splice(r.idx, 1);
+        def.discard.push(r.card);
+        mod = r.card.effect === 'react_dodge' ? { needBonus: r.card.params.bonus || 2 }
+          : { blockDice: r.card.params.dice || 1 };
+        log(def.char.name + ' 打出【' + r.card.name + '】', 'log-event');
+        sfx('card');
+      }
+    }
+    S.reaction = null;
+    var cb = r.cb;
+    cb(mod);
+  }
+
+  function consumeShot(p, free) {
+    if (!free) {
+      p.focus -= 1;
+      p.shots++;
+    }
+    p.ammo -= 1;
+    p.heat += p.weapon.heat;
+    S.stats.shots++;
+  }
+
+  function fireShot(attacker, target, extra, free, mod) {
+    var def = target.type === 'player' ? target.p : {
+      r: target.t.r, c: target.t.c, char: { eva: 2 }, dodge: 0, stealth: { turns: 0 }
+    };
+    var opts = profileOpts({
+      extraDice: extra.extraDice || 0,
+      ignoreCover: !!extra.ignoreCover,
+      blockDice: (mod && mod.blockDice) || 0
+    });
+    var prof = R.shotProfile(attacker, def, S.map, opts);
+    if (!prof.valid) { hintShow(prof.reason); return; }
+    if (mod && mod.needBonus) {
+      prof.need = clamp(prof.need + mod.needBonus, 2, 6);
+      prof.hitChance = 1 - Math.pow((prof.need - 1) / 6, prof.dice);
+    }
+
+    consumeShot(attacker, free);
+    var res = R.rollShot(prof, attacker.weapon);
+    var raw = res.total;
+    var armor = target.type === 'player' ? armorOf(def) : 2;
+    var dmg = R.damageAfterArmor(raw, armor);
+
+    effectBeam(attacker, def, dmg > 0 ? '#ff6b81' : '#8b95b2');
+    shake(dmg > 0 ? 6 : 2);
+    sfx(dmg > 0 ? 'shoot' : 'miss');
+
+    var diceTxt = res.rolls.join(',');
+    log(attacker.char.name + ' → ' + (target.type === 'player' ? def.char.name : '炮塔') +
+      ' 骰[' + diceTxt + '] 命中值' + prof.need + '+ 命中' + res.hits + ' 暴击' + res.crits +
+      (dmg > 0 ? ' -' + dmg + ' HP' : ' 未造成伤害'),
+      dmg > 0 ? 'log-hit' : 'log-miss');
+
+    if (dmg > 0) {
+      effectFloat(def.r, def.c, '-' + dmg, '#ff6b81');
+      if (target.type === 'player') {
+        applyDamage(def, dmg, attacker);
+      } else {
+        target.t.hp -= dmg;
+        if (target.t.hp <= 0) {
+          S.turrets = S.turrets.filter(function (t) { return t !== target.t; });
+          log('炮塔被摧毁', 'log-hit');
+        }
+      }
+    } else if (res.hits === 0) {
+      effectFloat(def.r, def.c, 'MISS', '#8b95b2');
+    }
+
+    if (target.type === 'player') def.dodge = 0;
+    S.pending = null;
+    refreshRanges();
+    updateAll();
+    checkOver();
+    saveGame();
+  }
+
+  function fireAoe(attacker, target, radius, extra, free) {
+    if (!free) {
+      if (attacker.focus < 1) { hintShow('专注不足'); return; }
+      if (attacker.shots >= 1) { hintShow('每回合只能进行 1 次基础射击'); return; }
+    }
+    consumeShot(attacker, free);
+    var center = { r: target.r, c: target.c };
+    var victims = S.players.filter(function (q) {
+      return q !== attacker && q.alive && R.cheb(center, q) <= radius;
+    });
+    if (!victims.length) {
+      log('区域射击没有命中任何敌人', 'log-miss');
+    }
+    victims.forEach(function (q) {
+      var prof = R.shotProfile(attacker, q, S.map, profileOpts({
+        extraDice: extra.extraDice || 0, ignoreCone: true, isSplash: true, ignoreCover: false
+      }));
+      var res = prof.valid ? R.rollShot(prof, attacker.weapon) : { rolls: [], hits: 0, crits: 0, total: 0 };
+      var dmg = R.damageAfterArmor(res.total, armorOf(q));
+      log('区域射击 ' + q.char.name + '：命中' + res.hits + ' 暴击' + res.crits +
+        (dmg ? ' -' + dmg + ' HP' : ' 未造成伤害'), dmg ? 'log-hit' : 'log-miss');
+      if (dmg) {
+        effectFloat(q.r, q.c, '-' + dmg, '#ff6b81');
+        applyDamage(q, dmg, attacker);
+      }
+    });
+    effectRing(center.r, center.c, radius, '#ff6b81');
+    sfx('hit'); shake(8);
+    S.pending = null;
+    refreshRanges();
+    updateAll();
+    checkOver();
+    saveGame();
+  }
+
+  function applyDamage(target, dmg, source) {
+    target.hp = Math.max(0, target.hp - dmg);
+    target.taken += dmg;
+    if (source) source.dealt += dmg;
+    S.stats.damage += dmg;
+    target.stress = Math.min(target.char.stressMax + 2, target.stress + Math.min(3, dmg));
+    if (target.hp <= 0 && target.alive) {
+      target.alive = false;
+      log(target.char.name + ' 倒下了', 'log-hit');
+      toast(target.char.name + ' 被击倒', 2200);
+    }
+  }
+
+  function checkOver() {
+    if (S.over) return;
+    var alive = S.players.filter(function (p) { return p.alive; });
+    if (alive.length <= 1) {
+      S.over = true;
+      S.phase = 'over';
+      S.pending = null;
+      var winner = alive.length === 1 ? alive[0] : null;
+      log(winner ? winner.char.name + '（玩家' + (winner.idx + 1) + '）获胜！' : '平局', 'log-event');
+      clearSave();
+      setTimeout(function () { showOver(winner); }, 700);
+    }
+  }
+
+  function showOver(winner) {
+    var modal = $('#over-modal');
+    $('#over-title').textContent = winner ? '玩家' + (winner.idx + 1) + ' 获胜' : '平局';
+    $('#over-title').style.color = winner ? winner.char.color : 'var(--gold)';
+    $('#over-sub').textContent = winner ? (winner.char.name + ' · ' + winner.char.tag) : '同归于尽';
+    var rows = S.players.map(function (p) {
+      return '玩家' + (p.idx + 1) + ' ' + p.char.name + '：造成 ' + p.dealt + ' / 承受 ' + p.taken +
+        ' HP · 剩余 ' + p.hp;
+    }).join('<br>');
+    $('#over-stats').innerHTML = rows + '<br>回合数 ' + S.round + ' · 总射击 ' + S.stats.shots + ' 次';
+    modal.classList.add('show');
+  }
+
+  /* =====================================================================
+     道具
+     ===================================================================== */
+  function useItem(item) {
+    var p = activePlayer();
+    if (!p || S.phase !== 'playing' || S.busy) return;
+    if (p.itemsUsed >= 1) { hintShow('本回合已经使用过道具了'); return; }
+    var idx = p.items.indexOf(item);
+    if (idx < 0) return;
+    if (item === '医疗包') {
+      if (p.hp >= p.maxHp) { hintShow('生命已满'); return; }
+      p.items.splice(idx, 1); p.itemsUsed++;
+
+      p.hp = Math.min(p.maxHp, p.hp + 3);
+      p.stress = Math.max(0, p.stress - 1);
+      effectFloat(p.r, p.c, '+3', '#34d399');
+      log(p.char.name + ' 使用医疗包，回复 3 HP', 'log-good');
+    } else if (item === '护甲板') {
+      p.items.splice(idx, 1); p.itemsUsed++;
+      p.armorBonus += 2;
+      log(p.char.name + ' 使用护甲板，护甲提升至 ' + armorOf(p), 'log-good');
+      effectFloat(p.r, p.c, '护甲+2', '#22d3ee');
+    } else if (item === '破片手雷') {
+      S.pending = { kind: 'item-target', item: item, range: 6, radius: 1 };
+      hintShow('选择 6 格内的投掷点');
+    } else if (item === '烟雾弹') {
+      S.pending = { kind: 'item-target', item: item, range: 6, radius: 1 };
+      hintShow('选择 6 格内的投掷点');
+    }
+    sfx('card');
+    refreshRanges();
+    updateAll();
+  }
+
+  function resolveItemTarget(dest) {
+    var p = activePlayer();
+    var pd = S.pending;
+    if (!p || !pd) return;
+    if (R.cheb(p, dest) > (pd.range || 6)) { hintShow('超出投掷距离'); return; }
+    if (pd.item === '破片手雷' && !R.hasLoS(S.map, p, dest, isSmoke)) { hintShow('没有视线，无法投掷手雷'); return; }
+    var idx = p.items.indexOf(pd.item);
+    if (idx < 0) return;
+    p.items.splice(idx, 1);
+    p.itemsUsed++;
+    if (pd.item === '破片手雷') {
+      var victims = S.players.filter(function (q) {
+        return q !== p && q.alive && R.cheb(dest, q) <= 1;
+      });
+      victims.forEach(function (q) {
+        var dmg = R.damageAfterArmor(4, armorOf(q));
+        applyDamage(q, dmg, p);
+        effectFloat(q.r, q.c, '-' + dmg, '#ff6b81');
+        log('手雷命中 ' + q.char.name + ' -' + dmg + ' HP', 'log-hit');
+      });
+      if (!victims.length) log('手雷没有炸到人', 'log-miss');
+      effectRing(dest.r, dest.c, 1, '#ff8c42');
+      sfx('hit'); shake(9);
+    } else {
+      for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) {
+        var nr = dest.r + dr, nc = dest.c + dc;
+        if (R.isOpen(S.map, nr, nc)) S.smoke.push({ r: nr, c: nc, rem: 3 });
+      }
+      log('烟雾弹在 (' + dest.r + ',' + dest.c + ') 释放', 'log-event');
+      effectRing(dest.r, dest.c, 1, '#8b95b2');
+    }
+    S.pending = null;
+    refreshRanges();
+    updateAll();
+    checkOver();
+    saveGame();
+  }
+
+  /* =====================================================================
+     点击 / 悬停
+     ===================================================================== */
+  function targetAt(r, c) {
+    for (var i = 0; i < S.targets.length; i++) if (S.targets[i].r === r && S.targets[i].c === c) return S.targets[i];
+    return null;
+  }
+  function moveCellAt(r, c) {
+    for (var i = 0; i < S.moveCells.length; i++) if (S.moveCells[i].r === r && S.moveCells[i].c === c) return S.moveCells[i];
+    return null;
+  }
+
+  function onCell(r, c) {
+    var p = activePlayer();
+    if (!p || S.phase !== 'playing' || S.busy || S.over) return;
+
+    if (S.pending && S.pending.kind === 'item-target') {
+      resolveItemTarget({ r: r, c: c });
+      return;
+    }
+
+    var t = targetAt(r, c);
+    if (t && t.prof.valid) {
+      if (!S.pending && p.shots >= 1) { hintShow('每回合只能进行 1 次基础射击，用卡牌追加'); return; }
+      if (!S.pending && p.ammo <= 0) { hintShow('弹药不足'); return; }
+      if (!S.pending && p.heat >= p.weapon.heatMax) { hintShow('武器过热'); return; }
+      beginAttack(t);
+      return;
+    }
+
+    var m = moveCellAt(r, c);
+    if (m) { doMove({ r: r, c: c }); return; }
+
+    if (t && !t.prof.valid) { hintShow(t.prof.reason || '无法攻击'); return; }
+    if (r === p.r && c === p.c) { hintShow('这是你的位置'); return; }
+    hintShow('这里不在可行动范围内');
+  }
+
+  function explainCell(r, c) {
+    var p = activePlayer();
+    if (!p) return '';
+    if (S.pending && S.pending.kind === 'item-target') {
+      var d = R.cheb(p, { r: r, c: c });
+      return d <= (S.pending.range || 6) ? '点击投掷 <b>' + S.pending.item + '</b> 到这里' : '超出投掷距离（' + d + ' > ' + (S.pending.range || 6) + '）';
+    }
+    var t = targetAt(r, c);
+    if (t) {
+      if (!t.prof.valid) return '<span class="bad">' + t.prof.reason + '</span>';
+      var armor = t.type === 'player' ? armorOf(t.p) : 2;
+      var exp = R.expectedDamage(t.prof, p.weapon, armor);
+      var name = t.type === 'player' ? t.p.char.name : '炮塔';
+      return '射击 <b>' + name + '</b> · 命中值 <b>' + t.prof.need + '+</b> · ' + t.prof.dice + 'D6 · 期望 <b>' + exp.avg.toFixed(1) + '</b> 伤害（护甲 ' + armor + '）' +
+        (t.prof.reasons.length ? ' · ' + t.prof.reasons.map(function (x) { return x.label + (x.v > 0 ? '+' : '') + x.v; }).join(' ') : '');
+    }
+    var m = moveCellAt(r, c);
+    if (m) return '移动到 (' + r + ',' + c + ') · <b>' + m.d + '</b> 格' + (S.pending && S.pending.free ? '（卡牌已付费）' : ' · 1 专注');
+    if (r === p.r && c === p.c) return '你的位置 · 朝向 ' + ({ up: '↑', down: '↓', left: '←', right: '→' }[p.dir]);
+    var tile = R.tileAt(S.map, r, c);
+    if (tile === R.TILE.WALL) return '墙体 · 阻挡移动与视线';
+    if (tile === R.TILE.FULL) return '全掩体 · 命中值 +2，阻挡视线';
+    if (tile === R.TILE.HALF) return '半掩体 · 命中值 +1';
+    if (tile === R.TILE.SUPPLY) return S.supplyUsed[r + ',' + c] ? '已拾取的补给点' : '补给点 · 走上去拾取';
+    if (!R.isOpen(S.map, r, c)) return '虚空';
+    return '地面 (' + r + ',' + c + ')';
+  }
+
+  function updateHover(r, c) {
+    S.hover = (r == null ? null : { r: r, c: c });
+    if (S.hover) {
+      hintEl.innerHTML = explainCell(r, c);
+      hintEl.classList.add('show');
+    } else {
+      hintEl.classList.remove('show');
+    }
+    invalidate();
+  }
+
+  /* =====================================================================
+     渲染
+     ===================================================================== */
+  function rr(c, x, y, w, h, rad) {
+    if (c.roundRect) { c.beginPath(); c.roundRect(x, y, w, h, rad); return; }
+    var r = Math.min(rad, w / 2, h / 2);
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r);
+    c.arcTo(x, y, x + w, y, r);
+    c.closePath();
+  }
+
+  function px(c) { return S.pad + c * S.cell + S.cell / 2; }
+  function py(r) { return S.pad + r * S.cell + S.cell / 2; }
+
+  function resize() {
+    var availW = Math.max(240, wrap.clientWidth - 14);
+    var availH = Math.max(220, wrap.clientHeight - 14);
+    var byW = Math.floor((availW - S.pad * 2) / COLS);
+    var byH = Math.floor((availH - S.pad * 2) / ROWS);
+    if (availW < 700) S.cell = clamp(Math.floor((window.innerHeight * 0.42 - S.pad * 2) / ROWS), 26, 36);
+    else S.cell = clamp(Math.min(byW, byH), 24, 46);
+    S.dpr = Math.min(2, window.devicePixelRatio || 1);
+    var w = COLS * S.cell + S.pad * 2;
+    var h = ROWS * S.cell + S.pad * 2;
+    if (Math.round(w * S.dpr) === canvas.width && Math.round(h * S.dpr) === canvas.height &&
+        canvas.style.width === w + 'px') return;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    canvas.width = Math.round(w * S.dpr); canvas.height = Math.round(h * S.dpr);
+    ctx.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+    staticCanvas.width = canvas.width; staticCanvas.height = canvas.height;
+    sctx.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+    drawStatic(w, h);
+    invalidate();
+  }
+
+  function drawStatic(w, h) {
+    var c = sctx, cell = S.cell, pad = S.pad;
+    c.clearRect(0, 0, w, h);
+    var g = c.createRadialGradient(w * 0.5, h * 0.2, 20, w * 0.5, h * 0.5, h);
+    g.addColorStop(0, '#0b1224'); g.addColorStop(1, '#05080f');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+
+    for (var r = 0; r < ROWS; r++) for (var col = 0; col < COLS; col++) {
+      if (!S.map.shape[r][col]) continue;
+      var x = px(col) - cell / 2, y = py(r) - cell / 2;
+      var t = R.tileAt(S.map, r, col);
+      c.fillStyle = t === R.TILE.WALL ? '#242c4a' : t === R.TILE.FULL ? '#1b2440' : t === R.TILE.HALF ? '#182137' : '#121a2e';
+      rr(c, x + 1, y + 1, cell - 2, cell - 2, Math.max(3, cell * 0.12));
+      c.fill();
+      c.strokeStyle = 'rgba(120,150,230,.09)';
+      c.lineWidth = 1;
+      c.stroke();
+    }
+
+    for (r = 0; r < ROWS; r++) for (col = 0; col < COLS; col++) {
+      if (!S.map.shape[r][col]) continue;
+      t = R.tileAt(S.map, r, col);
+      var cx = px(col), cy = py(r);
+      if (t === R.TILE.WALL) {
+        c.fillStyle = '#38436e';
+        rr(c, cx - cell * 0.38, cy - cell * 0.34, cell * 0.76, cell * 0.68, 3); c.fill();
+        c.fillStyle = 'rgba(160,190,255,.22)';
+        c.fillRect(cx - cell * 0.3, cy - cell * 0.28, cell * 0.6, cell * 0.12);
+        c.fillStyle = 'rgba(0,0,0,.22)';
+        c.fillRect(cx - cell * 0.3, cy + cell * 0.18, cell * 0.6, cell * 0.1);
+      } else if (t === R.TILE.HALF) {
+        c.fillStyle = '#8a7a5a';
+        rr(c, cx - cell * 0.36, cy + cell * 0.02, cell * 0.72, cell * 0.18, 3); c.fill();
+        c.fillStyle = 'rgba(255,240,200,.18)';
+        c.fillRect(cx - cell * 0.36, cy + cell * 0.02, cell * 0.72, cell * 0.05);
+      } else if (t === R.TILE.FULL) {
+        c.strokeStyle = 'rgba(150,200,255,.5)';
+        c.lineWidth = Math.max(2, cell * 0.06);
+        c.beginPath(); c.arc(cx, cy, cell * 0.22, 0, Math.PI * 2); c.stroke();
+        c.fillStyle = 'rgba(120,170,255,.16)';
+        c.beginPath(); c.arc(cx, cy, cell * 0.22, 0, Math.PI * 2); c.fill();
+        c.strokeStyle = 'rgba(150,200,255,.22)';
+        c.lineWidth = 1;
+        c.beginPath(); c.arc(cx, cy, cell * 0.32, 0, Math.PI * 2); c.stroke();
+      } else if (t === R.TILE.SUPPLY) {
+        c.fillStyle = 'rgba(52,211,153,.14)';
+        rr(c, cx - cell * 0.26, cy - cell * 0.26, cell * 0.52, cell * 0.52, 4); c.fill();
+        c.strokeStyle = 'rgba(52,211,153,.7)'; c.lineWidth = 1.5; c.stroke();
+        c.fillStyle = 'rgba(52,211,153,.85)';
+        c.fillRect(cx - cell * 0.03, cy - cell * 0.18, cell * 0.06, cell * 0.36);
+        c.fillRect(cx - cell * 0.18, cy - cell * 0.03, cell * 0.36, cell * 0.06);
+      }
+    }
+
+    c.fillStyle = 'rgba(139,149,178,.5)';
+    c.font = Math.max(8, Math.round(cell * 0.22)) + 'px ui-monospace,monospace';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    for (col = 0; col < COLS; col++) c.fillText(String(col), px(col), pad * 0.55);
+    for (r = 0; r < ROWS; r++) c.fillText(String(r), pad * 0.5, py(r));
+  }
+
+  function draw(now) {
+    var D = S.dpr, cell = S.cell;
+    ctx.save();
+    ctx.setTransform(D, 0, 0, D, 0, 0);
+    if (now < S.shakeUntil) {
+      var k = ((S.shakeUntil - now) / 200) * 4;
+      ctx.translate((Math.random() - 0.5) * k, (Math.random() - 0.5) * k);
+    }
+    var w = COLS * cell + S.pad * 2, h = ROWS * cell + S.pad * 2;
+    ctx.clearRect(-20, -20, w + 40, h + 40);
+    ctx.drawImage(staticCanvas, 0, 0, w, h);
+
+    var p = activePlayer();
+    drawCone(p);
+    drawItemCells();
+    drawMoveCells();
+    drawTargets();
+    drawSmoke(now);
+    drawDrops();
+    drawTurrets();
+    drawPlayers(now);
+    drawPathPreview();
+    drawHover();
+    drawEffects(now);
+    ctx.restore();
+    S.dirty = false;
+  }
+
+  function drawCone(p) {
+    if (!p || S.phase !== 'playing' || S.over) return;
+    if (S.pending && S.pending.kind === 'item-target') return;
+    var len = (p.weapon.range[2] + 1) * S.cell;
+    var d = R.DELTA[p.dir];
+    var ox = px(p.c), oy = py(p.r);
+    var ex = ox + d[1] * len, ey = oy + d[0] * len;
+    var perp = [-d[0], d[1]];
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(ox, oy);
+    ctx.lineTo(ex - perp[1] * len * 0.95, ey - perp[0] * len * 0.95);
+    ctx.lineTo(ex + perp[1] * len * 0.95, ey + perp[0] * len * 0.95);
+    ctx.closePath();
+    var g = ctx.createRadialGradient(ox, oy, 0, ox, oy, len);
+    g.addColorStop(0, 'rgba(34,211,238,.10)');
+    g.addColorStop(1, 'rgba(34,211,238,0)');
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawMoveCells() {
+    if (!S.moveCells.length) return;
+    var cell = S.cell;
+    S.moveCells.forEach(function (m) {
+      ctx.fillStyle = 'rgba(52,211,153,.13)';
+      rr(ctx, px(m.c) - cell / 2 + 1, py(m.r) - cell / 2 + 1, cell - 2, cell - 2, 4); ctx.fill();
+      ctx.strokeStyle = 'rgba(52,211,153,.42)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(52,211,153,.45)';
+      ctx.beginPath(); ctx.arc(px(m.c), py(m.r), Math.max(1.5, cell * 0.05), 0, Math.PI * 2); ctx.fill();
+    });
+  }
+
+  function drawItemCells() {
+    if (!S.itemCells.length) return;
+    var cell = S.cell;
+    S.itemCells.forEach(function (m) {
+      ctx.fillStyle = 'rgba(232,184,75,.10)';
+      rr(ctx, px(m.c) - cell / 2 + 1, py(m.r) - cell / 2 + 1, cell - 2, cell - 2, 4); ctx.fill();
+      ctx.strokeStyle = 'rgba(232,184,75,.32)';
+      ctx.stroke();
+    });
+  }
+
+  function drawTargets() {
+    var cell = S.cell;
+    S.targets.forEach(function (t) {
+      if (!t.prof.valid) return;
+      ctx.strokeStyle = 'rgba(255,107,129,.75)';
+      ctx.lineWidth = Math.max(1.5, cell * 0.045);
+      ctx.setLineDash([4, 4]);
+      rr(ctx, px(t.c) - cell / 2 + 3, py(t.r) - cell / 2 + 3, cell - 6, cell - 6, 4);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,107,129,.10)';
+      rr(ctx, px(t.c) - cell / 2 + 3, py(t.r) - cell / 2 + 3, cell - 6, cell - 6, 4); ctx.fill();
+    });
+  }
+
+  function drawSmoke(now) {
+    S.smoke.forEach(function (s) {
+      var a = 0.30 + 0.05 * Math.sin((now / 600) + s.r + s.c);
+      ctx.fillStyle = 'rgba(175,185,210,' + a + ')';
+      rr(ctx, px(s.c) - S.cell / 2 + 2, py(s.r) - S.cell / 2 + 2, S.cell - 4, S.cell - 4, S.cell * 0.2);
+      ctx.fill();
+    });
+  }
+
+  function drawDrops() {
+    var cell = S.cell;
+    S.drops.forEach(function (d) {
+      ctx.save();
+      ctx.translate(px(d.c), py(d.r));
+      ctx.fillStyle = 'rgba(232,184,75,.18)';
+      rr(ctx, -cell * 0.22, -cell * 0.22, cell * 0.44, cell * 0.44, 4); ctx.fill();
+      ctx.strokeStyle = 'rgba(232,184,75,.85)'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = '#e8b84b';
+      ctx.font = Math.max(8, cell * 0.22) + 'px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('+', 0, 0);
+      ctx.restore();
+    });
+  }
+
+  function drawTurrets() {
+    S.turrets.forEach(function (t) {
+      var x = px(t.c), y = py(t.r);
+      ctx.fillStyle = '#3a4568';
+      ctx.beginPath(); ctx.arc(x, y, S.cell * 0.26, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(34,211,238,.8)'; ctx.lineWidth = 2; ctx.stroke();
+      var d = R.DELTA[t.dir];
+      ctx.fillStyle = '#22d3ee';
+      ctx.beginPath();
+      ctx.moveTo(x + d[1] * S.cell * 0.3, y + d[0] * S.cell * 0.3);
+      ctx.lineTo(x - d[1] * S.cell * 0.12 - d[0] * S.cell * 0.12, y - d[0] * S.cell * 0.12 + d[1] * S.cell * 0.12);
+      ctx.lineTo(x - d[1] * S.cell * 0.12 + d[0] * S.cell * 0.12, y - d[0] * S.cell * 0.12 - d[1] * S.cell * 0.12);
+      ctx.closePath(); ctx.fill();
+      var bw = S.cell * 0.5;
+      ctx.fillStyle = 'rgba(0,0,0,.6)';
+      ctx.fillRect(x - bw / 2, y - S.cell * 0.38, bw, 3);
+      ctx.fillStyle = '#22d3ee';
+      ctx.fillRect(x - bw / 2, y - S.cell * 0.38, bw * (t.hp / t.maxHp), 3);
+    });
+  }
+
+  function drawPlayers(now) {
+    S.players.forEach(function (p) {
+      if (!p.alive) return;
+      var x = px(p.c), y = py(p.r);
+      if (S.anim && S.anim.idx === p.idx) {
+        var t = clamp((now - S.anim.t0) / S.anim.dur, 0, 1);
+        var e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        x = px(S.anim.from.c) + (px(p.c) - px(S.anim.from.c)) * e;
+        y = py(S.anim.from.r) + (py(p.r) - py(S.anim.from.r)) * e;
+      }
+      var rad = S.cell * 0.31;
+      ctx.save();
+      if (p.stealth.turns > 0) ctx.globalAlpha = 0.5;
+      ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2);
+      ctx.fillStyle = p.char.color; ctx.fill();
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = p === activePlayer() ? '#ffffff' : 'rgba(5,7,15,.85)';
+      ctx.stroke();
+      if (p.stealth.turns > 0) {
+        ctx.setLineDash([3, 3]);
+        ctx.strokeStyle = 'rgba(167,139,250,.9)'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(x, y, rad + 4, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      var d = R.DELTA[p.dir];
+      ctx.fillStyle = '#05070f';
+      ctx.beginPath();
+      ctx.moveTo(x + d[1] * (rad + 6), y + d[0] * (rad + 6));
+      ctx.lineTo(x - d[1] * 5 - d[0] * 5, y - d[0] * 5 + d[1] * 5);
+      ctx.lineTo(x - d[1] * 5 + d[0] * 5, y - d[0] * 5 - d[1] * 5);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+
+      var bw = Math.max(24, S.cell * 0.78);
+      var by = y - rad - 9;
+      ctx.fillStyle = 'rgba(0,0,0,.65)';
+      rr(ctx, x - bw / 2, by, bw, 4, 2); ctx.fill();
+      ctx.fillStyle = hpPct(p) > 0.5 ? '#34d399' : hpPct(p) > 0.25 ? '#e8b84b' : '#ff6b81';
+      rr(ctx, x - bw / 2, by, bw * hpPct(p), 4, 2); ctx.fill();
+
+      ctx.fillStyle = 'rgba(233,238,252,.92)';
+      ctx.font = '600 ' + Math.max(8, Math.round(S.cell * 0.21)) + 'px -apple-system,sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(p.char.name, x, by - 2);
+
+      if (p.stealth.turns > 0) {
+        ctx.fillStyle = '#a78bfa';
+        ctx.font = Math.max(7, S.cell * 0.18) + 'px sans-serif';
+        ctx.textBaseline = 'top';
+        ctx.fillText('潜行', x, y + rad + 2);
+      }
+    });
+  }
+
+  function drawPathPreview() {
+    if (!S.hover || !S.pending || S.pending.kind !== 'move') return;
+    var p = activePlayer();
+    if (!p) return;
+    var m = moveCellAt(S.hover.r, S.hover.c);
+    if (!m) return;
+    var path = R.pathTo(S.map, p, S.hover, blockedSet(p));
+    if (!path) return;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(34,211,238,.35)';
+    ctx.lineWidth = 2; ctx.setLineDash([3, 5]);
+    ctx.beginPath();
+    path.forEach(function (n, i) { if (i) ctx.lineTo(px(n.c), py(n.r)); else ctx.moveTo(px(n.c), py(n.r)); });
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawHover() {
+    if (!S.hover) return;
+    ctx.strokeStyle = 'rgba(255,255,255,.65)';
+    ctx.lineWidth = 1.5;
+    rr(ctx, px(S.hover.c) - S.cell / 2 + 1, py(S.hover.r) - S.cell / 2 + 1, S.cell - 2, S.cell - 2, 4);
+    ctx.stroke();
+  }
+
+  /* ---------- 特效 ---------- */
+  function shake(ms) { S.shakeUntil = performance.now() + ms; invalidate(); }
+  function effectBeam(a, b, color) {
+    S.effects.push({ type: 'beam', t0: performance.now(), dur: 260, a: { r: a.r, c: a.c }, b: { r: b.r, c: b.c }, color: color });
+    invalidate();
+  }
+  function effectFloat(r, c, text, color) {
+    S.effects.push({ type: 'float', t0: performance.now(), dur: 950, r: r, c: c, text: text, color: color });
+    invalidate();
+  }
+  function effectRing(r, c, radius, color) {
+    S.effects.push({ type: 'ring', t0: performance.now(), dur: 450, r: r, c: c, radius: radius, color: color });
+    invalidate();
+  }
+  function drawEffects(now) {
+    for (var i = S.effects.length - 1; i >= 0; i--) {
+      var e = S.effects[i];
+      var t = (now - e.t0) / e.dur;
+      if (t >= 1) { S.effects.splice(i, 1); continue; }
+      var a = 1 - t;
+      if (e.type === 'beam') {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, 1 - t * 1.4);
+        ctx.strokeStyle = e.color; ctx.lineWidth = 3; ctx.shadowColor = e.color; ctx.shadowBlur = 12;
+        ctx.beginPath(); ctx.moveTo(px(e.a.c), py(e.a.r)); ctx.lineTo(px(e.b.c), py(e.b.r)); ctx.stroke();
+        ctx.restore();
+      } else if (e.type === 'float') {
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.fillStyle = e.color;
+        ctx.font = '700 ' + Math.max(11, S.cell * 0.32) + 'px -apple-system,sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0,0,0,.8)'; ctx.shadowBlur = 4;
+        ctx.fillText(e.text, px(e.c), py(e.r) - 12 - t * 26);
+        ctx.restore();
+      } else if (e.type === 'ring') {
+        ctx.save();
+        ctx.globalAlpha = a * 0.6;
+        ctx.strokeStyle = e.color; ctx.lineWidth = 2;
+        var rad = (e.radius + 0.5 + t * 0.5) * S.cell;
+        ctx.beginPath(); ctx.arc(px(e.c), py(e.r), rad, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
+    }
+    if (S.anim && now - S.anim.t0 > S.anim.dur) S.anim = null;
+    if (S.anim) invalidate();
+  }
+
+  /* =====================================================================
+     UI 更新
+     ===================================================================== */
+  function renderPlayerCard(p, active) {
+    var el = $('#pcard-' + p.idx);
+    var armor = armorOf(p);
+    var hp = Math.ceil(p.hp);
+    var chips = [
+      '<span>护甲 <b>' + armor + '</b></span>',
+      '<span>专注 <b>' + p.focus + '</b>/' + p.char.focus + '</span>',
+      '<span class="' + (p.heat >= p.weapon.heatMax ? 'warn' : '') + '">热度 <b>' + p.heat + '</b>/' + p.weapon.heatMax + '</span>',
+      '<span>弹药 <b>' + p.ammo + '</b>/' + p.weapon.ammo + '</span>',
+      '<span class="' + (p.stress >= p.char.stressMax ? 'warn' : '') + '">压力 <b>' + p.stress + '</b>/' + p.char.stressMax + '</span>'
+    ];
+    var badges = [];
+    if (p.stealth.turns > 0) badges.push('<span class="badge" style="color:#a78bfa">潜行' + p.stealth.turns + '</span>');
+    if (p.dodge) badges.push('<span class="badge" style="color:#22d3ee">闪避+' + p.dodge + '</span>');
+    if (p.armorBonus > 0) badges.push('<span class="badge" style="color:#22d3ee">护甲+' + p.armorBonus + '</span>');
+    el.className = 'pcard' + (p.idx === 1 ? ' p2' : '') + (active ? ' active' : '') + (!p.alive ? ' dead' : '');
+    el.innerHTML =
+      '<div class="avatar" style="background:' + p.char.color + '">' + p.char.name.charAt(0) + '</div>' +
+      '<div class="info">' +
+      '<div class="row1"><span class="pname">' + (p.idx + 1) + 'P · ' + p.char.name + '</span>' +
+      '<span class="pweapon">' + p.weapon.name + '</span></div>' +
+      '<div class="hpbar"><div class="hpfill ' + (hpPct(p) < 0.3 ? 'low' : '') + '" style="width:' + (hpPct(p) * 100) + '%"></div></div>' +
+      '<div class="chips">' + chips.join('') + '</div>' +
+      '</div>' +
+      '<div class="badges">' + badges.join('') + '</div>';
+  }
+
+  function renderHand(p) {
+    var el = $('#hand');
+    el.innerHTML = '';
+    if (!p) return;
+    if (!p.hand.length) {
+      el.innerHTML = '<div class="empty-hand">没有手牌，结束回合后抽 2 张</div>';
+      return;
+    }
+    p.hand.forEach(function (card, i) {
+      var b = document.createElement('button');
+      var cls = 'card' + (card.type === 'reaction' ? ' reaction' : '') + (card.type === 'skill' ? ' skill' : '');
+      if (p.focus < card.cost || S.phase !== 'playing') cls += ' disabled';
+      b.className = cls;
+      b.dataset.i = i;
+      b.innerHTML =
+        '<div class="cname">' + card.name + '</div>' +
+        '<div class="cdesc">' + card.desc + '</div>' +
+        '<div class="cfoot"><span>' + (card.type === 'reaction' ? '反应' : card.type === 'skill' ? '专属' : '行动') + '</span>' +
+        '<span class="ccost">' + card.cost + ' 专注</span></div>';
+      b.onclick = function () { playCard(i); };
+      el.appendChild(b);
+    });
+  }
+
+  function renderFocus(p) {
+    var el = $('#pips');
+    el.innerHTML = '';
+    for (var i = 0; i < p.char.focus; i++) {
+      var d = document.createElement('span');
+      d.className = 'pip' + (i < p.focus ? ' on' : '');
+      el.appendChild(d);
+    }
+    $('#focus-num').textContent = p.focus + '/' + p.char.focus;
+  }
+
+  function renderItems(p) {
+    var el = $('#items');
+    el.innerHTML = '';
+    var counts = {};
+    p.items.forEach(function (it) { counts[it] = (counts[it] || 0) + 1; });
+    Object.keys(counts).forEach(function (it) {
+      var b = document.createElement('button');
+      b.className = 'item-btn';
+      b.innerHTML = it + ' <b>×' + counts[it] + '</b>';
+      b.title = R.ITEMS[it].desc;
+      b.disabled = p.itemsUsed >= 1 || S.phase !== 'playing';
+      b.onclick = function () { useItem(it); };
+      el.appendChild(b);
+    });
+    if (!p.items.length) el.innerHTML = '<span style="font-size:10px;color:var(--muted);font-family:var(--mono)">无道具</span>';
+  }
+
+  function renderBadge(p) {
+    var el = $('#turn-badge');
+    if (S.phase === 'select') { el.innerHTML = '等待开始'; el.className = ''; return; }
+    if (S.over) { el.innerHTML = '<b>战斗结束</b>'; return; }
+    el.className = p.idx === 1 ? 'p2' : '';
+    el.innerHTML = '第 <b>' + S.round + '</b> 回合 · <b>玩家' + (p.idx + 1) + '</b>';
+  }
+
+  function updateAll() {
+    var p = activePlayer();
+    if (p) {
+      renderPlayerCard(S.players[0], S.phase === 'playing' && S.active === 0);
+      renderPlayerCard(S.players[1], S.phase === 'playing' && S.active === 1);
+      renderHand(p);
+      renderFocus(p);
+      renderItems(p);
+      renderBadge(p);
+    }
+    var noAct = !p || S.phase !== 'playing' || S.busy || S.over;
+    $('#end-turn').disabled = noAct;
+    $('#reload-btn').disabled = noAct || p.focus < 1;
+    document.querySelectorAll('[data-rot]').forEach(function (b) { b.disabled = noAct; });
+    invalidate();
+  }
+
+  function hintShow(html) { hintEl.innerHTML = html; hintEl.classList.add('show'); }
+  function hintHide() { hintEl.classList.remove('show'); }
+
+  /* =====================================================================
+     弹窗 / 过渡
+     ===================================================================== */
+  function askConfirm(text, cb) {
+    $('#confirm-text').textContent = text;
+    $('#confirm-modal').classList.add('show');
+    askConfirm._cb = cb;
+  }
+  function closeConfirm() {
+    $('#confirm-modal').classList.remove('show');
+    askConfirm._cb = null;
+  }
+  function showTransition(t1, t2) {
+    $('#trans-t1').textContent = t1;
+    $('#trans-t2').textContent = t2 || '';
+    $('#transition').classList.add('show');
+  }
+  function hideTransition() { $('#transition').classList.remove('show'); }
+
+  function centerOn(p) {
+    if (!p) return;
+    var x = px(p.c), y = py(p.r);
+    wrap.scrollLeft = x - wrap.clientWidth / 2;
+    wrap.scrollTop = y - wrap.clientHeight / 2;
+  }
+
+  /* =====================================================================
+     存档
+     ===================================================================== */
+  var SAVE_KEY = 'blast.save.v2';
+  function saveGame() {
+    if (S.phase !== 'playing' || S.over) return;
+    try {
+      var data = {
+        v: 2, active: S.active, first: S.firstPlayer, round: S.round, setup: S.setup,
+        smoke: S.smoke, turrets: S.turrets, supplyUsed: S.supplyUsed, drops: S.drops,
+        players: S.players.map(function (p) {
+          return {
+            char: p.char.name, r: p.r, c: p.c, dir: p.dir, hp: p.hp,
+            focus: p.focus, heat: p.heat, ammo: p.ammo, stress: p.stress,
+            armorBonus: p.armorBonus, dodge: p.dodge, stealth: p.stealth.turns,
+            items: p.items, shots: p.shots, itemsUsed: p.itemsUsed,
+            dealt: p.dealt, taken: p.taken,
+            hand: p.hand.map(function (c) { return c.id; }),
+            deck: p.deck.map(function (c) { return c.id; }),
+            discard: p.discard.map(function (c) { return c.id; })
+          };
+        })
+      };
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    } catch (e) {}
+  }
+  function hasSave() {
+    try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; }
+  }
+  function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+
+  function loadGame() {
+    try {
+      var raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return false;
+      var d = JSON.parse(raw);
+      if (!d || d.v !== 2 || !d.players || d.players.length !== 2) return false;
+      S.map = R.buildMap();
+      S.players = d.players.map(function (sp, i) {
+        var p = makePlayer(i, sp.char, { r: sp.r, c: sp.c, dir: sp.dir });
+        p.hp = sp.hp; p.focus = sp.focus; p.heat = sp.heat; p.ammo = sp.ammo; p.stress = sp.stress;
+        p.armorBonus = sp.armorBonus || 0; p.dodge = sp.dodge || 0;
+        p.stealth = { turns: sp.stealth || 0 };
+        p.items = sp.items || [];
+        p.shots = sp.shots || 0; p.itemsUsed = sp.itemsUsed || 0;
+        p.dealt = sp.dealt || 0; p.taken = sp.taken || 0;
+        p.hand = (sp.hand || []).map(cardFromId).filter(Boolean);
+        p.deck = (sp.deck || []).map(cardFromId).filter(Boolean);
+        p.discard = (sp.discard || []).map(cardFromId).filter(Boolean);
+        p.alive = p.hp > 0;
+        return p;
+      });
+      if (S.players.some(function (p) { return !p.char; })) return false;
+      S.active = d.active; S.firstPlayer = d.first; S.round = d.round;
+      S.setup = d.setup || {
+        p1: S.players[0].char.name, p2: S.players[1].char.name,
+        s1: { r: S.players[0].r, c: S.players[0].c, dir: S.players[0].dir, label: '存档' },
+        s2: { r: S.players[1].r, c: S.players[1].c, dir: S.players[1].dir, label: '存档' }
+      };
+      S.smoke = d.smoke || []; S.turrets = d.turrets || [];
+      S.supplyUsed = d.supplyUsed || {}; S.drops = d.drops || [];
+      S.over = false; S.pending = null; S.phase = 'playing';
+      S.logLines = [];
+      S.stats = { turns: 0, shots: 0, damage: 0 };
+      $('#select-screen').classList.add('hidden');
+      resize();
+      log('已载入上局存档', 'log-turn');
+      S.phase = 'playing';
+      S.busy = false;
+      refreshRanges();
+      updateAll();
+      centerOn(activePlayer());
+      return true;
+    } catch (e) {
+      clearSave();
+      return false;
+    }
+  }
+
+  /* =====================================================================
+     开发者控制台
+     ===================================================================== */
+  function devExec(cmdStr) {
+    var msg = $('#dev-msg');
+    var parts = cmdStr.replace(/^\//, '').trim().split(/\s+/);
+    var cmd = (parts[0] || '').toLowerCase(), a = parts.slice(1);
+    var p = S.players[parseInt(a[0], 10) - 1];
+    function need() { if (!p) return '需要玩家编号 1 或 2'; return null; }
+    var err;
+    if (cmd === 'h' || cmd === 'help') return '/tp 玩家 行 列 | /heal 玩家 值 | /focus 玩家 值 | /stress 玩家 值 | /dmg 玩家 值 | /kill 玩家 | /gc 玩家 卡牌ID | /win 玩家';
+    if (cmd === 'tp') { if ((err = need())) return err; var r = +a[1], c = +a[2]; if (!R.isOpen(S.map, r, c)) return '坐标不可用'; p.r = r; p.c = c; }
+    else if (cmd === 'heal') { if ((err = need())) return err; p.hp = Math.min(p.maxHp, p.hp + (+a[1] || 99)); }
+    else if (cmd === 'focus') { if ((err = need())) return err; p.focus = +a[1] || 0; }
+    else if (cmd === 'stress') { if ((err = need())) return err; p.stress = +a[1] || 0; }
+    else if (cmd === 'dmg') { if ((err = need())) return err; applyDamage(p, +a[1] || 1, null); }
+    else if (cmd === 'kill') { if ((err = need())) return err; applyDamage(p, 999, null); }
+    else if (cmd === 'win') { if ((err = need())) return err; S.players.forEach(function (q) { if (q !== p) q.hp = 0, q.alive = false; }); checkOver(); }
+    else if (cmd === 'gc') { if ((err = need())) return err; var card = cardFromId(a[1]); if (!card) return '卡牌 ID 无效'; p.hand.push(card); }
+    else return '未知指令，输入 /h';
+    refreshRanges(); updateAll(); saveGame();
+    return 'OK';
+  }
+
+  /* =====================================================================
+     事件绑定
+     ===================================================================== */
+  function bind() {
+    $('#start-btn').onclick = function () { initGame(); };
+    $('#continue-btn').onclick = function () { if (!loadGame()) { toast('存档损坏或版本不兼容'); clearSave(); } };
+
+    $('#end-turn').onclick = endTurn;
+    $('#reload-btn').onclick = reload;
+    document.querySelectorAll('[data-rot]').forEach(function (b) {
+      b.onclick = function () { rotate(b.dataset.rot); };
+    });
+
+    $('#rules-btn').onclick = function () { $('#rules-modal').classList.add('show'); };
+    $('#sound-btn').onclick = function () {
+      S.sound = !S.sound;
+      this.classList.toggle('on', S.sound);
+      this.classList.toggle('off', !S.sound);
+      this.textContent = S.sound ? '音效' : '静音';
+      if (S.sound) { initAudio(); sfx('click'); }
+    };
+    $('#restart-btn').onclick = function () {
+      askConfirm('重新开始本局？当前进度会丢失。', function () {
+        closeConfirm();
+        if (S.setup) {
+          S.sel = { step: 'ready', p1: S.setup.p1, p2: S.setup.p2, s1: S.setup.s1, s2: S.setup.s2 };
+          initGame();
+        } else resetSelect();
+      });
+    };
+    $('#over-again').onclick = function () {
+      $('#over-modal').classList.remove('show');
+      if (S.setup) {
+        S.sel = { step: 'ready', p1: S.setup.p1, p2: S.setup.p2, s1: S.setup.s1, s2: S.setup.s2 };
+        initGame();
+      } else {
+        resetSelect();
+      }
+    };
+    $('#over-select').onclick = function () { resetSelect(); };
+
+    $('#confirm-yes').onclick = function () { var cb = askConfirm._cb; closeConfirm(); if (cb) cb(); };
+    $('#confirm-no').onclick = closeConfirm;
+    document.querySelectorAll('[data-close]').forEach(function (b) {
+      b.onclick = function () { document.getElementById(b.dataset.close).classList.remove('show'); };
+    });
+    document.querySelectorAll('.modal').forEach(function (m) {
+      m.addEventListener('click', function (e) { if (e.target === m) m.classList.remove('show'); });
+    });
+
+    $('#reaction-use').onclick = function () { resolveReaction(true); };
+    $('#reaction-skip').onclick = function () { resolveReaction(false); };
+
+    // 指针
+    var drag = null;
+    canvas.addEventListener('pointerdown', function (e) {
+      initAudio();
+      if (e.button !== undefined && e.button !== 0) return;
+      drag = { x: e.clientX, y: e.clientY, sl: wrap.scrollLeft, st: wrap.scrollTop, moved: false, t: Date.now() };
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    canvas.addEventListener('pointermove', function (e) {
+      if (drag) {
+        var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+        if (Math.abs(dx) + Math.abs(dy) > 7) drag.moved = true;
+        if (drag.moved) {
+          wrap.scrollLeft = drag.sl - dx;
+          wrap.scrollTop = drag.st - dy;
+          updateHover(null);
+          return;
+        }
+      }
+      var g = cellFromEvent(e);
+      if (g) updateHover(g.r, g.c); else updateHover(null);
+    });
+    canvas.addEventListener('pointerup', function (e) {
+      var d = drag; drag = null;
+      if (!d || d.moved || Date.now() - d.t > 700) return;
+      var g = cellFromEvent(e);
+      if (g) onCell(g.r, g.c);
+    });
+    canvas.addEventListener('pointercancel', function () { drag = null; });
+    canvas.addEventListener('pointerleave', function () { updateHover(null); });
+    canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+    function cellFromEvent(e) {
+      var rect = canvas.getBoundingClientRect();
+      var x = (e.clientX - rect.left) * (parseFloat(canvas.style.width) / rect.width);
+      var y = (e.clientY - rect.top) * (parseFloat(canvas.style.height) / rect.height);
+      var c = Math.floor((x - S.pad) / S.cell);
+      var r = Math.floor((y - S.pad) / S.cell);
+      if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null;
+      if (!S.map.shape[r][c]) return null;
+      return { r: r, c: c };
+    }
+
+    document.addEventListener('keydown', function (e) {
+      var tag = (e.target && e.target.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === 'Escape' && S.reaction) { resolveReaction(false); return; }
+      if (document.querySelector('.modal.show') || $('#reaction').classList.contains('show')) return;
+      var p = activePlayer();
+      if (!p || S.phase !== 'playing') return;
+      var k = e.key.toLowerCase();
+      if (k === 'w' || k === 'arrowup') { rotate('up'); e.preventDefault(); }
+      else if (k === 's' || k === 'arrowdown') { rotate('down'); e.preventDefault(); }
+      else if (k === 'a' || k === 'arrowleft') { rotate('left'); e.preventDefault(); }
+      else if (k === 'd' || k === 'arrowright') { rotate('right'); e.preventDefault(); }
+      else if (k === 'r') { reload(); e.preventDefault(); }
+      else if (k === ' ') { endTurn(); e.preventDefault(); }
+      else if (k === 'escape') { S.pending = null; refreshRanges(); updateAll(); hintHide(); }
+      else if (k >= '1' && k <= '6') { playCard(parseInt(k, 10) - 1); }
+    });
+
+    var rt;
+    window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { resize(); centerOn(activePlayer()); }, 120); });
+    if (window.ResizeObserver) {
+      var roTimer;
+      new ResizeObserver(function () {
+        clearTimeout(roTimer);
+        roTimer = setTimeout(function () { resize(); }, 90);
+      }).observe(wrap);
+    }
+    window.addEventListener('orientationchange', function () { setTimeout(function () { resize(); }, 260); });
+
+    if (S.dev) {
+      $('#dev-btn').classList.remove('hidden');
+      $('#dev-btn').onclick = function () { $('#dev-modal').classList.add('show'); $('#dev-input').focus(); };
+      $('#dev-input').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          $('#dev-msg').textContent = devExec(this.value);
+          this.value = '';
+        }
+      });
+    }
+  }
+
+  /* =====================================================================
+     启动
+     ===================================================================== */
+  function boot() {
+    S.map = R.buildMap();
+    bind();
+    resize();
+    resetSelect();
+    if (hasSave()) $('#continue-btn').classList.remove('hidden');
+    // 选角页也允许点击
+    $('#select-screen').addEventListener('pointerdown', initAudio, { once: true });
+
+    var loop = function (now) {
+      if (S.dirty || S.effects.length || S.anim) draw(now);
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+
+    // 每帧兜底：特效结束时强制重绘
+    setInterval(function () { if (S.effects.length || S.anim) invalidate(); }, 120);
+
+    if (S.dev) {
+      window.__blast = {
+        S: S, R: R, draw: draw, refreshRanges: refreshRanges, updateAll: updateAll,
+        endTurn: endTurn, startTurn: startTurn, onCell: onCell, doMove: doMove,
+        beginAttack: beginAttack, playCard: playCard, rotate: rotate, reload: reload,
+        useItem: useItem, explainCell: explainCell, resize: resize, resolveReaction: resolveReaction, resolveItemTarget: resolveItemTarget
+      };
+    }
+  }
+
+  boot();
+})();
+
+</script>
+</body>
+</html>
