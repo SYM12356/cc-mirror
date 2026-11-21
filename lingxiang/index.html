@@ -2419,6 +2419,61 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   .shop-head .shop-gold { margin-left: auto; }
 }
 
+/* ===================== 3v3 房间 ===================== */
+.room-sheet { width: min(760px, 94vw); max-height: 90dvh; overflow: auto; }
+.room-players { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 6px 0; }
+.room-slot { display: grid; grid-template-columns: 18px 1fr 38px 54px; gap: 5px; align-items: center; border: 1px solid var(--line); border-radius: 5px; padding: 5px 6px; font-size: 8px; background: var(--paper); }
+.room-slot > span { color: var(--muted); font-family: ui-monospace, monospace; }
+.room-slot b { font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.room-slot em { font-style: normal; font-size: 7px; color: var(--muted); }
+.room-slot strong { font-size: 8px; font-family: var(--serif); font-weight: 800; text-align: right; }
+.room-slot.student { border-left: 3px solid var(--teal); }
+.room-slot.teacher { border-left: 3px solid var(--red); }
+.room-slot.me { background: rgba(63,175,155,.09); border-color: var(--teal-deep); }
+.room-slot.empty { opacity: .55; border-style: dashed; }
+.room-choice { display: flex; gap: 6px; align-items: center; margin: 7px 0; }
+.room-team { display: flex; gap: 4px; }
+.room-team button { border: 1px solid var(--line); border-radius: 5px; padding: 5px 10px; background: var(--paper); font-size: 9px; cursor: pointer; }
+.room-team button.active { background: var(--ink); color: var(--paper-2); border-color: var(--ink); }
+.room-choice select { flex: 1; min-width: 0; }
+.room-duel { margin-top: 6px; width: 100%; font-size: 8px; }
+@media (max-width: 600px) { .room-players { grid-template-columns: 1fr; } }
+
+/* 联机退出 */
+.oh-exit { position: absolute; top: 5px; right: 6px; border: 1px solid var(--line); background: var(--paper); color: var(--red); border-radius: 5px; padding: 3px 7px; font-size: 8px; font-weight: 800; cursor: pointer; }
+.oh-exit:hover { background: var(--red); color: #fff; border-color: var(--red); }
+#online-hud { position: relative; }
+.room-exit { margin-top: 4px; width: 100%; font-size: 8px; color: var(--red); }
+.room-duel-entry { margin-top: 8px; width: 100%; font-size: 9px; }
+
+/* 标题页：单机 / 联机 双入口 */
+.title-gate { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; }
+.title-gate-btn {
+  display: flex; align-items: baseline; justify-content: center; gap: 8px;
+  border: 1.4px solid rgba(255,248,232,.35); border-radius: 9px;
+  background: rgba(255,250,240,.06); color: rgba(255,248,232,.72);
+  padding: 10px 12px; cursor: pointer; transition: .15s;
+}
+.title-gate-btn span { font-family: var(--serif); font-size: 21px; font-weight: 900; letter-spacing: 4px; }
+.title-gate-btn small { font-size: 7px; letter-spacing: .22em; opacity: .6; }
+.title-gate-btn:hover { background: rgba(255,250,240,.13); border-color: rgba(255,248,232,.6); }
+.title-gate-btn.active { background: var(--paper-2); color: var(--ink); border-color: var(--paper-2); box-shadow: 3px 3px 0 rgba(0,0,0,.22); }
+.title-v2 .mode-grid.two { grid-template-columns: 1fr 1fr; }
+.title-v2 .mode-blue { border-top: 5px solid #6a8fb5; }
+.title-panel .title-other { margin-top: 12px; }
+@media (max-width: 900px) {
+  .title-v2 .mode-grid.two { grid-template-columns: 1fr; }
+  .title-gate-btn { padding: 7px 9px; }
+  .title-gate-btn span { font-size: 18px; letter-spacing: 2px; }
+}
+
+/* 精简联机信息：不显示帧号/RTT/链路等技术指标 */
+.oh-simple { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; padding-right: 30px; }
+.oh-simple b { font-family: var(--serif); font-size: 11px; color: var(--ink); letter-spacing: .04em; }
+.oh-simple span { font-family: ui-monospace, monospace; font-size: 9px; letter-spacing: .1em; color: var(--red-deep); }
+.oh-exit { pointer-events: auto; }
+.title-v2 .mode-grid.one { grid-template-columns: 1fr; }
+
 </style>
 </head>
 <body>
@@ -2435,14 +2490,9 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     </div>
 
     <div id="bell-hud"><span class="b-icon">🔔</span><span id="bell-text">--:--</span></div>
-    <div id="online-hud" class="hidden folded">
-      <button class="oh-head" id="oh-toggle" type="button"><b id="oh-role">联机</b><span id="oh-code">----</span><i>⌄</i></button>
-      <div class="oh-grid">
-        <span>RTT</span><b id="oh-rtt">--</b>
-        <span>链路</span><b id="oh-link">--</b>
-        <span>帧</span><b id="oh-tick">0</b>
-        <span>状态</span><b id="oh-state">同步</b>
-      </div>
+    <div id="online-hud" class="hidden">
+      <div class="oh-simple"><b id="oh-role">联机对局</b><span id="oh-code">----</span></div>
+      <button class="oh-exit" id="oh-exit" type="button">退出</button>
     </div>
     <div id="story-hud" class="hidden"><span id="story-objective"></span></div>
     <div id="quick-badge" class="hidden">快速模式 · 2× 经济</div>
@@ -2534,40 +2584,57 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       </div>
 
       <div class="title-hero">
-        <div class="title-mark">2D · 3v3 / 5v5 · 草稿纸战场</div>
+        <div class="title-mark">3v3 / 5v5 · 草稿纸战场</div>
         <h1 class="logo">铃响之前</h1>
         <p class="tagline">最后一节自习课，草稿纸活了过来。</p>
       </div>
 
       <div id="title-menu" class="title-menu title-v2-menu">
         <section class="title-main">
-          <div class="section-label">主模式 <em>PLAY</em></div>
-          <div class="mode-grid">
-            <button id="btn-start" class="mode-card mode-teal">
-              <span class="mode-arrow">→</span>
-              <div><div class="mode-icon">✎</div><h3>3v3 MOBA</h3><p>推掉核心，决定今天到底放不放学。标准三路对局。</p></div>
-              <div class="mode-meta"><span>你 + 2 AI</span><span>三路</span><span>完整局</span></div>
-            </button>
-            <button id="btn-five" class="mode-card mode-red">
-              <span class="mode-arrow">→</span>
-              <div><div class="mode-icon">5×5</div><h3>5v5 团战</h3><p>每边 5 名英雄，10 人同屏。更挤、更乱、更像课间。</p></div>
-              <div class="mode-meta"><span>你 + 4 AI</span><span>10 人</span></div>
-            </button>
-            <button id="btn-online" class="mode-card mode-gold">
-              <span class="mode-arrow">→</span>
-              <div><div class="mode-icon">⌁</div><h3>联机 1v1</h3><p>房间码，真实英雄，P2P 锁步。先拿 5 个人头。</p></div>
-              <div class="mode-meta"><span>2 人</span><span>RTT / 重连</span></div>
-            </button>
+          <div class="title-gate">
+            <button id="title-gate-single" class="title-gate-btn active"><span>单机</span><small>SOLO</small></button>
+            <button id="title-gate-online" class="title-gate-btn"><span>联机</span><small>ONLINE</small></button>
           </div>
-        </section>
 
-        <section class="title-other">
-          <div class="section-label">其他玩法 <em>MORE</em></div>
-          <div class="chip-row">
-            <button id="btn-quick" class="mode-chip">快速模式</button>
-            <button id="btn-duel" class="mode-chip">单挑</button>
-            <button id="btn-story" class="mode-chip">剧情</button>
-            <button id="btn-tutorial" class="mode-chip">新手指导</button>
+          <div id="title-panel-single" class="title-panel">
+            <div class="section-label">单机模式 <em>SOLO</em></div>
+            <div class="mode-grid two">
+              <button id="btn-start" class="mode-card mode-teal">
+                <span class="mode-arrow">→</span>
+                <div><div class="mode-icon">✎</div><h3>3v3 MOBA</h3><p>推掉核心，决定今天到底放不放学。标准三路对局。</p></div>
+                <div class="mode-meta"><span>你 + 2 AI</span><span>三路</span><span>完整局</span></div>
+              </button>
+              <button id="btn-five" class="mode-card mode-red">
+                <span class="mode-arrow">→</span>
+                <div><div class="mode-icon">5×5</div><h3>5v5 团战</h3><p>每边 5 名英雄，10 人同屏。更挤、更乱、更像课间。</p></div>
+                <div class="mode-meta"><span>你 + 4 AI</span><span>10 人</span></div>
+              </button>
+            </div>
+            <div class="title-other">
+              <div class="section-label">其他玩法 <em>MORE</em></div>
+              <div class="chip-row">
+                <button id="btn-quick" class="mode-chip">快速模式</button>
+                <button id="btn-duel" class="mode-chip">单挑</button>
+                <button id="btn-story" class="mode-chip">剧情</button>
+                <button id="btn-tutorial" class="mode-chip">新手指导</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="title-panel-online" class="title-panel hidden">
+            <div class="section-label">联机模式 <em>ONLINE</em></div>
+            <div class="mode-grid two">
+              <button id="btn-online" class="mode-card mode-gold">
+                <span class="mode-arrow">→</span>
+                <div><div class="mode-icon">⌁</div><h3>联机 3v3</h3><p>2–6 名真人，自由选边，空位 AI 补满到 3v3。</p></div>
+                <div class="mode-meta"><span>2–6 人</span><span>AI 补位</span></div>
+              </button>
+              <button id="btn-online-duel" class="mode-card mode-blue">
+                <span class="mode-arrow">→</span>
+                <div><div class="mode-icon">1v1</div><h3>联机 1v1</h3><p>单挑房，双方各选一名英雄，独立小擂台。</p></div>
+                <div class="mode-meta"><span>2 人</span><span>单挑擂台</span></div>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -2577,7 +2644,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
             <button id="btn-help" class="title-tool">帮助</button>
             <button id="btn-changelog" class="title-tool">更新日志</button>
           </div>
-          <div class="title-ver">v0.23.0 · 单机 3v3 / 5v5 · 联机 1v1</div>
+          <div class="title-ver">v1.0.0text-1 · 单机 3v3 / 5v5 · 联机 3v3</div>
         </div>
       </div>
     </div>
@@ -2660,7 +2727,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   <!-- ===================== 暂停 ===================== -->
   <div id="modal-pause" class="modal hidden">
     <div class="sheet">
-      <div class="sheet-head"><div><h3>对局暂停</h3><p>草稿纸先摊在这里。继续后从当前帧恢复。</p></div></div>
+      <div class="sheet-head"><div><h3>对局暂停</h3><p>草稿纸先摊在这里。继续后从暂停处恢复。</p></div></div>
       <div class="pause-buttons">
         <button id="btn-resume" class="btn primary">继续游戏</button>
         <button id="btn-restart" class="btn">重新开局</button>
@@ -2772,7 +2839,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
             <div class="guide-card"><h4>下课铃</h4><p>开局 90 秒后第一次响，之后每 90 秒交替。下课铃让全队获得短时移速加成，适合抱团推进或撤退。</p></div>
             <div class="guide-card"><h4>上课铃 / 随堂测验</h4><p>上课铃在中央旗杆开启随堂测验。站进圈里 3 秒完成占领，全队获得 60 秒伤害 +15%；对面也能抢，先清人再站。</p></div>
           </div>
-          <div class="guide-tip">铃声 HUD 在顶部中间。倒计时剩 10 秒会变金色，别在铃响前把技能全交掉。</div>
+          <div class="guide-tip">铃声提示在顶部中间。倒计时剩 10 秒会变金色，别在铃响前把技能全交掉。</div>
         </section>
 
         <section class="guide-panel" data-guide-panel="shop">
@@ -2879,7 +2946,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       <div class="changelog-head">
         <div>
           <h3>更新日志</h3>
-          <p class="tiny">0.9.0 之前的条目按开发阶段补录 · 当前 v0.23.0</p>
+          <p class="tiny">0.9.0 之前的条目按开发阶段补录 · 当前 v1.0.0text-1</p>
         </div>
         <button id="btn-changelog-close" class="btn ghost">关闭</button>
       </div>
@@ -3656,6 +3723,14 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     // 教师基地
   ];
   var WALKABLE = RAW_WALKABLE.map(scaleShape);
+  var RAW_DUEL_ARENA = { x: 1738, y: 1326, w: 620, h: 420 };
+  var DUEL_ARENA = {
+    x: S(RAW_DUEL_ARENA.x),
+    y: S(RAW_DUEL_ARENA.y),
+    w: S(RAW_DUEL_ARENA.w),
+    h: S(RAW_DUEL_ARENA.h)
+  };
+  var DUEL_WALKABLE = [{ kind: "rect", x: DUEL_ARENA.x, y: DUEL_ARENA.y, w: DUEL_ARENA.w, h: DUEL_ARENA.h }];
   var RAW_STORY_RACE = [
     rect(1900, 2450, 450, 300),
     // 教室
@@ -3685,6 +3760,10 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   var storyDoorOpen = false;
   function setStoryWalkable(on) {
     activeWalkable = on ? STORY_RACE_WALKABLE : WALKABLE;
+    storyDoorOpen = false;
+  }
+  function setArenaWalkable() {
+    activeWalkable = DUEL_WALKABLE;
     storyDoorOpen = false;
   }
   function setStoryDoorOpen(open) {
@@ -4296,12 +4375,89 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     t.hp = Math.min(t.maxHp, t.hp + amount);
     const real = t.hp - before;
     if (show && real > 0) floatText(w, { x: t.pos.x, y: t.pos.y - t.radius - 12 }, `+${Math.round(real)}`, "#5ec46a", 16);
+    if (real > 4 && t.heroId !== "huohua") {
+      const h = w.units.find((u) => u.heroId === "huohua" && !u.dead && u.id !== t.id && dist(u.pos, t.pos) < 420);
+      if (h) {
+        const cap = h.maxHp * 0.1;
+        const steal = Math.min(real * 0.35, h.maxHp * 0.03, Math.max(0, cap - h.shield));
+        if (steal > 0.5) {
+          h.shield = Math.min(cap, h.shield + steal);
+          h.shieldUntil = Math.max(h.shieldUntil ?? 0, w.time + 3);
+          floatText(w, { x: h.pos.x, y: h.pos.y - h.radius - 20 }, `\u5077 ${Math.round(steal)}`, "#7fc9e8", 12);
+        }
+      }
+    }
   }
   function addShield(w, _src, t, amount, dur) {
     if (t.dead) return;
     t.shield = Math.max(t.shield, amount);
     t.shieldUntil = Math.max(t.shieldUntil ?? 0, w.time + dur);
     floatText(w, { x: t.pos.x, y: t.pos.y - t.radius - 12 }, `\u62A4\u76FE ${Math.round(amount)}`, "#7fc9e8", 14);
+  }
+  function summonGrunt(w, src, team, pos, duration = 12) {
+    const st = MINION_STATS.melee;
+    const scale2 = 1 + Math.floor(w.time / 180) * 0.08;
+    const u = {
+      id: w.nextId++,
+      team,
+      kind: "minion",
+      name: "\u70E4\u5C4E\u4F59",
+      pos: { ...pos },
+      vel: { x: 0, y: 0 },
+      facing: { x: 0, y: team === "student" ? -1 : 1 },
+      radius: 18,
+      hp: st.hp * scale2 * 3,
+      maxHp: st.hp * scale2 * 3,
+      mp: 0,
+      maxMp: 0,
+      level: 1,
+      xp: 0,
+      gold: 0,
+      kills: 0,
+      deaths: 0,
+      assists: 0,
+      base: { ...st, hp: st.hp * scale2 * 3, ad: st.ad * scale2 * 1.5 },
+      atkCd: 0,
+      attackAnim: 0,
+      hitFlash: 0,
+      dead: false,
+      respawnAt: 0,
+      deathAt: 0,
+      buffs: [],
+      shield: 0,
+      shieldUntil: 0,
+      damageDealt: 0,
+      laneIdx: 1,
+      route: "mid",
+      minionKind: "melee",
+      targetId: null,
+      ai: true,
+      spawnPos: { ...pos }
+    };
+    w.units.push(u);
+    w.events.push({ type: "spawn", text: `${src?.name ?? "\u706B\u534E"} \u53EC\u5524\u4E86\u70E4\u5C4E\u4F59` });
+    for (const t of enemiesIn(w, team, pos, 280, false)) addBuff(w, u, t, "taunt", 0.8, 0);
+    burst(w, pos, "#3FAF9B", 20, "star");
+    let exploded = false;
+    const explode = () => {
+      if (exploded) return;
+      exploded = true;
+      for (const t of enemiesIn(w, team, u.pos, 300, false)) damage(w, src, t, t.maxHp * 0.08, "magic", { skill: true });
+      burst(w, u.pos, "#D94F3D", 26, "chalk");
+    };
+    const until = w.time + duration;
+    const check = () => {
+      if (u.dead) {
+        explode();
+        return;
+      }
+      if (w.time < until) after(w, 0.25, check);
+    };
+    after(w, 0.25, check);
+    after(w, duration, () => {
+      if (!u.dead) killUnit(w, src, u);
+    });
+    return u;
   }
   function killUnit(w, killer, t) {
     if (t.dead || w.state !== "playing") return;
@@ -4468,23 +4624,6 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     u.abilities.e.rank = qeRank;
     u.abilities.r.rank = rRank;
     u.abilities.t.rank = rRank;
-  }
-  function startCarry(w, carrier, target) {
-    if (carrier.dead || target.dead) return false;
-    if (carrier.carrying || carrier.carriedBy || target.carriedBy || target.carrying) return false;
-    if (target.team !== carrier.team) return false;
-    carrier.carrying = target.id;
-    carrier.carryUntil = w.time + 8;
-    target.carriedBy = carrier.id;
-    target.channel = null;
-    target.dash = null;
-    target.recallUntil = void 0;
-    target.targetId = null;
-    target.moveTo = void 0;
-    addBuff(w, carrier, carrier, "carryHaste", 8, 0.15);
-    burst(w, carrier.pos, "#3FAF9B", 12, "dot");
-    floatText(w, { x: carrier.pos.x, y: carrier.pos.y - carrier.radius - 30 }, "\u80CC\u4E0A\u4E86\uFF01", "#3FAF9B", 16);
-    return true;
   }
   function releaseCarry(w, carrier) {
     const id = carrier.carrying;
@@ -6369,85 +6508,121 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   };
   var huohuaJ = {
     id: "huohua_j",
-    name: "\u80CC\u9505",
+    name: "\u54AF\u53FD\u54AF\u53FD",
     slot: "q",
-    targeting: "ally",
-    range: 300,
-    cooldown: 10,
-    mana: 40,
-    desc: "\u80CC\u8D77 300 \u5185\u4E00\u540D\u961F\u53CB 8 \u79D2\uFF1A\u706B\u534E\u4E0D\u80FD\u653B\u51FB/\u653E\u6280\u80FD\uFF0C\u961F\u53CB\u53EA\u80FD\u666E\u653B\uFF0C70% \u4F24\u5BB3\u8F6C\u79FB\u7ED9\u706B\u534E\uFF1B\u518D\u6309\u4E00\u6B21\u653E\u4E0B\u3002",
-    ai: { use: "ally", range: 300 },
+    targeting: "unit",
+    range: 260,
+    cooldown: 11,
+    mana: 50,
+    desc: "\u9501\u4F4F\u4E00\u540D\u654C\u4EBA 1.5 \u79D2\uFF1A\u53CC\u65B9\u65E0\u6CD5\u79FB\u52A8\uFF0C\u706B\u534E\u51CF\u4F24 40%\uFF0C\u6BCF 0.3 \u79D2\u9020\u6210\u4F24\u5BB3\u3002",
+    ai: { use: "enemy", range: 250 },
     cast(ctx2) {
       const { world: w, caster: u, target: t } = ctx2;
-      if (u.carrying) {
-        releaseCarry(w, u);
-        return;
-      }
-      if (t) startCarry(w, u, t);
+      if (!t) return;
+      addBuff(w, u, u, "root", 1.5, 0);
+      addBuff(w, u, t, "root", 1.4, 0);
+      addBuff(w, u, u, "dr", 1.6, 0.4);
+      u.channel = {
+        abilityId: "huohua_q",
+        start: w.time,
+        end: w.time + 1.5,
+        breakOnDamage: false,
+        data: { targetId: t.id, lastTick: w.time }
+      };
+      floatText(w, { x: u.pos.x, y: u.pos.y - u.radius - 26 }, "\u54AF\u53FD\u54AF\u53FD\uFF01", "#3FAF9B", 15);
+    },
+    onChannel(w, u, ch) {
+      if (w.time - (ch.data.lastTick ?? 0) < 0.3) return;
+      ch.data.lastTick = w.time;
+      const t = w.units.find((x) => x.id === ch.data.targetId);
+      if (!t || t.dead) return;
+      const rank = u.abilities?.q.rank ?? 1;
+      damage(w, u, t, 18 + 8 * (rank - 1) + 0.2 * powerOf(u), "magic", { skill: true, showText: false });
     }
   };
   var huohuaK = {
     id: "huohua_k",
-    name: "\u5E05\u4E00\u4E0B",
+    name: "\u62A2\u7BEE\u677F",
     slot: "e",
-    targeting: "self",
-    range: 500,
-    cooldown: 16,
+    targeting: "dir",
+    range: 450,
+    cooldown: 9,
     mana: 50,
-    desc: "500 \u5185\u654C\u4EBA\u88AB\u5632\u8BBD 1.2 \u79D2\uFF0C\u4F18\u5148\u653B\u51FB\u706B\u534E\u3002",
-    ai: { use: "self", range: 500 },
+    desc: "\u5411\u6307\u5B9A\u65B9\u5411\u51B2\u950B\uFF1A\u65A9\u6740\u7B2C\u4E00\u4E2A\u78B0\u5230\u7684\u5C0F\u5175\u5E76\u8FD4\u8FD8 30% \u51B7\u5374\uFF1B\u649E\u5230\u7B2C\u4E00\u4E2A\u654C\u4EBA\u5219\u505C\u4E0B\uFF0C\u9020\u6210\u4F24\u5BB3\u5E76\u7729\u6655 0.5 \u79D2\u3002",
+    ai: { use: "enemy", range: 430 },
     cast(ctx2) {
-      const { world: w, caster: u } = ctx2;
-      for (const t of enemiesIn(w, u.team, u.pos, 500, false)) {
-        addBuff(w, u, t, "taunt", 1.2, 0);
-      }
-      burst(w, u.pos, "#3FAF9B", 18, "star");
-      floatText(w, { x: u.pos.x, y: u.pos.y - u.radius - 30 }, "\u770B\u6211\uFF01", "#3FAF9B", 18);
+      const { world: w, caster: u, aim } = ctx2;
+      const dir = norm(sub(aim, u.pos));
+      let executed = false;
+      let hitHero = false;
+      const dmg = 70 + 25 * ((u.abilities?.e.rank ?? 1) - 1) + 0.5 * (u.base.ad + (u.growth?.ad ?? 0) * (u.level - 1));
+      dash(w, u, dir, 450, 1600, (w2, c, t) => {
+        if (hitHero) return;
+        if (t.kind === "minion" && !executed) {
+          executed = true;
+          killUnit(w2, c, t);
+          if (c.abilities) c.abilities.e.cdUntil = Math.max(0, c.abilities.e.cdUntil - 3);
+          burst(w2, t.pos, "#C9A227", 14, "star");
+          return;
+        }
+        if (t.structure) return;
+        hitHero = true;
+        damage(w2, c, t, dmg, "physical", { skill: true });
+        stun(w2, c, t, 0.5);
+        if (c.dash) c.dash.remaining = 0;
+        burst(w2, t.pos, "#3FAF9B", 18, "star");
+      });
     }
   };
   var huohuaR = {
     id: "huohua_r",
-    name: "\u76F4\u7EBF\u51B2\u649E",
+    name: "\u5199\u4E0D\u5B8C\u4E86",
     slot: "r",
-    targeting: "dir",
-    range: 450,
-    cooldown: 12,
-    mana: 55,
-    desc: "\u76F4\u7EBF\u51B2\u649E 450\uFF1A\u649E\u5230\u7684\u7B2C\u4E00\u4E2A\u654C\u4EBA\u7729\u6655 1 \u79D2\u5E76\u53D7\u5230\u4F24\u5BB3\u3002",
-    ai: { use: "enemy", range: 430 },
+    targeting: "unit",
+    range: 500,
+    cooldown: 30,
+    mana: 70,
+    desc: "\u9501\u5B9A\u76EE\u6807\u8DF3\u5230\u5176\u8EAB\u65C1\uFF0C\u9020\u6210\u4E94\u6BB5\u4F24\u5BB3\uFF1B\u6700\u540E\u4E00\u6BB5\u66F4\u91CD\u3002\u5BF9\u9632\u5FA1\u5854\u4F24\u5BB3\u4E3A 2 \u500D\u3002",
+    ai: { use: "enemy", range: 480 },
     cast(ctx2) {
-      const { world: w, caster: u, aim, rank } = ctx2;
-      const dmg = 70 + 25 * (rank - 1) + 0.5 * adOf(u);
-      dash(w, u, norm(sub(aim, u.pos)), 450, 1600, (w2, c, t) => {
-        damage(w2, c, t, dmg, "physical", { skill: true });
-        stun(w2, c, t, 1);
-        burst(w2, t.pos, "#3FAF9B", 14, "star");
-      });
+      const { world: w, caster: u, target: t } = ctx2;
+      if (!t) return;
+      const dir = norm(sub(t.pos, u.pos));
+      const dest = { x: t.pos.x - dir.x * (t.radius + u.radius + 16), y: t.pos.y - dir.y * (t.radius + u.radius + 16) };
+      if (isWalkable(dest.x, dest.y, u.radius * 0.5)) {
+        u.pos = dest;
+        u.facing = { x: dir.x, y: dir.y };
+      }
+      const rank = u.abilities?.r.rank ?? 1;
+      const base = 38 + 16 * (rank - 1) + 0.3 * (u.base.ad + (u.growth?.ad ?? 0) * (u.level - 1));
+      for (let i = 0; i < 5; i++) {
+        if (t.dead) break;
+        let dmg = base * (i === 4 ? 1.7 : 1);
+        if (t.structure) dmg *= 2;
+        damage(w, u, t, dmg, "physical", { skill: true, showText: i === 4 });
+      }
+      addBuff(w, u, u, "dr", 1, 0.2);
+      burst(w, t.pos, "#3FAF9B", 24, "chalk");
+      burst(w, u.pos, "#3FAF9B", 12, "star");
     }
   };
   var huohuaT = {
     id: "huohua_t",
-    name: "\u88C5\u6B7B",
+    name: "?!\u5E05\u5E05!?",
     slot: "t",
-    targeting: "self",
-    range: 0,
-    cooldown: 45,
-    mana: 60,
-    desc: "\u5B9A\u8EAB 2 \u79D2\u88C5\u6B7B\uFF0C\u7ED3\u675F\u65F6\u56DE\u590D 25% \u6700\u5927\u751F\u547D\uFF1B\u88AB\u6253\u65AD\u53EA\u56DE 10%\u3002",
-    ai: { use: "self", range: 400 },
+    targeting: "point",
+    range: 350,
+    cooldown: 35,
+    mana: 80,
+    desc: "\u53EC\u5524\u70E4\u5C4E\u4F59\uFF1A3 \u500D\u5C0F\u5175\u751F\u547D\u30011.5 \u500D\u5C0F\u5175\u653B\u51FB\uFF1B\u767B\u573A\u5632\u8BBD 0.8 \u79D2\uFF0C\u6B7B\u4EA1\u65F6\u7206\u70B8\u3002\u6301\u7EED 12 \u79D2\u3002",
+    ai: { use: "point", range: 320, minEnemies: 1 },
     cast(ctx2) {
-      const { world: w, caster: u } = ctx2;
-      addBuff(w, u, u, "root", 2, 0);
-      u.channel = { abilityId: "huohua_t", start: w.time, end: w.time + 2, breakOnDamage: true, data: {} };
-      floatText(w, { x: u.pos.x, y: u.pos.y - u.radius - 30 }, "\u88C5\u6B7B\u2026", "#c9a227", 16);
-    },
-    finishChannel(w, u) {
-      heal(w, u, u, u.maxHp * 0.25);
-      burst(w, u.pos, "#c9a227", 16, "dot");
-    },
-    interruptChannel(w, u) {
-      heal(w, u, u, u.maxHp * 0.1);
-      floatText(w, { x: u.pos.x, y: u.pos.y - u.radius - 28 }, "\u88AB\u53D1\u73B0\u4E86", "#9c9484", 15);
+      const { world: w, caster: u, aim } = ctx2;
+      const d = dist(u.pos, aim);
+      const pos = d > 350 ? { x: u.pos.x + (aim.x - u.pos.x) / d * 350, y: u.pos.y + (aim.y - u.pos.y) / d * 350 } : { ...aim };
+      if (!isWalkable(pos.x, pos.y, 20)) return;
+      const grunt = summonGrunt(w, u, u.team, pos, 12);
+      floatText(w, { x: grunt.pos.x, y: grunt.pos.y - 30 }, "?!\u5E05\u5E05!?", "#C9A227", 16);
     }
   };
   var jiaoJ = {
@@ -7136,13 +7311,13 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       role: "support",
       roleLabel: "\u8F85\u52A9 / \u5766\u514B",
       difficulty: 2,
-      blurb: "\u80CC\u8D77\u961F\u53CB\u5C31\u8DD1\uFF0C\u4F24\u5BB3\u6211\u6765\u625B\u3002\u53EA\u8981\u6211\u4E0D\u5012\uFF0C\u4F60\u5C31\u80FD\u4E00\u76F4\u8F93\u51FA\u3002",
-      quote: "\u4E0A\u6765\uFF0C\u6211\u80CC\u4F60\u3002",
+      blurb: "\u8C01\u56DE\u8840\u6211\u5077\u4E00\u53E3\u3002\u625B\u5F97\u4F4F\u3001\u63A7\u5F97\u4E45\uFF0C\u53EC\u5524\u4E00\u4E2A\u70E4\u5C4E\u4F59\u7EE7\u7EED\u6076\u5FC3\u4F60\u3002",
+      quote: "\u7ED9\u6211\u6765\u70B9\uFF0C\u5C31\u4E00\u53E3\u3002",
       stats: stats(980, 350, 60, 30, 26, 320, 170, 0.65),
       growth: { ...GROWTH, hp: 95 },
       radius: 30,
       abilities: {
-        passive: { name: "\u80CC\u9505", desc: "\u80CC\u8D1F\u671F\u95F4\u53D7\u5230\u4F24\u5BB3 -10%\uFF1B\u88AB\u80CC\u8005\u53D7\u5230\u7684 70% \u4F24\u5BB3\u8F6C\u79FB\u7ED9\u706B\u534E\u3002" },
+        passive: { name: "\u7ED9\u6211\u6765\u70B9", desc: "420 \u5185\u6709\u4EBA\u56DE\u590D\u751F\u547D\u65F6\uFF0C\u5077\u53D6 35% \u8F6C\u4E3A\u81EA\u8EAB\u62A4\u76FE\uFF08\u6BCF\u79D2\u6700\u591A 3% \u6700\u5927\u751F\u547D\uFF0C\u62A4\u76FE\u4E0A\u9650 10%\uFF09\u3002\u81EA\u8EAB\u4F4E\u4E8E 40% \u751F\u547D\u65F6\u6BCF\u79D2\u56DE\u590D 1%\u3002" },
         q: huohuaJ,
         e: huohuaK,
         r: huohuaR,
@@ -7469,11 +7644,66 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   // src/online.ts
   var ICE_SERVERS = [
     { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun.cloudflare.com:3478" },
     { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
     { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
   ];
   function peerOptions(id) {
-    return { ...id ? { id } : {}, debug: 0, config: { iceServers: ICE_SERVERS } };
+    return {
+      ...id ? { id } : {},
+      debug: 0,
+      config: { iceServers: ICE_SERVERS }
+    };
+  }
+  function attachPeerResilience(peer, closed) {
+    let timer = 0;
+    peer.on("disconnected", () => {
+      if (closed()) return;
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        timer = 0;
+        if (closed()) return;
+        try {
+          peer.reconnect();
+        } catch {
+        }
+      }, 600);
+    });
+  }
+  function watchIce(conn, onDead) {
+    const pc = conn?.peerConnection;
+    if (!pc?.addEventListener) return;
+    let dead = false;
+    let timer = 0;
+    const check = () => {
+      if (dead) return;
+      const s = pc.iceConnectionState;
+      if (s === "connected" || s === "completed") {
+        if (timer) {
+          window.clearTimeout(timer);
+          timer = 0;
+        }
+        return;
+      }
+      if (s === "failed") {
+        dead = true;
+        onDead("\u76F4\u8FDE\u5931\u8D25");
+        return;
+      }
+      if (s === "disconnected" && !timer) {
+        timer = window.setTimeout(() => {
+          timer = 0;
+          const now = pc.iceConnectionState;
+          if (now !== "connected" && now !== "completed") {
+            dead = true;
+            onDead("\u76F4\u8FDE\u65AD\u5F00");
+          }
+        }, 4e3);
+      }
+    };
+    pc.addEventListener("iceconnectionstatechange", check);
+    pc.addEventListener("connectionstatechange", check);
+    check();
   }
   function loadPeer() {
     const w = window;
@@ -7482,21 +7712,21 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       const existing = document.getElementById("peerjs-lib");
       if (existing) {
         existing.addEventListener("load", () => resolve(window.Peer));
-        existing.addEventListener("error", () => reject(new Error("PeerJS \u52A0\u8F7D\u5931\u8D25")));
+        existing.addEventListener("error", () => reject(new Error("\u8054\u673A\u529F\u80FD\u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC")));
         return;
       }
       const s = document.createElement("script");
       s.id = "peerjs-lib";
       s.src = "https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js";
       s.async = true;
-      const timer = window.setTimeout(() => reject(new Error("PeerJS \u52A0\u8F7D\u8D85\u65F6")), 12e3);
+      const timer = window.setTimeout(() => reject(new Error("\u8054\u673A\u529F\u80FD\u52A0\u8F7D\u8D85\u65F6\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC")), 12e3);
       s.onload = () => {
         window.clearTimeout(timer);
         resolve(window.Peer);
       };
       s.onerror = () => {
         window.clearTimeout(timer);
-        reject(new Error("PeerJS \u52A0\u8F7D\u5931\u8D25"));
+        reject(new Error("\u8054\u673A\u529F\u80FD\u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC"));
       };
       document.head.appendChild(s);
     });
@@ -7524,6 +7754,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       this.cb.onStatus("\u6B63\u5728\u521B\u5EFA\u623F\u95F4\u2026");
       return new Promise((resolve, reject) => {
         this.peer = new Peer(`lxd-${this.code}`, peerOptions(`lxd-${this.code}`));
+        attachPeerResilience(this.peer, () => this.closed);
         const timer = window.setTimeout(() => reject(new Error("\u521B\u5EFA\u623F\u95F4\u8D85\u65F6")), 15e3);
         this.peer.on("open", () => {
           window.clearTimeout(timer);
@@ -7543,7 +7774,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
             this.cb.onError("\u623F\u95F4\u7801\u88AB\u5360\u7528\uFF0C\u8BF7\u91CD\u8BD5");
             reject(new Error("\u623F\u95F4\u7801\u88AB\u5360\u7528"));
           } else {
-            this.cb.onError(`\u8054\u673A\u9519\u8BEF\uFF1A${msg}`);
+            this.cb.onError("\u8054\u673A\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC\u540E\u91CD\u8BD5");
             reject(err);
           }
         });
@@ -7557,6 +7788,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       this.cb.onStatus("\u6B63\u5728\u8FDE\u63A5\u623F\u95F4\u2026");
       return new Promise((resolve, reject) => {
         this.peer = new Peer(void 0, peerOptions());
+        attachPeerResilience(this.peer, () => this.closed);
         const timer = window.setTimeout(() => reject(new Error("\u8FDE\u63A5\u623F\u95F4\u8D85\u65F6")), 18e3);
         this.peer.on("open", () => {
           this.conn = this.peer.connect(`lxd-${this.code}`, { reliable: true });
@@ -7573,7 +7805,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
             this.cb.onError("\u627E\u4E0D\u5230\u8FD9\u4E2A\u623F\u95F4\uFF0C\u786E\u8BA4\u623F\u4E3B\u5DF2\u521B\u5EFA");
             reject(new Error("\u627E\u4E0D\u5230\u623F\u95F4"));
           } else {
-            this.cb.onError(`\u8054\u673A\u9519\u8BEF\uFF1A${msg}`);
+            this.cb.onError("\u8054\u673A\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC\u540E\u91CD\u8BD5");
             reject(err);
           }
         });
@@ -7581,6 +7813,13 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     }
     attach(conn) {
       this.conn = conn;
+      watchIce(conn, (reason) => {
+        try {
+          conn.close();
+        } catch {
+        }
+        if (!this.closed) this.cb.onClosed(reason);
+      });
       conn.on("open", () => {
         if (this.closed) return;
         this.cb.onConnected();
@@ -7592,8 +7831,8 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
         if (this.conn === conn) this.conn = null;
         if (!this.closed) this.cb.onClosed("\u8FDE\u63A5\u5DF2\u65AD\u5F00");
       });
-      conn.on("error", (err) => {
-        this.cb.onError(`\u8FDE\u63A5\u9519\u8BEF\uFF1A${String(err?.message ?? err)}`);
+      conn.on("error", () => {
+        this.cb.onError("\u8FDE\u63A5\u5F02\u5E38\uFF0C\u6B63\u5728\u5C1D\u8BD5\u6062\u590D");
       });
     }
     async connectionInfo() {
@@ -7640,6 +7879,313 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     }
   };
 
+  // src/online3.ts
+  function code4() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let s = "";
+    for (let i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    return s;
+  }
+  function loadPeer2() {
+    const w = window;
+    if (w.Peer) return Promise.resolve(w.Peer);
+    return new Promise((resolve, reject) => {
+      const existing = document.getElementById("peerjs-lib");
+      if (existing) {
+        existing.addEventListener("load", () => resolve(window.Peer));
+        existing.addEventListener("error", () => reject(new Error("\u8054\u673A\u529F\u80FD\u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC")));
+        return;
+      }
+      const s = document.createElement("script");
+      s.id = "peerjs-lib";
+      s.src = "https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js";
+      s.async = true;
+      const timer = window.setTimeout(() => reject(new Error("\u8054\u673A\u529F\u80FD\u52A0\u8F7D\u8D85\u65F6\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC")), 12e3);
+      s.onload = () => {
+        window.clearTimeout(timer);
+        resolve(window.Peer);
+      };
+      s.onerror = () => {
+        window.clearTimeout(timer);
+        reject(new Error("\u8054\u673A\u529F\u80FD\u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC"));
+      };
+      document.head.appendChild(s);
+    });
+  }
+  var peerConfig = {
+    debug: 0,
+    config: {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun.cloudflare.com:3478" },
+        { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+        { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+      ]
+    }
+  };
+  function attachPeerResilience2(peer, closed) {
+    let timer = 0;
+    peer.on("disconnected", () => {
+      if (closed()) return;
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        timer = 0;
+        if (closed()) return;
+        try {
+          peer.reconnect();
+        } catch {
+        }
+      }, 600);
+    });
+  }
+  function watchIce2(conn, onDead) {
+    const pc = conn?.peerConnection;
+    if (!pc?.addEventListener) return;
+    let dead = false;
+    let timer = 0;
+    const check = () => {
+      if (dead) return;
+      const s = pc.iceConnectionState;
+      if (s === "connected" || s === "completed") {
+        if (timer) {
+          window.clearTimeout(timer);
+          timer = 0;
+        }
+        return;
+      }
+      if (s === "failed") {
+        dead = true;
+        onDead("\u76F4\u8FDE\u5931\u8D25");
+        return;
+      }
+      if (s === "disconnected" && !timer) {
+        timer = window.setTimeout(() => {
+          timer = 0;
+          const now = pc.iceConnectionState;
+          if (now !== "connected" && now !== "completed") {
+            dead = true;
+            onDead("\u76F4\u8FDE\u65AD\u5F00");
+          }
+        }, 4e3);
+      }
+    };
+    pc.addEventListener("iceconnectionstatechange", check);
+    pc.addEventListener("connectionstatechange", check);
+    check();
+  }
+  var OnlineRoom = class {
+    constructor(role, cb, name = "\u73A9\u5BB6", presetId = "") {
+      this.cb = cb;
+      this.name = name;
+      __publicField(this, "role");
+      __publicField(this, "code", "");
+      __publicField(this, "localId", "");
+      __publicField(this, "players", []);
+      __publicField(this, "peer", null);
+      __publicField(this, "conns", /* @__PURE__ */ new Map());
+      __publicField(this, "hostConn", null);
+      __publicField(this, "closed", false);
+      this.role = role;
+      this.localId = role === "host" ? "host" : presetId || `p${Math.random().toString(36).slice(2, 8)}`;
+    }
+    async create() {
+      const Peer = await loadPeer2();
+      this.code = code4();
+      this.players = [{ id: "host", name: this.name, team: "student", hero: "messi", host: true, connected: true }];
+      this.cb.onLobby(this.players);
+      return new Promise((resolve, reject) => {
+        this.peer = new Peer(`lx3-${this.code}`, peerConfig);
+        attachPeerResilience2(this.peer, () => this.closed);
+        const timer = window.setTimeout(() => reject(new Error("\u521B\u5EFA\u623F\u95F4\u8D85\u65F6")), 15e3);
+        this.peer.on("open", () => {
+          window.clearTimeout(timer);
+          this.cb.onStatus(`\u623F\u95F4 ${this.code} \u5DF2\u521B\u5EFA\uFF0C\u7B49\u5F85\u73A9\u5BB6\u2026`);
+          resolve(this.code);
+        });
+        this.peer.on("connection", (conn) => this.attachHost(conn));
+        this.peer.on("error", (err) => {
+          window.clearTimeout(timer);
+          const msg = String(err?.type ?? err?.message ?? err);
+          this.cb.onError(msg.includes("unavailable-id") ? "\u623F\u95F4\u7801\u88AB\u5360\u7528\uFF0C\u8BF7\u91CD\u8BD5" : "\u8054\u673A\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC\u540E\u91CD\u8BD5");
+          reject(err);
+        });
+      });
+    }
+    async join(code) {
+      const Peer = await loadPeer2();
+      this.code = code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
+      if (this.code.length !== 4) throw new Error("\u623F\u95F4\u7801\u5E94\u4E3A 4 \u4F4D");
+      return new Promise((resolve, reject) => {
+        this.peer = new Peer(void 0, peerConfig);
+        attachPeerResilience2(this.peer, () => this.closed);
+        const timer = window.setTimeout(() => reject(new Error("\u8FDE\u63A5\u623F\u95F4\u8D85\u65F6")), 18e3);
+        this.peer.on("open", () => {
+          this.hostConn = this.peer.connect(`lx3-${this.code}`, { reliable: true });
+          watchIce2(this.hostConn, (reason) => {
+            try {
+              this.hostConn?.close();
+            } catch {
+            }
+            if (!this.closed) this.cb.onClosed(reason);
+          });
+          this.hostConn.on("open", () => {
+            window.clearTimeout(timer);
+            this.hostConn.send({ t: "join", id: this.localId, name: this.name });
+            resolve();
+          });
+          this.hostConn.on("data", (data) => this.cb.onData(data));
+          this.hostConn.on("close", () => {
+            if (!this.closed) this.cb.onClosed("\u4E0E\u623F\u4E3B\u7684\u8FDE\u63A5\u5DF2\u65AD\u5F00");
+          });
+        });
+        this.peer.on("error", (err) => {
+          window.clearTimeout(timer);
+          const msg = String(err?.type ?? err?.message ?? err);
+          this.cb.onError(msg.includes("peer-unavailable") ? "\u627E\u4E0D\u5230\u8FD9\u4E2A\u623F\u95F4" : "\u8054\u673A\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC\u540E\u91CD\u8BD5");
+          reject(err);
+        });
+      });
+    }
+    attachHost(conn) {
+      watchIce2(conn, (reason) => {
+        try {
+          conn.close();
+        } catch {
+        }
+        if (!this.closed && this.cb) this.cb.onStatus(`${reason}\uFF0C\u7B49\u5F85\u91CD\u8FDE\u2026`);
+      });
+      conn.on("data", (data) => {
+        if (data?.t === "join") {
+          if (this.players.length >= 6) {
+            try {
+              conn.close();
+            } catch {
+            }
+            return;
+          }
+          const id = String(data.id ?? "").slice(0, 20) || `p${this.conns.size + 1}`;
+          this.conns.set(id, conn);
+          const existing = this.players.find((p) => p.id === id);
+          if (existing) {
+            existing.connected = true;
+            existing.name = String(data.name ?? existing.name).slice(0, 12);
+          } else {
+            this.players.push({ id, name: String(data.name ?? "\u73A9\u5BB6").slice(0, 12), team: "student", hero: "laokao", host: false, connected: true });
+          }
+          this.broadcastLobby();
+          this.cb.onConnected();
+        } else if (data?.t === "choose") {
+          const pid = [...this.conns.entries()].find(([, c]) => c === conn)?.[0];
+          if (pid) {
+            if (data.team === "student" || data.team === "teacher") this.setTeam(pid, data.team);
+            if (typeof data.hero === "string") this.setHero(pid, data.hero);
+          }
+        } else {
+          this.cb.onData(data);
+        }
+      });
+      conn.on("close", () => {
+        let lost = "";
+        for (const [id, c] of this.conns) if (c === conn) {
+          lost = id;
+          this.conns.delete(id);
+        }
+        const p = this.players.find((x) => x.id === lost);
+        if (p && !p.host) p.connected = false;
+        this.broadcastLobby();
+      });
+    }
+    setTeam(id, team) {
+      if (this.role !== "host") return;
+      const p = this.players.find((x) => x.id === id);
+      if (!p) return;
+      if (this.players.filter((x) => x.team === team).length >= 3 && p.team !== team) return;
+      p.team = team;
+      const used = new Set(this.players.filter((x) => x.team === team && x.id !== id).map((x) => x.hero));
+      const pool = team === "student" ? ["messi", "laokao", "zhaoze", "dazhuang", "atai", "chaoran", "nianqingren", "huohua", "jiao"] : ["shitang", "wuhongchang", "liji", "xiangpiaopiao", "chengyaojin", "wangdi", "zhonggang", "dajiuma", "fan"];
+      if (!pool.includes(p.hero) || used.has(p.hero)) p.hero = this.autoHero(team, used);
+      this.broadcastLobby();
+    }
+    setHero(id, hero) {
+      if (this.role !== "host") return;
+      const p = this.players.find((x) => x.id === id);
+      if (!p) return;
+      const pool = p.team === "student" ? ["messi", "laokao", "zhaoze", "dazhuang", "atai", "chaoran", "nianqingren", "huohua", "jiao"] : ["shitang", "wuhongchang", "liji", "xiangpiaopiao", "chengyaojin", "wangdi", "zhonggang", "dajiuma", "fan"];
+      if (!pool.includes(hero)) return;
+      if (this.players.some((x) => x.team === p.team && x.id !== id && x.hero === hero)) return;
+      p.hero = hero;
+      this.broadcastLobby();
+    }
+    autoHero(team, used) {
+      const pool = team === "student" ? ["messi", "laokao", "zhaoze", "dazhuang", "atai", "chaoran", "nianqingren", "huohua", "jiao"] : ["shitang", "wuhongchang", "liji", "xiangpiaopiao", "chengyaojin", "wangdi", "zhonggang", "dajiuma", "fan"];
+      return pool.find((h) => !used.has(h)) ?? pool[0];
+    }
+    start() {
+      if (this.role !== "host" || this.players.length < 2) return null;
+      if (this.players.some((p) => p.team === "student") && this.players.some((p) => p.team === "teacher")) {
+      }
+      const seed = Math.floor(Math.random() * 1e9);
+      const config = {
+        seed,
+        humans: this.players.map((p) => ({ id: p.id, team: p.team, hero: p.hero })),
+        hostId: "host"
+      };
+      this.broadcast({ t: "start", config });
+      return config;
+    }
+    broadcastLobby() {
+      this.broadcast({ t: "lobby", players: this.players.map((p) => ({ ...p })) });
+      this.cb.onLobby(this.players);
+    }
+    broadcast(data) {
+      if (this.role !== "host") return;
+      for (const conn of this.conns.values()) {
+        try {
+          if (conn.open) conn.send(data);
+        } catch {
+        }
+      }
+    }
+    send(data) {
+      try {
+        if (this.role === "client") {
+          if (this.hostConn?.open) this.hostConn.send(data);
+        }
+      } catch {
+      }
+    }
+    sendTo(id, data) {
+      if (this.role !== "host") return;
+      const conn = this.conns.get(id);
+      try {
+        if (conn?.open) conn.send(data);
+      } catch {
+      }
+    }
+    abort() {
+      try {
+        this.hostConn?.close();
+      } catch {
+      }
+    }
+    close() {
+      this.closed = true;
+      try {
+        for (const c of this.conns.values()) c.close();
+      } catch {
+      }
+      try {
+        this.hostConn?.close();
+      } catch {
+      }
+      try {
+        this.peer?.destroy();
+      } catch {
+      }
+      this.conns.clear();
+    }
+  };
+
   // src/render.ts
   function createCamera() {
     return { x: WORLD_W / 2, y: WORLD_H / 2, zoom: 1.15 };
@@ -7656,10 +8202,18 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     cam.y = lerp(cam.y, ty, clamp(dt * 7, 0, 1));
     const halfW = cssW2 / 2 / cam.zoom;
     const halfH = cssH2 / 2 / cam.zoom;
-    if (halfW * 2 >= WORLD_W) cam.x = WORLD_W / 2;
-    else cam.x = clamp(cam.x, halfW, WORLD_W - halfW);
-    if (halfH * 2 >= WORLD_H) cam.y = WORLD_H / 2;
-    else cam.y = clamp(cam.y, halfH, WORLD_H - halfH);
+    const bounds = w.arena;
+    if (bounds) {
+      const minX = bounds.x + halfW, maxX = bounds.x + bounds.w - halfW;
+      const minY = bounds.y + halfH, maxY = bounds.y + bounds.h - halfH;
+      cam.x = minX > maxX ? bounds.x + bounds.w / 2 : clamp(cam.x, minX, maxX);
+      cam.y = minY > maxY ? bounds.y + bounds.h / 2 : clamp(cam.y, minY, maxY);
+    } else {
+      if (halfW * 2 >= WORLD_W) cam.x = WORLD_W / 2;
+      else cam.x = clamp(cam.x, halfW, WORLD_W - halfW);
+      if (halfH * 2 >= WORLD_H) cam.y = WORLD_H / 2;
+      else cam.y = clamp(cam.y, halfH, WORLD_H - halfH);
+    }
   }
   function screenToWorld(cam, sx, sy, cssW2, cssH2) {
     return {
@@ -7680,7 +8234,10 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     const halfW = cssW2 / 2 / cam.zoom + 80;
     const halfH = cssH2 / 2 / cam.zoom + 80;
     const view = { x1: cam.x - halfW, y1: cam.y - halfH, x2: cam.x + halfW, y2: cam.y + halfH };
-    if (w.story?.mode === "race") {
+    if (w.arena) {
+      drawDuelArena(ctx2, w, view);
+      drawStoryObjective(ctx2, w);
+    } else if (w.story?.mode === "race") {
       ctx2.fillStyle = "#e9e2cf";
       ctx2.fillRect(view.x1, view.y1, view.x2 - view.x1, view.y2 - view.y1);
       drawStoryRaceGround(ctx2, w, view);
@@ -7750,6 +8307,84 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     drawMouse(ctx2, w, cam, cssW2, cssH2);
     ctx2.restore();
     drawVignette(ctx2, cssW2, cssH2);
+  }
+  function drawDuelArena(ctx2, w, view) {
+    const a = w.arena;
+    ctx2.fillStyle = "#e9e2cf";
+    ctx2.fillRect(view.x1, view.y1, view.x2 - view.x1, view.y2 - view.y1);
+    ctx2.save();
+    ctx2.fillStyle = "#f6f1e3";
+    ctx2.fillRect(a.x, a.y, a.w, a.h);
+    ctx2.strokeStyle = "rgba(104,146,176,.13)";
+    ctx2.lineWidth = 1;
+    const step2 = 48;
+    ctx2.beginPath();
+    for (let x = a.x; x <= a.x + a.w; x += step2) {
+      ctx2.moveTo(x, a.y);
+      ctx2.lineTo(x, a.y + a.h);
+    }
+    for (let y = a.y; y <= a.y + a.h; y += step2) {
+      ctx2.moveTo(a.x, y);
+      ctx2.lineTo(a.x + a.w, y);
+    }
+    ctx2.stroke();
+    const cx = a.x + a.w / 2, cy = a.y + a.h / 2;
+    ctx2.strokeStyle = "rgba(46,42,36,.20)";
+    ctx2.lineWidth = 2;
+    ctx2.setLineDash([8, 9]);
+    ctx2.beginPath();
+    ctx2.arc(cx, cy, Math.min(a.w, a.h) * 0.18, 0, Math.PI * 2);
+    ctx2.stroke();
+    ctx2.beginPath();
+    ctx2.moveTo(a.x + 30, cy);
+    ctx2.lineTo(a.x + a.w - 30, cy);
+    ctx2.stroke();
+    ctx2.setLineDash([]);
+    ctx2.strokeStyle = "rgba(46,42,36,.62)";
+    ctx2.lineWidth = 3;
+    ctx2.strokeRect(a.x, a.y, a.w, a.h);
+    ctx2.strokeStyle = "rgba(217,79,61,.28)";
+    ctx2.lineWidth = 1.5;
+    ctx2.strokeRect(a.x + 9, a.y + 9, a.w - 18, a.h - 18);
+    const desk = (x, y) => {
+      ctx2.save();
+      ctx2.translate(x, y);
+      ctx2.fillStyle = "#b98252";
+      ctx2.strokeStyle = "#2e2a24";
+      ctx2.lineWidth = 1.4;
+      ctx2.beginPath();
+      ctx2.roundRect(-42, -10, 84, 12, 3);
+      ctx2.fill();
+      ctx2.stroke();
+      ctx2.beginPath();
+      ctx2.moveTo(-32, 2);
+      ctx2.lineTo(-38, 22);
+      ctx2.moveTo(32, 2);
+      ctx2.lineTo(38, 22);
+      ctx2.stroke();
+      ctx2.restore();
+    };
+    desk(a.x + 55, a.y + 40);
+    desk(a.x + a.w - 55, a.y + 40);
+    desk(a.x + 55, a.y + a.h - 40);
+    desk(a.x + a.w - 55, a.y + a.h - 40);
+    ctx2.fillStyle = "rgba(63,175,155,.12)";
+    ctx2.fillRect(a.x + 12, a.y + a.h * 0.68, a.w - 24, a.h * 0.28);
+    ctx2.fillStyle = "rgba(217,79,61,.10)";
+    ctx2.fillRect(a.x + 12, a.y + a.h * 0.04, a.w - 24, a.h * 0.28);
+    ctx2.fillStyle = "rgba(255,250,240,.86)";
+    ctx2.strokeStyle = "rgba(46,42,36,.25)";
+    ctx2.lineWidth = 1;
+    ctx2.beginPath();
+    ctx2.roundRect(cx - 52, cy - 12, 104, 24, 12);
+    ctx2.fill();
+    ctx2.stroke();
+    ctx2.fillStyle = "rgba(46,42,36,.55)";
+    ctx2.font = '900 9px "PingFang SC",sans-serif';
+    ctx2.textAlign = "center";
+    ctx2.textBaseline = "middle";
+    ctx2.fillText("\u5355\u6311\u64C2\u53F0", cx, cy);
+    ctx2.restore();
   }
   function drawPaper(ctx2, view, eyeCare2 = false) {
     const x1 = Math.max(0, view.x1), y1 = Math.max(0, view.y1);
@@ -9441,6 +10076,35 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     ctx2.clearRect(0, 0, W, H);
     ctx2.fillStyle = "#f3eedf";
     ctx2.fillRect(0, 0, W, H);
+    if (w.arena) {
+      const a = w.arena;
+      const ax = W / a.w, ay = H / a.h;
+      ctx2.fillStyle = "#e9e2cf";
+      ctx2.fillRect(0, 0, W, H);
+      ctx2.fillStyle = "#f6f1e3";
+      ctx2.fillRect((a.x - a.x) * ax + 6, 6, W - 12, H - 12);
+      ctx2.strokeStyle = "rgba(46,42,36,.55)";
+      ctx2.lineWidth = 2;
+      ctx2.strokeRect(6, 6, W - 12, H - 12);
+      ctx2.strokeStyle = "rgba(46,42,36,.18)";
+      ctx2.lineWidth = 1;
+      ctx2.beginPath();
+      ctx2.moveTo(W / 2, 6);
+      ctx2.lineTo(W / 2, H - 6);
+      ctx2.stroke();
+      for (const u of w.units) {
+        if (u.kind !== "hero" || u.dead) continue;
+        if (u.team !== w.playerTeam && !isVisibleToTeam(w, w.playerTeam, u)) continue;
+        ctx2.beginPath();
+        ctx2.arc((u.pos.x - a.x) * ax, (u.pos.y - a.y) * ay, u.id === w.playerId ? 4 : 3, 0, Math.PI * 2);
+        ctx2.fillStyle = u.team === "student" ? "#2f8f7d" : "#b33d2c";
+        ctx2.fill();
+      }
+      ctx2.strokeStyle = "rgba(46,42,36,.28)";
+      ctx2.lineWidth = 1;
+      ctx2.strokeRect((cam.x - viewW / 2 - a.x) * ax, (cam.y - viewH / 2 - a.y) * ay, viewW * ax, viewH * ay);
+      return;
+    }
     if (w.story?.mode === "race") {
       ctx2.fillStyle = "#e9e2cf";
       ctx2.fillRect(0, 0, W, H);
@@ -9676,8 +10340,14 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     const playerDef = HEROES[config.playerHeroId] ?? heroesOf(config.playerTeam)[0];
     const myRoster = heroesOf(config.playerTeam);
     const teamSize = config.teamSize === 5 ? 5 : 3;
-    const allyDefs = shuffle(myRoster.filter((h) => h.id !== playerDef.id), rng).slice(0, teamSize - 1);
-    const enemyDefs = shuffle(heroesOf(config.playerTeam === "student" ? "teacher" : "student"), rng).slice(0, teamSize);
+    const forcedAllyIds = Array.from(new Set(config.allyHeroIds ?? []));
+    const forcedAllies = forcedAllyIds.map((id) => myRoster.find((h) => h.id === id)).filter((h) => !!h && h.id !== playerDef.id);
+    const remainingAllies = shuffle(myRoster.filter((h) => h.id !== playerDef.id && !forcedAllies.some((f) => f.id === h.id)), rng);
+    const allyDefs = [...forcedAllies, ...remainingAllies].slice(0, teamSize - 1);
+    const enemyPool = heroesOf(config.playerTeam === "student" ? "teacher" : "student");
+    const forcedEnemyIds = Array.from(new Set(config.enemyHeroIds ?? []));
+    const forcedEnemies = forcedEnemyIds.map((id) => enemyPool.find((h) => h.id === id)).filter((h) => !!h);
+    const enemyDefs = [...forcedEnemies, ...shuffle(enemyPool.filter((h) => !forcedEnemies.some((f) => f.id === h.id)), rng)].slice(0, teamSize);
     const offsets = teamSize === 5 ? [
       { x: -180, y: 10 },
       { x: -96, y: 80 },
@@ -9729,7 +10399,8 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   }
   function createStoryWorld(w, config) {
     const story = config.story;
-    setStoryWalkable(story.mode === "race");
+    if (story.mode === "duel") setArenaWalkable();
+    else setStoryWalkable(story.mode === "race");
     const playerDef = HEROES[config.playerHeroId] ?? heroesOf("student")[0];
     const center = { x: 2048 * SCALE, y: 1536 * SCALE };
     const finish2 = story.finish;
@@ -9750,6 +10421,10 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       return u;
     };
     let playerPos = { x: center.x, y: center.y + 230 };
+    if (story.mode === "duel") {
+      w.arena = { ...DUEL_ARENA };
+      playerPos = { x: center.x, y: center.y + 180 };
+    }
     if (story.mode === "race") playerPos = { x: 2100 * SCALE, y: 2650 * SCALE };
     const player = mk(playerDef, "student", playerPos, true);
     w.playerId = player.id;
@@ -9758,13 +10433,13 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       allyIds.forEach((id, i) => {
         const def = HEROES[id];
         if (!def) return;
-        const u = mk(def, "student", { x: center.x - 140 + i * 280, y: center.y + 150 });
+        const u = mk(def, "student", { x: center.x - 150 + i * 300, y: center.y + 120 });
         u.route = i % 2 === 0 ? "left" : "right";
       });
       story.enemyIds.forEach((id, i) => {
         const def = HEROES[id];
         if (!def) return;
-        const u = mk(def, "teacher", { x: center.x - 140 + i * 280, y: center.y - 230 });
+        const u = mk(def, "teacher", { x: center.x - 150 + i * 300, y: center.y - 190 });
         u.route = i % 2 === 0 ? "mid" : "left";
       });
     } else {
@@ -10058,6 +10733,9 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     updateTimers(w);
     for (const u of w.units) {
       updateBuffs(w, u);
+      if (u.heroId === "huohua" && !u.dead && u.hp > 0 && u.hp / u.maxHp < 0.4) {
+        heal(w, null, u, u.maxHp * 0.01 * dt, false);
+      }
       if (u.attackAnim > 0) u.attackAnim = Math.max(0, u.attackAnim - dt);
       if (u.hitFlash > 0) u.hitFlash = Math.max(0, u.hitFlash - dt);
     }
@@ -10955,20 +11633,106 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   }
 
   // src/data/changelog.ts
-  var CURRENT_VERSION = "0.23.0";
+  var CURRENT_VERSION = "1.0.0text-1";
   var CHANGELOG = [
+    {
+      version: "1.0.0text-1",
+      date: "2026.11.21",
+      title: "\u7248\u672C\u53F7 1.0.0",
+      tags: ["\u7248\u672C"],
+      latest: true,
+      items: [
+        "\u7248\u672C\u53F7\u66F4\u65B0\u4E3A v1.0.0text-1\u3002"
+      ]
+    },
+    {
+      version: "0.28.0",
+      date: "2026.11.21",
+      title: "\u5355\u673A / \u8054\u673A\u53CC\u5165\u53E3",
+      tags: ["UI", "\u6807\u9898\u9875"],
+      items: [
+        "\u6807\u9898\u9875\u6539\u4E3A\u300C\u5355\u673A / \u8054\u673A\u300D\u4E24\u4E2A\u5165\u53E3\u6309\u94AE\u3002",
+        "\u5355\u673A\u9762\u677F\uFF1A3v3\u30015v5\u3001\u5FEB\u901F\u6A21\u5F0F\u3001\u5355\u6311\u3001\u5267\u60C5\u3001\u65B0\u624B\u6307\u5BFC\u3002",
+        "\u8054\u673A\u9762\u677F\uFF1A\u8054\u673A 3v3\u3001\u8054\u673A 1v1\u3002",
+        "\u8054\u673A 1v1 \u5728\u6807\u9898\u9875\u53EF\u76F4\u63A5\u8FDB\u5165\uFF0C\u4E0D\u518D\u9700\u8981\u5148\u521B\u5EFA 3v3 \u623F\u95F4\u3002"
+      ]
+    },
+    {
+      version: "0.27.0",
+      date: "2026.11.21",
+      title: "\u8FDE\u63A5\u7A33\u5B9A\u6027",
+      tags: ["\u8054\u673A", "\u7A33\u5B9A\u6027"],
+      items: [
+        "\u589E\u52A0\u4E24\u7EC4\u5907\u7528\u8FDE\u63A5\u8282\u70B9\uFF0C\u4F18\u5148\u5C1D\u8BD5\u76F4\u63A5\u8FDE\u63A5\u3002",
+        "\u76D1\u542C \u7F51\u7EDC \u5F02\u5E38\uFF1A4 \u79D2\u672A\u6062\u590D\u81EA\u52A8\u91CD\u8FDE\u3002",
+        "\u8054\u673A\u8FDE\u63A5\u65AD\u5F00\u540E\u81EA\u52A8\u6062\u590D\u3002",
+        "3v3 \u5BA2\u6237\u7AEF 5 \u79D2\u6536\u4E0D\u5230\u8FDB\u5EA6\u81EA\u52A8\u8BF7\u6C42\u91CD\u8FDE\u3002",
+        "1v1 \u8FDE\u63A5 5 \u79D2\u65E0\u54CD\u5E94\u65F6\u81EA\u52A8\u91CD\u8FDE\u3002",
+        "\u6CA1\u6709\u65B0\u589E\u79C1\u4EBA\u8FDE\u63A5\u670D\u52A1\uFF1B\u516C\u5171\u8FDE\u63A5\u670D\u52A1\u4ECD\u53EA\u4F5C\u515C\u5E95\u3002"
+      ]
+    },
+    {
+      version: "0.26.1",
+      date: "2026.11.21",
+      title: "\u9000\u51FA\u623F\u95F4",
+      tags: ["\u8054\u673A", "UI"],
+      items: [
+        "3v3 \u623F\u95F4\u5927\u5385\u589E\u52A0\u300C\u9000\u51FA\u623F\u95F4\u300D\u6309\u94AE\u3002",
+        "\u8054\u673A\u5BF9\u5C40 \u754C\u9762 \u589E\u52A0\u300C\u9000\u51FA\u300D\u6309\u94AE\uFF0C\u623F\u4E3B\u9000\u51FA\u524D\u786E\u8BA4\u5E76\u7ED3\u675F\u623F\u95F4\u3002",
+        "\u5BA2\u6237\u7AEF\u9000\u51FA\u540E\u623F\u4E3B\u81EA\u52A8 AI \u63A5\u7BA1\u539F\u82F1\u96C4\u3002"
+      ]
+    },
+    {
+      version: "0.26.0",
+      date: "2026.11.21",
+      title: "\u8054\u673A\u7A33\u5B9A\u6027",
+      tags: ["\u8054\u673A", "\u7A33\u5B9A\u6027"],
+      items: [
+        "3v3 \u771F\u4EBA\u6389\u7EBF\u540E\u7531 AI \u63A5\u7BA1\uFF0C\u4E0D\u518D\u505C\u5728\u539F\u5730\u3002",
+        "\u5BA2\u6237\u7AEF\u81EA\u52A8\u91CD\u8FDE\uFF08\u6700\u591A 36 \u6B21\uFF09\uFF0C\u623F\u4E3B\u56DE\u653E\u6389\u7EBF\u671F\u95F4\u7684\u8FDB\u5EA6\u3002",
+        "\u5BA2\u6237\u7AEF\u68C0\u6D4B\u4E22\u8FDB\u5EA6\u5E76\u4E3B\u52A8\u8BF7\u6C42\u8865\u9F50\u3002",
+        "\u623F\u4E3B 8 \u79D2\u6536\u4E0D\u5230\u8F93\u5165\u81EA\u52A8\u5224\u5B9A\u6389\u7EBF\u5E76 AI \u63A5\u7BA1\uFF1B\u6062\u590D\u8F93\u5165\u81EA\u52A8\u4EA4\u8FD8\u3002",
+        "\u91CD\u8FDE\u671F\u95F4\u4FDD\u7559\u539F\u961F\u4F0D\u3001\u82F1\u96C4\u548C\u73A9\u5BB6\u69FD\u4F4D\u3002"
+      ]
+    },
+    {
+      version: "0.25.0",
+      date: "2026.11.21",
+      title: "\u5355\u6311\u5C0F\u64C2\u53F0",
+      tags: ["\u5730\u56FE", "1v1"],
+      items: [
+        "\u5355\u6311\u4E0E\u8054\u673A 1v1 \u6539\u7528\u72EC\u7ACB\u5C0F\u578B\u64C2\u53F0\uFF0C\u4E0D\u518D\u590D\u7528\u4E09\u8DEF\u5168\u56FE\u3002",
+        "\u64C2\u53F0\u5E26\u72EC\u7ACB\u7EB8\u9762\u3001\u8FB9\u754C\u3001\u4E2D\u5FC3\u7C89\u7B14\u5706\u3001\u56DB\u89D2\u8BFE\u684C\u548C\u64C2\u53F0\u6807\u7B7E\u3002",
+        "\u4E13\u7528\u76F8\u673A\u7F29\u653E\u4E0E\u8FB9\u754C\u9650\u5236\uFF0C\u5C0F\u5730\u56FE\u6539\u4E3A\u64C2\u53F0\u89C6\u56FE\u3002",
+        "\u64C2\u53F0\u5185\u6CA1\u6709\u5854\u3001\u5175\u7EBF\u3001\u91CE\u533A\u548C\u6838\u5FC3\uFF0C\u53EA\u4FDD\u7559 1v1 \u51B3\u6597\u3002",
+        "3v3 \u548C\u4E09\u8DEF\u5730\u56FE\u4E0D\u53D7\u5F71\u54CD\u3002"
+      ]
+    },
+    {
+      version: "0.24.0",
+      date: "2026.11.21",
+      title: "\u8054\u673A 3v3",
+      tags: ["\u8054\u673A", "3v3"],
+      items: [
+        "\u8054\u673A\u5165\u53E3\u6539\u4E3A 3v3 \u623F\u95F4\uFF1A\u623F\u4E3B + 1\uFF5E5 \u4E2A\u5BA2\u6237\u7AEF\uFF0C2\uFF5E6 \u540D\u771F\u4EBA\u3002",
+        "\u81EA\u7531\u9009\u8FB9\uFF0C\u6BCF\u8FB9\u6700\u591A 3 \u4EBA\uFF1B\u7A7A\u4F4D\u7531 AI \u8865\u6EE1\u5230 3v3\u3002",
+        "\u623F\u4E3B\u6536\u96C6\u6240\u6709\u771F\u4EBA\u7684\u79FB\u52A8\u3001\u6280\u80FD\u3001\u56DE\u57CE\u548C\u88C5\u5907\u6307\u4EE4\uFF0C\u6309\u8FDB\u5EA6\u5E7F\u64AD\u3002",
+        "3v3 \u4F7F\u7528\u5B8C\u6574\u4E09\u8DEF\u5730\u56FE\u3001\u5175\u7EBF\u3001\u5854\u548C\u6838\u5FC3\uFF1B\u6240\u6709\u771F\u4EBA\u5404\u81EA\u672C\u5730\u89C6\u89D2\u3002",
+        "\u6BCF\u8FB9\u82F1\u96C4\u4E0D\u91CD\u590D\uFF1B\u623F\u4E3B\u81F3\u5C11 2 \u540D\u771F\u4EBA\u624D\u80FD\u5F00\u59CB\u3002",
+        "\u4FDD\u7559 1v1 \u5165\u53E3\uFF1A3v3 \u623F\u95F4\u5185\u53EF\u5207\u6362\u5230 1v1\u3002"
+      ]
+    },
     {
       version: "0.23.0",
       date: "2026.11.21",
       title: "UI \u5C42\u7EA7\u91CD\u6784",
       tags: ["UI", "\u5C42\u7EA7"],
-      latest: true,
       items: [
-        "\u6807\u9898\u9875\u6539\u4E3A\u300C\u4E3B\u6A21\u5F0F / \u5176\u4ED6\u73A9\u6CD5 / \u5DE5\u5177\u300D\u4E09\u5C42\uFF0C\u53BB\u6389\u8FDB\u5165\u8349\u7A3F\u7EB8\u6218\u573A\u4E2D\u95F4\u5C42\u3002",
+        "\u6807\u9898\u9875\u91CD\u65B0\u6574\u7406\u4E3A\u4E3B\u6A21\u5F0F\u4E0E\u5176\u4ED6\u73A9\u6CD5\u4E24\u5C42\u3002",
         "\u4E3B\u6A21\u5F0F\u524D\u7F6E\uFF1A3v3\u30015v5\u3001\u8054\u673A\uFF1B\u5FEB\u901F\u3001\u5355\u6311\u3001\u5267\u60C5\u3001\u65B0\u624B\u964D\u4E3A\u6B21\u7EA7\u5165\u53E3\u3002",
         "\u516C\u544A\u6539\u4E3A\u53F3\u4E0A\u89D2\u5FBD\u7AE0\uFF0C\u4E0D\u518D\u5360\u7528\u6807\u9898\u4E2D\u592E\u3002",
         "\u9009\u4EBA\u6D41\u7A0B\u4FDD\u7559\u539F\u6765\u7684\u300C\u9009\u8FB9 \u2192 \u9009\u82F1\u96C4\u300D\uFF0C\u4E0D\u6539\u6210\u5408\u5E76\u9875\u3002",
-        "\u8054\u673A HUD \u9ED8\u8BA4\u6298\u53E0\uFF0C\u70B9\u5F00\u663E\u793A\u623F\u95F4\u7801\u3001RTT\u3001\u94FE\u8DEF\u3001\u5E27\u53F7\u3001\u540C\u6B65\u72B6\u6001\u3002",
+        "\u8054\u673A \u754C\u9762 \u9ED8\u8BA4\u6298\u53E0\uFF0C\u70B9\u5F00\u663E\u793A\u623F\u95F4\u7801\u3001\u5EF6\u8FDF\u3001\u94FE\u8DEF\u3001\u8FDB\u5EA6\u3001\u540C\u6B65\u72B6\u6001\u3002",
         "\u4FDD\u7559\u65E7\u9009\u8FB9/\u9009\u4EBA\u9875\u4F9B\u5267\u60C5\u548C\u5355\u6311\u4F7F\u7528\uFF0C\u907F\u514D\u5F71\u54CD\u7279\u6B8A\u6D41\u7A0B\u3002",
         "\u6682\u505C\u3001\u8BBE\u7F6E\u3001\u5546\u5E97\u7EDF\u4E00\u6807\u9898/\u8BF4\u660E/\u5173\u95ED\u5C42\u7EA7\uFF1B\u7ED3\u7B97\u6539\u4E3A\u7EDF\u4E00\u7ED3\u7B97\u5361\u7247\u3002"
       ]
@@ -10982,7 +11746,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
         "\u8054\u673A\u5927\u5385\u65B0\u589E\u82F1\u96C4\u9009\u62E9\uFF1A\u623F\u4E3B\u4ECE\u5B66\u751F 9 \u4EBA\u4E2D\u9009\uFF0C\u5BA2\u6237\u7AEF\u4ECE\u6559\u5E08 9 \u4EBA\u4E2D\u9009\u3002",
         "\u53CC\u65B9\u9009\u62E9\u5B9E\u65F6\u540C\u6B65\uFF0C\u5E76\u663E\u793A\u5BF9\u624B\u5DF2\u9009\u82F1\u96C4\u3002",
         "\u5F00\u59CB\u5BF9\u5C40\u65F6\u628A\u53CC\u65B9\u82F1\u96C4\u4E00\u8D77\u5199\u5165\u5F00\u5C40\u6D88\u606F\uFF0C\u4E24\u8FB9\u521B\u5EFA\u5B8C\u5168\u76F8\u540C\u7684\u4E16\u754C\u3002",
-        "\u8054\u673A HUD \u548C\u91CD\u8FDE\u903B\u8F91\u4FDD\u6301\u6709\u6548\uFF1B\u9009\u4EBA\u4E0D\u4F1A\u5F71\u54CD 1v1 \u9501\u6B65\u3002",
+        "\u8054\u673A \u754C\u9762 \u548C\u91CD\u8FDE\u903B\u8F91\u4FDD\u6301\u6709\u6548\uFF1B\u9009\u4EBA\u4E0D\u4F1A\u5F71\u54CD 1v1 \u540C\u6B65\u3002",
         "\u8054\u673A\u4E0D\u518D\u56FA\u5B9A\u300C\u6885\u897F vs \u98DF\u5802\u8001\u5934\u300D\u3002",
         "\u6807\u9898\u9875\u65B0\u589E\u6B63\u5F0F\u7248\u516C\u544A\uFF08\u65E5\u671F\u5F85\u5B9A\uFF09\u3002"
       ]
@@ -10990,16 +11754,16 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     {
       version: "0.21.0",
       date: "2026.11.20",
-      title: "\u8054\u673A\u7A33\u5B9A\u6027\u4E0E\u6218\u6597 HUD",
+      title: "\u8054\u673A\u7A33\u5B9A\u6027\u4E0E\u6218\u6597 \u754C\u9762",
       tags: ["\u8054\u673A", "\u7A33\u5B9A\u6027"],
       items: [
-        "\u6218\u6597\u9875\u5DE6\u4E0A\u89D2\u65B0\u589E\u8054\u673A HUD\uFF1A\u623F\u4E3B/\u5BA2\u6237\u7AEF\u3001\u623F\u95F4\u7801\u3001RTT\u3001\u76F4\u8FDE/\u4E2D\u7EE7\u3001\u5E27\u53F7\u3001\u540C\u6B65\u72B6\u6001\u3002",
-        "PeerJS \u914D\u7F6E STUN + TURN \u515C\u5E95\uFF0CHUD \u4F1A\u663E\u793A\u5F53\u524D\u662F\u76F4\u8FDE\u8FD8\u662F\u4E2D\u7EE7\u3002",
+        "\u6218\u6597\u9875\u5DE6\u4E0A\u89D2\u65B0\u589E\u8054\u673A \u754C\u9762\uFF1A\u623F\u4E3B/\u5BA2\u6237\u7AEF\u3001\u623F\u95F4\u7801\u3001\u5EF6\u8FDF\u3001\u8FDE\u63A5\u65B9\u5F0F\u3001\u8FDB\u5EA6\u3001\u540C\u6B65\u72B6\u6001\u3002",
+        "\u8054\u673A \u914D\u7F6E \u7F51\u7EDC\u8FDE\u63A5 \u515C\u5E95\uFF0C\u754C\u9762 \u4F1A\u663E\u793A\u5F53\u524D\u662F\u5F53\u524D\u8FDE\u63A5\u65B9\u5F0F\u3002",
         "\u6389\u7EBF\u540E\u81EA\u52A8\u91CD\u8FDE\uFF1A\u5BA2\u6237\u7AEF\u6700\u591A\u5C1D\u8BD5\u7EA6 60 \u79D2\u3002",
-        "\u6389\u7EBF\u671F\u95F4\u4E3B\u673A\u7AEF AI \u4E34\u65F6\u63A5\u7BA1\uFF0C\u63A5\u7BA1\u8F93\u5165\u548C\u5386\u53F2\u5E27\u4E00\u8D77\u8BB0\u5F55\uFF0C\u91CD\u8FDE\u540E\u5BA2\u6237\u7AEF\u53EF\u56DE\u653E\u8FFD\u4E0A\u3002",
-        "\u91CD\u8FDE\u65F6\u6309\u6700\u540E\u5E27\u56DE\u653E\u7F3A\u5931 tick\uFF0C\u4E0D\u76F4\u63A5\u8DF3\u72B6\u6001\u3002",
-        "\u53CC\u65B9\u6BCF\u5E27\u8BA1\u7B97\u72B6\u6001\u54C8\u5E0C\uFF0CHUD \u663E\u793A\u300C\u540C\u6B65 / \u4E0D\u540C\u6B65\u300D\u3002",
-        "\u65B0\u589E 1 \u79D2\u5E94\u7528\u5C42 Ping\uFF0CHUD \u663E\u793A\u5B9E\u65F6 RTT\u3002"
+        "\u6389\u7EBF\u671F\u95F4\u4E3B\u673A\u7AEF AI \u4E34\u65F6\u63A5\u7BA1\uFF0C\u63A5\u7BA1\u8F93\u5165\u548C\u5386\u53F2\u8FDB\u5EA6\u4E00\u8D77\u8BB0\u5F55\uFF0C\u91CD\u8FDE\u540E\u5BA2\u6237\u7AEF\u53EF\u56DE\u653E\u8FFD\u4E0A\u3002",
+        "\u91CD\u8FDE\u65F6\u6309\u6700\u540E\u8FDB\u5EA6\u56DE\u653E\u7F3A\u5931 \u8FDB\u5EA6\uFF0C\u4E0D\u76F4\u63A5\u8DF3\u72B6\u6001\u3002",
+        "\u53CC\u65B9\u6BCF\u8FDB\u5EA6\u8BA1\u7B97\u72B6\u6001\u54C8\u5E0C\uFF0C\u754C\u9762 \u663E\u793A\u300C\u540C\u6B65 / \u4E0D\u540C\u6B65\u300D\u3002",
+        "\u65B0\u589E 1 \u79D2\u5E94\u7528\u5C42 Ping\uFF0C\u754C\u9762 \u663E\u793A\u5B9E\u65F6 \u5EF6\u8FDF\u3002"
       ]
     },
     {
@@ -11008,12 +11772,12 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       title: "\u8054\u673A 1v1",
       tags: ["\u8054\u673A", "1v1"],
       items: [
-        "\u6807\u9898\u9875\u65B0\u589E\u300C\u8054\u673A 1v1\u300D\uFF1APeerJS \u623F\u95F4\u7801\uFF0C\u623F\u4E3B\u521B\u5EFA\u3001\u53E6\u4E00\u65B9\u52A0\u5165\u3002",
+        "\u6807\u9898\u9875\u65B0\u589E\u300C\u8054\u673A 1v1\u300D\uFF1A\u8054\u673A \u623F\u95F4\u7801\uFF0C\u623F\u4E3B\u521B\u5EFA\u3001\u53E6\u4E00\u65B9\u52A0\u5165\u3002",
         "\u771F\u5B9E\u82F1\u96C4\u5BF9\u5C40\uFF1A\u623F\u4E3B\u63A7\u5236\u6885\u897F\uFF0C\u5BA2\u6237\u7AEF\u63A7\u5236\u98DF\u5802\u8001\u5934\uFF0C\u53CC\u65B9\u5404\u81EA\u672C\u5730\u89C6\u89D2\u3002",
-        "\u4E3B\u673A\u5B9A\u5E8F\u8F93\u5165\u9501\u6B65\uFF1A\u79FB\u52A8\u3001\u666E\u653B\u3001\u6280\u80FD\u3001\u56DE\u57CE\u3001\u5F15\u5BFC\u6280\u80FD\u91CA\u653E\u90FD\u540C\u6B65\u3002",
+        "\u4E3B\u673A\u5B9A\u5E8F\u8F93\u5165\u540C\u6B65\uFF1A\u79FB\u52A8\u3001\u666E\u653B\u3001\u6280\u80FD\u3001\u56DE\u57CE\u3001\u5F15\u5BFC\u6280\u80FD\u91CA\u653E\u90FD\u540C\u6B65\u3002",
         "\u53CC\u65B9\u65F6\u949F\u540C\u6B65\uFF0C\u652F\u6301\u771F\u5B9E\u7684\u4F24\u5BB3\u3001\u51B7\u5374\u3001\u590D\u6D3B\u548C 5 \u6740\u7ED3\u7B97\u3002",
         "\u8054\u673A\u5BF9\u5C40\u7981\u7528\u5546\u5E97\u3001\u6682\u505C\u548C\u5929\u8D4B\uFF0C\u907F\u514D\u4E2D\u9014\u6539\u53D8\u6A21\u62DF\u72B6\u6001\u3002",
-        "\u8054\u673A\u6A21\u5F0F\u6309\u9700\u4ECE CDN \u52A0\u8F7D PeerJS\uFF1B\u79BB\u7EBF\u5355\u673A\u73A9\u6CD5\u4E0D\u53D7\u5F71\u54CD\u3002"
+        "\u8054\u673A\u6A21\u5F0F\u6309\u9700\u4ECE \u8D44\u6E90 \u52A0\u8F7D \u8054\u673A\uFF1B\u79BB\u7EBF\u5355\u673A\u73A9\u6CD5\u4E0D\u53D7\u5F71\u54CD\u3002"
       ]
     },
     {
@@ -11025,8 +11789,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
         "\u547D\u4E2D\u53CD\u9988\u6539\u4E3A\u6CFC\u58A8\uFF1A\u4E0D\u89C4\u5219\u58A8\u56E2\u3001\u98DE\u6E85\u58A8\u70B9\u3001\u5E72\u7B14\u98DE\u767D\uFF0C\u6309\u7269\u7406/\u9B54\u6CD5/\u771F\u5B9E\u4F24\u5BB3\u4F7F\u7528\u4E0D\u540C\u58A8\u8272\u3002",
         "\u65BD\u6CD5\u6539\u4E3A\u811A\u4E0B\u843D\u58A8 + \u653E\u5C04\u58A8\u70B9\uFF0C\u5E76\u4FDD\u7559\u6DE1\u58A8\u5706\u73AF\u3002",
         "\u8FD1\u6218\u666E\u653B\u6539\u4E3A\u4E09\u7B14\u9519\u4F4D\u7B14\u950B + \u58A8\u70B9\uFF1B\u8FDC\u7A0B\u6295\u5C04\u7269\u589E\u52A0\u58A8\u8FF9\u62D6\u5C3E\u548C\u98DE\u58A8\u3002",
-        "\u6B7B\u4EA1\u6548\u679C\u6539\u4E3A\u5927\u58A8\u56E2 + \u7EB8\u5C51\uFF1B\u533A\u57DF\u6280\u80FD\u589E\u52A0\u7EB8\u9762\u6DE1\u58A8\u6655\u8FB9\u3002",
-        "\u5F00\u53D1\u8005\u6A21\u5F0F\u5DE5\u5177\u9875\u65B0\u589E\u300C\u6D4B\u8BD5\u6CFC\u58A8\u7279\u6548\u300D\u6309\u94AE\u3002"
+        "\u6B7B\u4EA1\u6548\u679C\u6539\u4E3A\u5927\u58A8\u56E2 + \u7EB8\u5C51\uFF1B\u533A\u57DF\u6280\u80FD\u589E\u52A0\u7EB8\u9762\u6DE1\u58A8\u6655\u8FB9\u3002"
       ]
     },
     {
@@ -11040,21 +11803,6 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
         "\u9009\u8FB9\u9875\u548C\u9009\u4EBA\u9875\u4F1A\u663E\u793A 5v5 \u7684 4 \u540D AI \u961F\u53CB\u8BF4\u660E\u3002",
         "\u5BF9\u5C40\u9876\u90E8\u65B0\u589E 5v5 \u6807\u8BC6\uFF1B\u5FEB\u901F\u6A21\u5F0F\u4ECD\u4FDD\u6301 3v3\u3002",
         "\u8FFD\u52A0 5v5 \u7F16\u961F\u6D4B\u8BD5\uFF1A\u6BCF\u8FB9 5 \u4EBA\u3001\u9ED8\u8BA4 3v3 \u4E0D\u53D7\u5F71\u54CD\u3002"
-      ]
-    },
-    {
-      version: "0.17.0",
-      date: "2026.11.19",
-      title: "\u5F00\u53D1\u8005\u6A21\u5F0F 2.0",
-      tags: ["\u8C03\u8BD5", "\u5DE5\u5177"],
-      items: [
-        "\u5F00\u53D1\u8005\u6A21\u5F0F\u6539\u4E3A\u300C\u5BF9\u5C40 / \u5355\u4F4D / \u5DE5\u5177 / \u65E5\u5FD7\u300D\u56DB\u9875\u3002",
-        "\u65B0\u589E\u6682\u505C\u3001\u5355\u6B65\u3001\u65F6\u95F4\u8DF3\u8F6C\u3001\u5F3A\u5236\u51FA\u5175\u3001\u4E0B\u8BFE\u94C3\u3001\u968F\u5802\u6D4B\u9A8C\u3001\u76F4\u63A5\u80DC\u8D1F\u3002",
-        "\u65B0\u589E\u5355\u4F4D\u68C0\u67E5\u5668\uFF1A\u5C5E\u6027\u3001Buff\u3001\u6280\u80FD\u51B7\u5374\u3001\u88C5\u5907\u3001\u5929\u8D4B\uFF0C\u53EF\u6539\u8840\u91CF/\u7B49\u7EA7/\u91D1\u5E01/\u5750\u6807\u3002",
-        "\u65B0\u589E\u5355\u4F4D\u64CD\u4F5C\uFF1A\u51BB\u7ED3\u3001\u63A5\u7BA1\u3001\u51FB\u6740\u3001\u590D\u6D3B\u3001\u6E05 Buff\u3001\u91CD\u7F6E\u51B7\u5374\u3001\u52A0\u5220\u88C5\u5907\u3001\u52A0\u5929\u8D4B\u3002",
-        "\u65B0\u589E\u573A\u666F\u9884\u8BBE\u3001\u751F\u6210\u5C0F\u5175/\u5854/\u6838\u5FC3/\u82F1\u96C4\u3001\u72B6\u6001 JSON \u5BFC\u51FA\u3001\u4E8B\u4EF6\u65E5\u5FD7\u548C FPS\u3002",
-        "\u5FEB\u6377\u952E\uFF1ACtrl/Cmd+Shift+D\u3001F6 \u6682\u505C\u3001F7 \u5355\u6B65\u3001F8 \u51FA\u5175\u3002",
-        "\u4FEE\u590D\u91CD\u5F00\u5F53\u524D\u5BF9\u5C40\u4E22\u5931\u5FEB\u901F\u6A21\u5F0F\u914D\u7F6E\u7684\u95EE\u9898\u3002"
       ]
     },
     {
@@ -11152,7 +11900,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
         "\u542F\u52A8\u56FE\u6807\u7BAD\u5934\u6062\u590D\u4E3A\u9ED1\u8272\uFF0C\u5E76\u52A0\u6D45\u8272\u63CF\u8FB9\u4FDD\u8BC1\u9ED1\u5E95\u53EF\u89C1\uFF1B\u56FE\u6807\u4E0B\u65B0\u589E\u300CSYM\u6E38\u620F\u5DE5\u4F5C\u5BA4\u51FA\u54C1\u300D\u3002",
         "\u8BBE\u7F6E\u9875\u65B0\u589E PC \u952E\u4F4D\u81EA\u5B9A\u4E49\uFF0C\u53EF\u6539\u79FB\u52A8\u3001\u56DB\u4E2A\u6280\u80FD\u3001\u56DE\u57CE\u3001\u5546\u5E97\u3001\u8BB0\u5206\u677F\u3002",
         "\u952E\u4F4D\u4FDD\u5B58\u5728\u672C\u5730\uFF0C\u952E\u4F4D\u51B2\u7A81\u4F1A\u63D0\u793A\uFF1B\u652F\u6301\u6062\u590D\u9ED8\u8BA4\u3002",
-        "\u624B\u673A\u6309\u952E\u5E03\u5C40\u8C03\u6574\u79FB\u5165\u8BBE\u7F6E\u9875\uFF0C\u4E0D\u518D\u653E\u5728\u5BF9\u5C40 HUD \u548C\u6682\u505C\u4E3B\u6309\u94AE\u91CC\u3002",
+        "\u624B\u673A\u6309\u952E\u5E03\u5C40\u8C03\u6574\u79FB\u5165\u8BBE\u7F6E\u9875\uFF0C\u4E0D\u518D\u653E\u5728\u5BF9\u5C40 \u754C\u9762 \u548C\u6682\u505C\u4E3B\u6309\u94AE\u91CC\u3002",
         "\u4ECE\u4E3B\u9875\u9762\u8BBE\u7F6E\u8FDB\u5165\u624B\u673A\u5E03\u5C40\u4F1A\u6253\u5F00\u63A7\u5236\u533A\u9884\u89C8\uFF0C\u4FDD\u5B58\u540E\u56DE\u5230\u8BBE\u7F6E\u3002"
       ]
     },
@@ -11290,20 +12038,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
         "\u5360\u8BFE\uFF1A\u4EFB\u610F\u5B66\u751F + \u674E\u6770 vs \u7EA2\u80A0 + \u9999\u98D8\u98D8\uFF0C2v2 \u5148\u62FF 5 \u6740\u3002",
         "\u98DF\u5802\uFF1A\u8D85\u7136 1v1 \u98DF\u5802\u8001\u5934\uFF0C\u5148\u62FF 3 \u6740\u3002",
         "\u62A2\u996D\uFF1A\u5B66\u751F\u8D5B\u8DD1\uFF0C\u738B\u4E3B\u4EFB\u548C\u98DF\u5802\u8001\u5934\u5728\u7EC8\u70B9\u62E6\u622A\u3002",
-        "\u65B0\u589E\u5267\u60C5\u4E13\u5C5E HUD\u3001\u80DC\u8D1F\u6587\u6848\u548C\u7ED3\u7B97\u9875\u3002"
-      ]
-    },
-    {
-      version: "0.4.0",
-      date: "2026.11.14",
-      title: "\u5F00\u53D1\u8005\u6A21\u5F0F\u4E0E\u53C2\u6570\u8C03\u8BD5",
-      tags: ["\u5DE5\u5177"],
-      items: [
-        "\u9690\u85CF\u5165\u53E3\uFF1A\u5DE6\u4E0A\u89D2\u8FDE\u70B9 5 \u6B21\uFF0C\u8F93\u5165\u5BC6\u7801\u8FDB\u5165\u5F00\u53D1\u8005\u6A21\u5F0F\u3002",
-        "\u65B0\u589E\u901F\u5EA6\u3001\u91D1\u5E01\u3001\u7B49\u7EA7\u3001\u65E0\u654C\u3001\u65E0\u9650\u84DD\u3001\u65E0\u51B7\u5374\u3001\u53D6\u6D88\u8FF7\u96FE\u3001\u663E\u793A\u5854\u8303\u56F4\u3001\u51BB\u7ED3 AI\u3002",
-        "\u652F\u6301 URL \u53C2\u6570\u8C03\u8BD5\uFF0C\u53C2\u6570\u53EA\u5728\u6253\u5F00\u5F00\u53D1\u8005\u6A21\u5F0F\u65F6\u8BFB\u53D6\u3002",
-        "\u624B\u673A\u6A21\u62DF\u5668\u79FB\u5165\u5F00\u53D1\u8005\u6A21\u5F0F\uFF0C\u652F\u6301\u7AD6\u5C4F / \u6A2A\u5C4F / \u91CD\u8F7D\u3002",
-        "\u7981\u6B62\u624B\u673A\u6A21\u62DF\u5668\u65E0\u9650\u5D4C\u5957\u3002"
+        "\u65B0\u589E\u5267\u60C5\u4E13\u5C5E \u754C\u9762\u3001\u80DC\u8D1F\u6587\u6848\u548C\u7ED3\u7B97\u9875\u3002"
       ]
     },
     {
@@ -11342,7 +12077,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
         "\u8349\u7A3F\u7EB8\u624B\u7ED8\u5730\u56FE\uFF1A\u4E2D\u8DEF\u3001\u8FB9\u8DEF\u3001\u91CE\u533A\u3001\u5854\u3001\u6838\u5FC3\u548C\u5175\u7EBF\u3002",
         "\u88C5\u5907\u5C0F\u5356\u90E8\u3001AI \u51FA\u88C5\u3001\u8865\u5200 / \u51FB\u6740 / \u63A8\u5854\u7ECF\u6D4E\u3002",
         "\u94C3\u58F0\u4E8B\u4EF6\u3001\u968F\u5802\u6D4B\u9A8C\u3001\u91CE\u533A Buff \u548C\u5355\u6587\u4EF6\u6784\u5EFA\u3002",
-        "\u952E\u76D8 / \u9F20\u6807\u64CD\u4F5C\u4E0E\u57FA\u7840 HUD\u3002"
+        "\u952E\u76D8 / \u9F20\u6807\u64CD\u4F5C\u4E0E\u57FA\u7840 \u754C\u9762\u3002"
       ]
     }
   ];
@@ -11613,6 +12348,8 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
         });
       });
       $("btn-guide-pause").addEventListener("click", () => this.showHowTo(true));
+      $("btn-howto-close").addEventListener("click", () => this.showHowTo(false));
+      $("btn-changelog-close").addEventListener("click", () => this.showChangelog(false));
       this.bindHudTooltips();
       this.renderSide();
       this.syncKeyLabels();
@@ -12461,6 +13198,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   // src/main.ts
   var params = new URLSearchParams(location.search);
   var isTouchDevice = window.matchMedia && window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0 || params.get("mobile") === "1";
+  var online3v3Enabled = params.get("online3") === "1" || /\/3v3(\/|$)/i.test(location.pathname) || /\/text\.html$/i.test(location.pathname);
   var isPhoneInner = params.get("phoneinner") === "1";
   if (isTouchDevice) document.body.classList.add("mobile");
   var canvas = document.getElementById("game");
@@ -12516,6 +13254,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   var onlineHistory = [];
   var onlinePingTimer = 0;
   var onlinePingSentAt = 0;
+  var onlineLastPongAt = 0;
   var onlineReconnectTimer = 0;
   var onlineReconnectAttempts = 0;
   var onlineReconnecting = false;
@@ -12523,6 +13262,30 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   var onlineInfoTimer = 0;
   var onlineHudAt = 0;
   var zeroInput = { moveX: 0, moveY: 0, aimX: 0, aimY: 0 };
+  var room = null;
+  var roomHost = false;
+  var roomActive = false;
+  var roomPlayers = [];
+  var roomLocalTeam = "student";
+  var roomLocalHero = "messi";
+  var roomHumanUnits = /* @__PURE__ */ new Map();
+  var roomRemote = /* @__PURE__ */ new Map();
+  var roomLocalCmds = [];
+  var roomTick = 0;
+  var roomLastTick = 0;
+  var roomTimer = 0;
+  var roomInputTimer = 0;
+  var roomReady = /* @__PURE__ */ new Set();
+  var roomConfig = null;
+  var roomStarting = false;
+  var roomLocalId = "";
+  var roomReconnectTimer = 0;
+  var roomReconnectAttempts = 0;
+  var roomReconnecting = false;
+  var roomLastSeen = /* @__PURE__ */ new Map();
+  var roomHistory = [];
+  var roomLastTickAt = 0;
+  var roomWatchdogTimer = 0;
   var talentOpen = false;
   var eyeCare = params.get("eyecare") === "1";
   try {
@@ -12569,7 +13332,48 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   document.getElementById("btn-online")?.addEventListener("click", () => {
     initAudio();
     sfx("click");
+    showRoomModal();
+  });
+  document.getElementById("btn-online-duel")?.addEventListener("click", () => {
+    initAudio();
+    sfx("click");
     showOnlineModal();
+  });
+  var titleGateSingle = document.getElementById("title-gate-single");
+  var titleGateOnline = document.getElementById("title-gate-online");
+  var titlePanelSingle = document.getElementById("title-panel-single");
+  var titlePanelOnline = document.getElementById("title-panel-online");
+  function showTitleGate(online) {
+    titleGateSingle?.classList.toggle("active", !online);
+    titleGateOnline?.classList.toggle("active", online);
+    titlePanelSingle?.classList.toggle("hidden", online);
+    titlePanelOnline?.classList.toggle("hidden", !online);
+  }
+  titleGateSingle?.addEventListener("click", () => {
+    sfx("click");
+    showTitleGate(false);
+  });
+  titleGateOnline?.addEventListener("click", () => {
+    sfx("click");
+    showTitleGate(true);
+  });
+  if (!online3v3Enabled) {
+    document.getElementById("btn-online")?.classList.add("hidden");
+    document.querySelector("#title-panel-online .mode-grid")?.classList.add("one");
+  }
+  document.getElementById("oh-exit")?.addEventListener("click", () => {
+    if (roomActive) {
+      if (roomHost && !window.confirm("\u4F60\u662F\u623F\u4E3B\uFF0C\u9000\u51FA\u4F1A\u7ED3\u675F\u6574\u4E2A\u623F\u95F4\u3002\u786E\u5B9A\u9000\u51FA\uFF1F")) return;
+      if (roomHost) room?.broadcast({ t: "end" });
+      quitToTitle();
+      return;
+    }
+    if (onlineActive) {
+      closeOnlineSession();
+      quitToTitle();
+      return;
+    }
+    quitToTitle();
   });
   document.getElementById("oh-toggle")?.addEventListener("click", () => {
     document.getElementById("online-hud")?.classList.toggle("folded");
@@ -12694,6 +13498,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       }
       if (to === "title") {
         closeOnlineSession();
+        closeRoom();
         pendingStory = null;
         quickPending = false;
         pendingDuel = false;
@@ -12749,7 +13554,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   });
   function toggleShop(force) {
     if (!world || world.state !== "playing") return;
-    if (onlineActive) {
+    if (onlineActive || roomActive) {
       ui.toast("\u8054\u673A\u5BF9\u5C40\u6682\u4E0D\u652F\u6301\u5546\u5E97");
       return;
     }
@@ -12769,6 +13574,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   }
   function quitToTitle() {
     closeOnlineSession();
+    closeRoom();
     pendingStory = null;
     quickPending = false;
     pendingDuel = false;
@@ -12828,8 +13634,9 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       startMatch(world.config.playerTeam, world.config.playerHeroId);
     }
   }
-  function startMatch(team, heroId, seedOverride, story) {
-    if (!onlineStarting) closeOnlineSession();
+  function startMatch(team, heroId, seedOverride, story, allyHeroIds, enemyHeroIds) {
+    if (!onlineStarting && !roomStarting) closeOnlineSession();
+    if (!roomStarting) closeRoom();
     clearTutorial();
     attractWorld = null;
     const seed = seedOverride ?? (Number(params.get("seed")) || Math.floor(Math.random() * 1e9));
@@ -12843,10 +13650,12 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       story: story ? { ...story } : void 0,
       quick: quickPending,
       teamSize: pendingTeamSize,
+      allyHeroIds,
+      enemyHeroIds,
       talents: story?.id === "tutorial" ? false : isTalentsEnabled()
     });
     camera = createCamera();
-    camera.zoom = zoomLevel;
+    camera.zoom = world.arena ? 1.1 : zoomLevel;
     const p = playerOf(world);
     if (p) {
       camera.x = p.pos.x;
@@ -12894,7 +13703,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   }
   function setPaused(v) {
     if (!world || world.state === "over") return;
-    if (onlineActive) {
+    if (onlineActive || roomActive) {
       ui.toast("\u8054\u673A\u5BF9\u5C40\u4E0D\u80FD\u6682\u505C");
       return;
     }
@@ -12919,7 +13728,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       world.input.aimX = screenToWorld(camera, mouse.x, mouse.y, cssW, cssH).x;
       world.input.aimY = screenToWorld(camera, mouse.x, mouse.y, cssW, cssH).y;
       updateMoveInput(world);
-      if (!onlineActive && !paused && world.state === "playing") {
+      if (!onlineActive && !roomActive && !paused && world.state === "playing") {
         acc += dt * speed;
         let n = 0;
         while (acc >= DT && n < 20) {
@@ -12931,7 +13740,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
         drainEvents(world);
       }
       if (tutorial && !paused && world.state === "playing") updateTutorial(world);
-      if (!onlineActive && world.state === "playing" && !paused && !shopOpen && !talentOpen) {
+      if (!onlineActive && !roomActive && world.state === "playing" && !paused && !shopOpen && !talentOpen) {
         const p = playerOf(world);
         if (p?.pendingTalent != null) {
           const tier = p.pendingTalent;
@@ -12956,7 +13765,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
         devLastRefresh = now;
         devRefresh();
       }
-      if (onlineActive && now - onlineHudAt > 200) {
+      if ((onlineActive || roomActive) && now - onlineHudAt > 200) {
         onlineHudAt = now;
         updateOnlineHud();
       }
@@ -13073,7 +13882,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       no: "VS",
       title: "\u8054\u673A 1v1",
       tag: "\u8054\u673A",
-      desc: "\u540C\u57CE P2P\uFF0C\u771F\u5B9E\u82F1\u96C4\uFF0C\u5148\u62FF 5 \u4E2A\u4EBA\u5934\u3002",
+      desc: "\u623F\u95F4\u7801\u8054\u673A\uFF0C\u53CC\u65B9\u5404\u9009\u4E00\u540D\u82F1\u96C4\uFF0C\u5148\u62FF 5 \u4E2A\u4EBA\u5934\u3002",
       mode: "duel",
       heroPool: [],
       allyIds: [],
@@ -13124,7 +13933,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   function updateOnlineHud() {
     const hud = document.getElementById("online-hud");
     if (!hud) return;
-    hud.classList.toggle("hidden", !onlineActive);
+    hud.classList.toggle("hidden", !onlineActive && !roomActive);
     const role = document.getElementById("oh-role");
     const code = document.getElementById("oh-code");
     const rtt = document.getElementById("oh-rtt");
@@ -13135,7 +13944,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     if (code) code.textContent = onlineCode || "----";
     if (rtt) rtt.textContent = onlineRtt > 0 ? `${Math.round(onlineRtt)}ms` : "--";
     if (link) link.textContent = onlineTransport;
-    if (tick) tick.textContent = String(onlineHost ? onlineTick : onlineLastAppliedTick);
+    if (tick) tick.textContent = String(roomActive ? roomHost ? roomTick : roomLastTick : onlineHost ? onlineTick : onlineLastAppliedTick);
     if (state) {
       state.textContent = onlineNetState;
       state.classList.toggle("bad", onlineNetState === "\u4E0D\u540C\u6B65" || onlineNetState === "\u91CD\u8FDE\u5931\u8D25");
@@ -13146,9 +13955,16 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     if (onlinePingTimer) window.clearInterval(onlinePingTimer);
     const send = () => {
       if (!onlineActive || !onlineSession) return;
-      onlinePingSentAt = performance.now();
+      const now = performance.now();
+      if (onlineLastPongAt > 0 && now - onlineLastPongAt > 5e3) {
+        onlineNetState = "\u76F4\u8FDE\u8D85\u65F6";
+        updateOnlineHud();
+        if (!onlineHost) onlineScheduleReconnect();
+      }
+      onlinePingSentAt = now;
       onlineSession.send({ t: "ping", at: onlinePingSentAt });
     };
+    onlineLastPongAt = performance.now();
     send();
     onlinePingTimer = window.setInterval(send, 1e3);
   }
@@ -13263,6 +14079,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     onlineHistory = [];
     onlineCode = "";
     onlineRtt = 0;
+    onlineLastPongAt = 0;
     onlineTransport = "--";
     onlineNetState = "\u540C\u6B65";
     document.getElementById("online-hud")?.classList.add("hidden");
@@ -13431,6 +14248,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     onlineCode = onlineSession.code;
     onlineHistory = [];
     onlineRtt = 0;
+    onlineLastPongAt = 0;
     onlineTransport = "--";
     onlineNetState = "\u540C\u6B65";
     onlineReconnectAttempts = 0;
@@ -13502,6 +14320,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     } else if (data.t === "pong") {
       const at = Number(data.at);
       if (Number.isFinite(at)) onlineRtt = Math.max(0, performance.now() - at);
+      onlineLastPongAt = performance.now();
       updateOnlineHud();
     } else if (data.t === "resume" && onlineHost) {
       const last2 = Number(data.last) || 0;
@@ -13614,7 +14433,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     modal.innerHTML = `
     <div class="sheet online-sheet">
       <h3>\u8054\u673A 1v1</h3>
-      <p class="tiny">P2P \xB7 STUN + TURN \u515C\u5E95 \xB7 \u771F\u5B9E\u82F1\u96C4 \xB7 \u65E0 AI \u8865\u4F4D<br/>\u53CC\u65B9\u90FD\u9700\u8981\u4FDD\u6301\u9875\u9762\u6253\u5F00\u3002</p>
+      <p class="tiny">\u623F\u95F4\u7801\u8054\u673A \xB7 \u53CC\u65B9\u5404\u9009\u4E00\u540D\u82F1\u96C4 \xB7 \u72EC\u7ACB\u5355\u6311\u64C2\u53F0<br/>\u53CC\u65B9\u90FD\u9700\u8981\u4FDD\u6301\u9875\u9762\u6253\u5F00\u3002</p>
       <div id="online-connect-view">
         <button id="online-create" class="btn primary">\u521B\u5EFA\u623F\u95F4</button>
         <div class="online-or">\u6216</div>
@@ -13730,6 +14549,522 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     modal.querySelector("#online-code-input")?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") modal.querySelector("#online-join")?.click();
     });
+  }
+  function roomStatus(text) {
+    const el = document.getElementById("room3-status");
+    if (el) el.textContent = text;
+  }
+  function closeRoom() {
+    if (roomTimer) {
+      window.clearInterval(roomTimer);
+      roomTimer = 0;
+    }
+    if (roomInputTimer) {
+      window.clearInterval(roomInputTimer);
+      roomInputTimer = 0;
+    }
+    if (roomWatchdogTimer) {
+      window.clearInterval(roomWatchdogTimer);
+      roomWatchdogTimer = 0;
+    }
+    roomActive = false;
+    roomStarting = false;
+    roomHost = false;
+    room?.close();
+    room = null;
+    roomPlayers = [];
+    roomHumanUnits.clear();
+    roomRemote.clear();
+    roomLocalCmds = [];
+    roomReady.clear();
+    roomConfig = null;
+    roomLastTickAt = 0;
+    document.body.classList.remove("online-mode");
+    document.getElementById("online-hud")?.classList.add("hidden");
+  }
+  function roomRenderLobby() {
+    const box = document.getElementById("room3-players");
+    if (!box) return;
+    const humans = roomPlayers;
+    const slots = [];
+    for (const p of humans) slots.push(p);
+    while (slots.length < 6) slots.push(null);
+    box.innerHTML = slots.map((p, i) => p ? `<div class="room-slot ${p.team} ${p.id === room?.localId ? "me" : ""}"><span>${i + 1}</span><b>${p.host ? "\u623F\u4E3B" : p.name}${p.connected ? "" : " \xB7 \u6389\u7EBF"}${p.id === room?.localId ? " \xB7 \u4F60" : ""}</b><em>${p.team === "student" ? "\u5B66\u751F" : "\u6559\u5E08"}</em><strong>${HERO_LIST.find((h) => h.id === p.hero)?.name ?? p.hero}</strong></div>` : `<div class="room-slot empty"><span>${i + 1}</span><b>AI \u8865\u4F4D</b><em>\u2014</em><strong>\u2014</strong></div>`).join("");
+    const count = document.getElementById("room3-count");
+    if (count) count.textContent = `${humans.length} / 6 \u771F\u4EBA \xB7 \u7A7A\u4F4D AI \u8865\u6EE1 3v3`;
+    const start = document.getElementById("room3-start");
+    if (start) start.disabled = humans.length < 2;
+    const me = humans.find((p) => p.id === room?.localId);
+    if (me) {
+      roomLocalTeam = me.team;
+      roomLocalHero = me.hero;
+      document.querySelectorAll("#room3-team [data-team]").forEach((b) => b.classList.toggle("active", b.dataset.team === me.team));
+      const sel = document.getElementById("room3-hero");
+      if (sel) {
+        const list = HERO_LIST.filter((h) => h.team === me.team);
+        sel.innerHTML = list.map((h) => `<option value="${h.id}" ${h.id === me.hero ? "selected" : ""}>${h.name} \xB7 ${h.roleLabel}</option>`).join("");
+      }
+    }
+    roomStatus(roomHost ? "\u4F60\u662F\u623F\u4E3B\uFF0C\u81F3\u5C11 2 \u540D\u771F\u4EBA\u540E\u5F00\u59CB" : "\u7B49\u5F85\u623F\u4E3B\u5F00\u59CB");
+  }
+  function roomChoose(team, hero) {
+    if (!room) return;
+    const t = team ?? roomLocalTeam;
+    const h = hero ?? roomLocalHero;
+    if (roomHost) {
+      room.setTeam(room.localId, t);
+      room.setHero(room.localId, h);
+      roomRenderLobby();
+    } else {
+      roomLocalTeam = t;
+      roomLocalHero = h;
+      room.send({ t: "choose", team: t, hero: h });
+      roomRenderLobby();
+      roomStatus("\u5DF2\u63D0\u4EA4\u9009\u62E9\uFF0C\u7B49\u5F85\u623F\u4E3B\u5F00\u59CB");
+    }
+  }
+  function roomApplyHumans(list, localId) {
+    if (!world) return;
+    for (const h of list) {
+      const u = roomHumanUnits.get(String(h.id));
+      if (!u) continue;
+      const inp = sanitizeOnlineInput(h.input);
+      u.netInput = inp;
+      u.netCommands = Array.isArray(h.cmds) ? h.cmds : [];
+      if (String(h.id) === localId) world.input = { ...inp };
+    }
+  }
+  function roomFinish() {
+    if (!roomActive) return;
+    roomActive = false;
+    if (roomTimer) {
+      window.clearInterval(roomTimer);
+      roomTimer = 0;
+    }
+    if (roomInputTimer) {
+      window.clearInterval(roomInputTimer);
+      roomInputTimer = 0;
+    }
+    if (roomWatchdogTimer) {
+      window.clearInterval(roomWatchdogTimer);
+      roomWatchdogTimer = 0;
+    }
+    document.getElementById("online-hud")?.classList.add("hidden");
+    document.body.classList.remove("online-mode");
+    if (roomTimer) {
+      window.clearInterval(roomTimer);
+      roomTimer = 0;
+    }
+    if (roomInputTimer) {
+      window.clearInterval(roomInputTimer);
+      roomInputTimer = 0;
+    }
+    room?.broadcast({ t: "end" });
+  }
+  function roomBotTick(id) {
+    const u = roomHumanUnits.get(id);
+    if (!u || u.dead || !world) return { id, input: { ...zeroInput }, cmds: [] };
+    const enemies = world.units.filter((x) => !x.dead && x.team !== u.team && (x.kind === "hero" || x.kind === "minion"));
+    enemies.sort((a, b) => dist(u.pos, a.pos) - dist(u.pos, b.pos));
+    const t = enemies[0];
+    if (!t) return { id, input: { ...zeroInput, aimX: u.pos.x, aimY: u.pos.y }, cmds: [] };
+    const d = dist(u.pos, t.pos);
+    const dir = d > 1 ? { x: (t.pos.x - u.pos.x) / d, y: (t.pos.y - u.pos.y) / d } : { x: 0, y: 0 };
+    const cmds = [];
+    const ready = (slot) => {
+      const a = u.abilities?.[slot];
+      return !!a && a.rank > 0 && a.cdUntil <= world.time && u.mp >= a.def.mana;
+    };
+    if (ready("q") && d < 250) cmds.push({ type: "cast", slot: "q", aim: { ...t.pos } });
+    else if (ready("e") && d < 430 && d > 120) cmds.push({ type: "cast", slot: "e", aim: { ...t.pos } });
+    else if (ready("r") && d < 480) cmds.push({ type: "cast", slot: "r", aim: { ...t.pos } });
+    else if (ready("t") && d < 330) cmds.push({ type: "cast", slot: "t", aim: { ...t.pos } });
+    const want = d > u.base.range + 40 ? 1 : -0.35;
+    return {
+      id,
+      input: {
+        moveX: dir.x * want,
+        moveY: dir.y * want,
+        aimX: t.pos.x,
+        aimY: t.pos.y
+      },
+      cmds
+    };
+  }
+  function roomStartHostLoop() {
+    if (!room || !roomConfig) return;
+    const cfg = roomConfig;
+    if (roomTimer) window.clearInterval(roomTimer);
+    roomTimer = window.setInterval(() => {
+      if (!roomActive || !world || !room) return;
+      if (world.state !== "playing") {
+        roomFinish();
+        return;
+      }
+      const now = Date.now();
+      let changed = false;
+      for (const p of roomPlayers) {
+        if (p.host || !p.connected) continue;
+        const seen = roomLastSeen.get(p.id) ?? now;
+        if (now - seen > 8e3) {
+          p.connected = false;
+          changed = true;
+        }
+      }
+      if (changed) {
+        room.broadcastLobby();
+        roomStatus("\u6709\u73A9\u5BB6\u6389\u7EBF\uFF0CAI \u63A5\u7BA1\u4E2D");
+      }
+      const n = ++roomTick;
+      const humans = cfg.humans.map((h) => {
+        if (h.id === cfg.hostId) return { id: h.id, input: { ...world?.input ?? zeroInput }, cmds: roomLocalCmds.splice(0) };
+        const p = roomPlayers.find((x) => x.id === h.id);
+        if (!p || !p.connected) return roomBotTick(h.id);
+        const r = roomRemote.get(h.id);
+        return { id: h.id, input: r ? { ...r.input } : { ...zeroInput }, cmds: r ? r.cmds.splice(0) : [] };
+      });
+      roomApplyHumans(humans, cfg.hostId);
+      step(world, DT);
+      drainEvents(world);
+      const hash = onlineHash(world);
+      roomHistory.push({ n, humans, hash });
+      if (roomHistory.length > 3e3) roomHistory.shift();
+      room.broadcast({ t: "tick", n, humans, hash });
+      if (world.state !== "playing") roomFinish();
+    }, 33);
+  }
+  function roomStartClientInput() {
+    if (roomInputTimer) window.clearInterval(roomInputTimer);
+    if (roomWatchdogTimer) window.clearInterval(roomWatchdogTimer);
+    roomInputTimer = window.setInterval(() => {
+      if (!roomActive || !world || !room || !roomConfig) return;
+      room.send({ t: "input", id: room.localId, input: { ...world.input }, cmds: roomLocalCmds.splice(0) });
+    }, 33);
+    roomWatchdogTimer = window.setInterval(() => {
+      if (!roomActive || roomHost || roomReconnecting) return;
+      if (roomLastTickAt && Date.now() - roomLastTickAt > 5e3) roomBeginReconnect("\u76F4\u8FDE\u8D85\u65F6");
+    }, 1e3);
+  }
+  function startRoomWorld(config) {
+    if (!room) return;
+    roomConfig = config;
+    roomStarting = true;
+    const hostHuman = config.humans.find((h) => h.id === config.hostId) ?? config.humans[0];
+    const hostTeam = hostHuman.team;
+    const allies = config.humans.filter((h) => h.team === hostTeam && h.id !== hostHuman.id).map((h) => h.hero);
+    const enemies = config.humans.filter((h) => h.team !== hostTeam).map((h) => h.hero);
+    pendingTeamSize = 3;
+    quickPending = false;
+    startMatch(hostTeam, hostHuman.hero, config.seed, void 0, allies, enemies);
+    roomStarting = false;
+    if (!world) {
+      roomStatus("\u4E16\u754C\u521D\u59CB\u5316\u5931\u8D25");
+      return;
+    }
+    roomHumanUnits.clear();
+    for (const h of config.humans) {
+      const u = world.units.find((x) => x.kind === "hero" && x.team === h.team && x.heroId === h.hero);
+      if (!u) {
+        roomStatus(`\u627E\u4E0D\u5230\u82F1\u96C4 ${h.hero}`);
+        return;
+      }
+      roomHumanUnits.set(h.id, u);
+      u.ai = false;
+      u.isPlayer = false;
+      u.netInput = { ...zeroInput };
+      u.netCommands = [];
+    }
+    roomConfig = config;
+    roomLocalId = room.localId;
+    roomTick = 0;
+    roomLastTick = 0;
+    roomHistory = [];
+    roomLastSeen.clear();
+    roomLastTickAt = Date.now();
+    roomLocalCmds = [];
+    roomRemote.clear();
+    roomReady.clear();
+    const localHuman = config.humans.find((h) => h.id === room?.localId) ?? config.humans[0];
+    const localUnit = roomHumanUnits.get(localHuman.id);
+    if (localUnit) {
+      localUnit.isPlayer = true;
+      world.playerId = localUnit.id;
+      world.playerTeam = localUnit.team;
+      world.input = { ...zeroInput };
+      ui.setHero(localUnit);
+      camera.x = localUnit.pos.x;
+      camera.y = localUnit.pos.y;
+    }
+    world.config.talents = false;
+    roomActive = true;
+    onlineCode = room.code;
+    onlineHost = roomHost;
+    onlineNetState = "\u540C\u6B65";
+    onlineTransport = "P2P";
+    document.body.classList.add("online-mode");
+    document.getElementById("online-hud")?.classList.remove("hidden");
+    updateOnlineHud();
+    ui.updateHud(world);
+    document.getElementById("room3-modal")?.remove();
+    ui.announce(roomHost ? "3v3 \u623F\u95F4\uFF1A\u4F60\u662F\u623F\u4E3B" : "3v3 \u623F\u95F4\uFF1A\u5DF2\u8FDB\u5165\u5BF9\u5C40");
+    if (roomHost) {
+      roomReady.add(room.localId);
+      roomStatus("\u7B49\u5F85\u5176\u4ED6\u73A9\u5BB6\u8F7D\u5165\u2026");
+    } else {
+      room.send({ t: "ready", id: room.localId });
+      roomStartClientInput();
+    }
+  }
+  function roomHandleData(data) {
+    if (!data || typeof data !== "object") return;
+    if (data.t === "lobby") {
+      roomPlayers = Array.isArray(data.players) ? data.players : [];
+      roomRenderLobby();
+    } else if (data.t === "start") {
+      startRoomWorld(data.config);
+    } else if (data.t === "ready" && roomHost) {
+      roomLastSeen.set(String(data.id), Date.now());
+      roomReady.add(String(data.id));
+      if (roomConfig && roomReady.size >= roomConfig.humans.length) roomStartHostLoop();
+    } else if (data.t === "input" && roomHost) {
+      const id = String(data.id);
+      roomLastSeen.set(id, Date.now());
+      const rp = roomPlayers.find((x) => x.id === id);
+      if (rp && !rp.connected) {
+        rp.connected = true;
+        room?.broadcastLobby();
+      }
+      roomRemote.set(id, { input: sanitizeOnlineInput(data.input), cmds: Array.isArray(data.cmds) ? data.cmds : [] });
+    } else if (data.t === "resume" && roomHost && roomActive) {
+      const id = String(data.id);
+      const p = roomPlayers.find((x) => x.id === id);
+      if (p) {
+        p.connected = true;
+        roomLastSeen.set(id, Date.now());
+      }
+      const last2 = Number(data.last) || 0;
+      const ticks = roomHistory.filter((t) => t.n > last2);
+      room?.sendTo(id, { t: "resume", ticks, done: true });
+      room?.broadcastLobby();
+      roomStatus(`${p?.name ?? "\u73A9\u5BB6"} \u5DF2\u91CD\u8FDE\uFF0C\u6B63\u5728\u540C\u6B65\u8FDB\u5EA6\u2026`);
+    } else if (data.t === "resume" && !roomHost && roomActive && world) {
+      const ticks = Array.isArray(data.ticks) ? data.ticks : [];
+      for (const tk of ticks) {
+        if (Number(tk.n) <= roomLastTick) continue;
+        roomLastTick = Number(tk.n);
+        roomApplyHumans(Array.isArray(tk.humans) ? tk.humans : [], room?.localId ?? roomLocalId);
+        step(world, DT);
+        drainEvents(world);
+      }
+      onlineNetState = "\u540C\u6B65";
+      roomReconnecting = false;
+      roomLastTickAt = Date.now();
+      roomStartClientInput();
+      ui.updateHud(world);
+      roomStatus("\u5DF2\u91CD\u8FDE\uFF0C\u7EE7\u7EED\u5BF9\u5C40");
+    } else if (data.t === "tick" && !roomHost && roomActive && world) {
+      const n = Number(data.n);
+      if (n <= roomLastTick) return;
+      if (roomLastTick > 0 && n > roomLastTick + 1) {
+        room?.send({ t: "resume", id: roomLocalId, last: roomLastTick });
+        roomStatus("\u7F51\u7EDC\u6296\u52A8\uFF0C\u6B63\u5728\u540C\u6B65\u2026");
+        return;
+      }
+      roomLastTick = n;
+      roomLastTickAt = Date.now();
+      roomApplyHumans(Array.isArray(data.humans) ? data.humans : [], room?.localId ?? "");
+      step(world, DT);
+      drainEvents(world);
+      ui.updateHud(world);
+      if (world.state !== "playing") roomFinish();
+    } else if (data.t === "end" && !roomHost && roomActive) {
+      roomFinish();
+    }
+  }
+  function roomClientCallbacks() {
+    return {
+      onStatus: roomStatus,
+      onLobby: (players) => {
+        roomPlayers = players;
+        roomRenderLobby();
+      },
+      onStart: startRoomWorld,
+      onData: roomHandleData,
+      onClosed: (reason) => {
+        if (roomActive) roomBeginReconnect(reason);
+        else roomStatus(reason);
+      },
+      onError: (text) => roomStatus(text),
+      onConnected: () => {
+      }
+    };
+  }
+  function roomBeginReconnect(reason = "\u8FDE\u63A5\u65AD\u5F00") {
+    if (roomHost || !roomActive || roomReconnecting) return;
+    if (roomInputTimer) {
+      window.clearInterval(roomInputTimer);
+      roomInputTimer = 0;
+    }
+    roomReconnecting = true;
+    roomReconnectAttempts = 0;
+    roomStatus(`${reason}\uFF0C\u6B63\u5728\u91CD\u8FDE\u2026`);
+    onlineNetState = "\u91CD\u8FDE\u4E2D";
+    const tryOnce = () => {
+      if (!roomActive || roomHost) {
+        roomReconnecting = false;
+        return;
+      }
+      if (!room || !room.code) {
+        roomReconnecting = false;
+        return;
+      }
+      const code = room.code;
+      roomReconnectAttempts++;
+      if (roomReconnectAttempts > 36) {
+        roomReconnecting = false;
+        onlineNetState = "\u65AD\u5F00";
+        roomStatus("\u91CD\u8FDE\u5931\u8D25\uFF0C\u8BF7\u9000\u51FA\u91CD\u5F00\u623F\u95F4");
+        return;
+      }
+      if (roomReconnectTimer) window.clearTimeout(roomReconnectTimer);
+      roomReconnectTimer = window.setTimeout(() => {
+        if (!roomActive) {
+          roomReconnecting = false;
+          return;
+        }
+        const old = room;
+        try {
+          old?.close();
+        } catch {
+        }
+        room = new OnlineRoom("client", roomClientCallbacks(), "\u73A9\u5BB6", roomLocalId);
+        roomStatus(`\u91CD\u8FDE\u4E2D ${roomReconnectAttempts} / 36\u2026`);
+        room.join(code).then(() => {
+          roomReconnecting = false;
+          onlineNetState = "\u540C\u6B65";
+          room?.send({ t: "resume", id: roomLocalId, last: roomLastTick });
+          roomStartClientInput();
+          roomStatus("\u5DF2\u91CD\u8FDE\uFF0C\u6B63\u5728\u56DE\u653E\u2026");
+        }).catch(() => {
+          if (roomReconnectAttempts < 36) tryOnce();
+          else {
+            roomReconnecting = false;
+            roomStatus("\u91CD\u8FDE\u5931\u8D25");
+          }
+        });
+      }, 1600);
+    };
+    tryOnce();
+  }
+  function showRoomModal() {
+    if (document.getElementById("room3-modal")) return;
+    const modal = document.createElement("div");
+    modal.id = "room3-modal";
+    modal.className = "modal";
+    modal.innerHTML = `
+    <div class="sheet wide room-sheet">
+      <div class="sheet-head"><div><h3>\u8054\u673A 3v3</h3><p>2\u20136 \u540D\u771F\u4EBA \xB7 \u81EA\u7531\u9009\u8FB9 \xB7 \u7A7A\u4F4D AI \u8865\u6EE1</p></div><button id="room3-close">\xD7</button></div>
+      <div id="room3-connect">
+        <button id="room3-create" class="btn primary">\u521B\u5EFA\u623F\u95F4</button>
+        <div class="online-or">\u6216</div>
+        <div class="online-join-row"><input id="room3-code" maxlength="4" placeholder="4 \u4F4D\u623F\u95F4\u7801" /><button id="room3-join" class="btn ghost">\u52A0\u5165</button></div>
+      </div>
+      <div id="room3-room" class="hidden">
+        <div class="online-code-wrap"><span>\u623F\u95F4\u7801</span><b id="room3-code-label">----</b></div>
+        <div id="room3-count" class="tiny">0 / 6 \u771F\u4EBA</div>
+        <div id="room3-players" class="room-players"></div>
+        <div class="room-choice">
+          <div id="room3-team" class="room-team"><button data-team="student" class="active">\u5B66\u751F</button><button data-team="teacher">\u6559\u5E08</button></div>
+          <select id="room3-hero"></select>
+        </div>
+        <div id="room3-status" class="online-status">\u6B63\u5728\u8FDE\u63A5\u2026</div>
+        <button id="room3-start" class="btn primary hidden">\u5F00\u59CB 3v3</button>
+        <button id="room3-exit" class="btn ghost room-exit">\u9000\u51FA\u623F\u95F4</button>
+      </div>
+    </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector("#room3-close")?.addEventListener("click", () => {
+      modal.remove();
+      if (!roomActive) closeRoom();
+    });
+    modal.querySelector("#room3-exit")?.addEventListener("click", () => {
+      modal.remove();
+      closeRoom();
+    });
+    modal.addEventListener("pointerdown", (e) => {
+      if (e.target === modal) {
+        modal.remove();
+        if (!roomActive) closeRoom();
+      }
+    });
+    modal.querySelector("#room3-create")?.addEventListener("click", () => {
+      document.getElementById("room3-connect")?.classList.add("hidden");
+      document.getElementById("room3-room")?.classList.remove("hidden");
+      roomHost = true;
+      roomLocalId = "host";
+      room = new OnlineRoom("host", {
+        onStatus: roomStatus,
+        onLobby: (players) => {
+          roomPlayers = players;
+          roomRenderLobby();
+        },
+        onStart: startRoomWorld,
+        onData: roomHandleData,
+        onClosed: (reason) => {
+          roomStatus(reason);
+          if (roomActive) roomFinish();
+        },
+        onError: (text) => roomStatus(text),
+        onConnected: () => roomStatus("\u6709\u73A9\u5BB6\u52A0\u5165")
+      }, "\u623F\u4E3B");
+      room.create().then((code) => {
+        const el = document.getElementById("room3-code-label");
+        if (el) el.textContent = code;
+        document.getElementById("room3-start")?.classList.remove("hidden");
+      }).catch(() => {
+      });
+    });
+    modal.querySelector("#room3-join")?.addEventListener("click", () => {
+      const code = (document.getElementById("room3-code")?.value ?? "").toUpperCase().trim();
+      if (code.length !== 4) {
+        roomStatus("\u8BF7\u8F93\u5165 4 \u4F4D\u623F\u95F4\u7801");
+        return;
+      }
+      document.getElementById("room3-connect")?.classList.add("hidden");
+      document.getElementById("room3-room")?.classList.remove("hidden");
+      roomHost = false;
+      roomLocalId = "";
+      room = new OnlineRoom("client", roomClientCallbacks(), "\u73A9\u5BB6");
+      roomLocalId = room.localId;
+      room.join(code).then(() => {
+        const el = document.getElementById("room3-code-label");
+        if (el) el.textContent = code;
+        roomStatus("\u5DF2\u52A0\u5165\uFF0C\u7B49\u5F85\u623F\u4E3B\u5F00\u59CB");
+        roomRenderLobby();
+      }).catch((err) => roomStatus(String(err?.message ?? err)));
+    });
+    modal.querySelector("#room3-start")?.addEventListener("click", () => {
+      if (!room || !roomHost) return;
+      if (room.players.length < 2) {
+        roomStatus("\u81F3\u5C11\u9700\u8981 2 \u540D\u771F\u4EBA");
+        return;
+      }
+      const cfg = room.start();
+      if (!cfg) {
+        roomStatus("\u65E0\u6CD5\u5F00\u59CB");
+        return;
+      }
+      startRoomWorld(cfg);
+    });
+    modal.querySelectorAll("#room3-team [data-team]").forEach((b) => {
+      b.addEventListener("click", () => roomChoose(b.dataset.team, roomLocalHero));
+    });
+    modal.querySelector("#room3-hero")?.addEventListener("change", (e) => roomChoose(roomLocalTeam, e.target.value));
+  }
+  function roomQueue(cmd) {
+    if (!roomActive) return false;
+    roomLocalCmds.push(cmd);
+    return true;
   }
   function startTutorial() {
     quickPending = false;
@@ -13905,18 +15240,18 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     const aim = screenToWorld(camera, mouse.x, mouse.y, cssW, cssH);
     const slot = code === km.q ? "q" : code === km.e ? "e" : code === km.r ? "r" : code === km.t ? "t" : null;
     if (slot) {
-      if (onlineQueue({ type: "cast", slot, aim })) return;
+      if (onlineQueue({ type: "cast", slot, aim }) || roomQueue({ type: "cast", slot, aim })) return;
       if (slot === "r" && p.heroId === "chengyaojin") {
         tryCast(world, p, "r", aim);
       } else {
         world.queued.push({ type: "cast", slot, aim });
       }
     } else if (code === km.recall) {
-      if (onlineQueue({ type: "recall" })) return;
+      if (onlineQueue({ type: "recall" }) || roomQueue({ type: "recall" })) return;
       world.queued.push({ type: "recall" });
     } else if (/^Digit[1-6]$/.test(code)) {
       const itemSlot = Number(code.slice(5)) - 1;
-      if (onlineQueue({ type: "item", slot: itemSlot })) return;
+      if (onlineQueue({ type: "item", slot: itemSlot }) || roomQueue({ type: "item", slot: itemSlot })) return;
       useItem(world, p, itemSlot);
     }
   });
@@ -14279,7 +15614,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
         const p = playerOf(world);
         if (!p) return;
         const aim = touchAim(p, slot);
-        if (onlineQueue({ type: "cast", slot, aim })) return;
+        if (onlineQueue({ type: "cast", slot, aim }) || roomQueue({ type: "cast", slot, aim })) return;
         if (slot === "r" && p.heroId === "chengyaojin") tryCast(world, p, "r", aim);
         else world.queued.push({ type: "cast", slot, aim });
       });
@@ -14319,7 +15654,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     });
     onTap("touch-recall", () => {
       if (!world || paused) return;
-      if (onlineQueue({ type: "recall" })) return;
+      if (onlineQueue({ type: "recall" }) || roomQueue({ type: "recall" })) return;
       world.queued.push({ type: "recall" });
     });
     onTap("touch-item", () => {
@@ -14328,7 +15663,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       const btn = document.getElementById("touch-item");
       const slot = Number(btn?.dataset.slot);
       if (p && Number.isFinite(slot)) {
-        if (onlineQueue({ type: "item", slot })) return;
+        if (onlineQueue({ type: "item", slot }) || roomQueue({ type: "item", slot })) return;
         useItem(world, p, slot);
       }
     });
@@ -15426,6 +16761,10 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       runSelftest();
       return;
     }
+    if (scene === "duel") {
+      startDuel(params.get("hero") || "messi");
+      return;
+    }
     if (scene === "match") {
       const team = params.get("team") === "teacher" ? "teacher" : "student";
       const heroId = params.get("hero") || heroesOf(team)[0].id;
@@ -15586,6 +16925,36 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
       for (let i = 0; i < n && world; i++) step(world, DT);
     },
     errors: () => errors,
+    room: {
+      get active() {
+        return roomActive;
+      },
+      get host() {
+        return roomHost;
+      },
+      get localId() {
+        return room?.localId ?? "";
+      },
+      get config() {
+        return roomConfig;
+      },
+      get last() {
+        return roomLastTick;
+      },
+      get tick() {
+        return roomTick;
+      },
+      get reconnecting() {
+        return roomReconnecting;
+      },
+      get history() {
+        return roomHistory.length;
+      },
+      units: () => [...roomHumanUnits.entries()].map(([id, u]) => ({ id, team: u.team, hero: u.heroId, isPlayer: !!u.isPlayer })),
+      drop: () => {
+        room?.abort?.();
+      }
+    },
     online: {
       get active() {
         return onlineActive;

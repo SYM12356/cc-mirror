@@ -2472,6 +2472,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
 .oh-simple b { font-family: var(--serif); font-size: 11px; color: var(--ink); letter-spacing: .04em; }
 .oh-simple span { font-family: ui-monospace, monospace; font-size: 9px; letter-spacing: .1em; color: var(--red-deep); }
 .oh-exit { pointer-events: auto; }
+.title-v2 .mode-grid.one { grid-template-columns: 1fr; }
 
 </style>
 </head>
@@ -12347,6 +12348,8 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
         });
       });
       $("btn-guide-pause").addEventListener("click", () => this.showHowTo(true));
+      $("btn-howto-close").addEventListener("click", () => this.showHowTo(false));
+      $("btn-changelog-close").addEventListener("click", () => this.showChangelog(false));
       this.bindHudTooltips();
       this.renderSide();
       this.syncKeyLabels();
@@ -13195,6 +13198,7 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
   // src/main.ts
   var params = new URLSearchParams(location.search);
   var isTouchDevice = window.matchMedia && window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0 || params.get("mobile") === "1";
+  var online3v3Enabled = params.get("online3") === "1" || /\/3v3(\/|$)/i.test(location.pathname) || /\/text\.html$/i.test(location.pathname);
   var isPhoneInner = params.get("phoneinner") === "1";
   if (isTouchDevice) document.body.classList.add("mobile");
   var canvas = document.getElementById("game");
@@ -13353,6 +13357,10 @@ body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 52px); left:
     sfx("click");
     showTitleGate(true);
   });
+  if (!online3v3Enabled) {
+    document.getElementById("btn-online")?.classList.add("hidden");
+    document.querySelector("#title-panel-online .mode-grid")?.classList.add("one");
+  }
   document.getElementById("oh-exit")?.addEventListener("click", () => {
     if (roomActive) {
       if (roomHost && !window.confirm("\u4F60\u662F\u623F\u4E3B\uFF0C\u9000\u51FA\u4F1A\u7ED3\u675F\u6574\u4E2A\u623F\u95F4\u3002\u786E\u5B9A\u9000\u51FA\uFF1F")) return;
