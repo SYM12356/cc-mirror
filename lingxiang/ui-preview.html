@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>铃响之前 · UI 层级原型 v2</title>
+<style>
+  :root{
+    --ink:#2e2a24; --ink-soft:rgba(46,42,36,.68); --muted:rgba(46,42,36,.46);
+    --paper:#f6f0df; --paper-2:#fffaf0; --paper-3:#efe3ca;
+    --teal:#3faf9b; --teal-deep:#247a6c; --red:#d94f3d; --red-deep:#a93627;
+    --gold:#c9a227; --gold-deep:#8a6a12; --line:rgba(46,42,36,.22);
+    --serif:"Songti SC","STSong",serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif}
+  body{background-image:
+    radial-gradient(circle at 12% 8%,rgba(255,255,255,.5),transparent 28%),
+    linear-gradient(rgba(46,42,36,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(46,42,36,.035) 1px,transparent 1px);
+    background-size:auto,30px 30px,30px 30px}
+  button{font-family:inherit;color:inherit}
+  .hidden{display:none!important}
+  .screen{min-height:100dvh;position:relative;overflow:hidden}
+  .proto-bar{
+    position:fixed;left:14px;top:12px;z-index:60;display:flex;align-items:center;gap:8px;
+    font-size:8px;letter-spacing:.16em;color:var(--muted);font-weight:800;
+    background:rgba(255,250,240,.78);border:1px solid var(--line);border-radius:99px;padding:4px 9px;
+    pointer-events:none;
+  }
+  .proto-bar b{color:var(--red-deep)}
+  body.in-game .proto-bar{display:none}
+  .title-wrap{max-width:1180px;margin:0 auto;padding:70px 28px 70px;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;position:relative}
+  .title-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;position:absolute;top:46px;left:28px;right:28px}
+  .brand-mini{font-size:9px;letter-spacing:.16em;color:var(--muted);font-weight:900;line-height:1.7}
+  .brand-mini b{display:block;font-size:11px;letter-spacing:.24em;color:var(--ink)}
+  .notice{
+    display:inline-flex;align-items:center;gap:7px;border:1.4px solid rgba(217,79,61,.5);
+    border-radius:99px;background:rgba(255,250,240,.9);padding:5px 12px;
+    font-size:10px;font-weight:800;color:var(--red-deep);transform:rotate(-.5deg);
+    box-shadow:2px 2px 0 rgba(46,42,36,.07);cursor:pointer;
+  }
+  .notice i{width:6px;height:6px;border-radius:50%;background:var(--red);box-shadow:0 0 0 3px rgba(217,79,61,.12);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%,100%{opacity:.65;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}
+  .title-hero{text-align:center;margin:26px 0 28px}
+  .title-mark{font-size:9px;letter-spacing:.22em;color:var(--muted);font-weight:900}
+  h1.logo{font-family:var(--serif);font-size:92px;line-height:.98;letter-spacing:12px;margin:10px 0 8px;font-weight:900;text-shadow:4px 4px 0 rgba(201,162,39,.15)}
+  .tagline{font-size:12px;color:var(--ink-soft);letter-spacing:.08em;margin:0}
+  .section-label{display:flex;align-items:baseline;gap:8px;font-family:var(--serif);font-size:17px;font-weight:900;letter-spacing:.08em;margin:0 0 9px}
+  .section-label em{font-style:normal;font-family:inherit;font-size:8px;letter-spacing:.16em;color:var(--gold-deep);font-weight:900}
+  .mode-grid{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:10px}
+  .mode-card{
+    position:relative;text-align:left;border:1.6px solid var(--ink);border-radius:12px;
+    background:var(--paper-2);padding:15px 16px;min-height:128px;cursor:pointer;
+    box-shadow:5px 5px 0 rgba(46,42,36,.1);transition:transform .12s,box-shadow .12s;
+    display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;
+  }
+  .mode-card:hover{transform:translate(-1px,-1px);box-shadow:7px 7px 0 rgba(46,42,36,.12)}
+  .mode-card:active{transform:translate(1px,1px);box-shadow:3px 3px 0 rgba(46,42,36,.12)}
+  .mode-card:after{content:"";position:absolute;right:-20px;bottom:-30px;width:110px;height:110px;border-radius:50%;background:rgba(63,175,155,.08)}
+  .mode-card.teal{border-top:6px solid var(--teal)}
+  .mode-card.red{border-top:6px solid var(--red)}
+  .mode-card.gold{border-top:6px solid var(--gold)}
+  .mode-card h3{font-family:var(--serif);font-size:27px;margin:0;letter-spacing:2px}
+  .mode-card p{font-size:10px;line-height:1.6;color:var(--ink-soft);margin:5px 0 0}
+  .mode-card .mode-meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+  .mode-card .mode-meta span{font-size:8px;border:1px solid var(--line);border-radius:99px;padding:2px 6px;color:var(--muted)}
+  .mode-card .mode-arrow{position:absolute;right:14px;top:13px;font-size:16px;color:var(--muted)}
+  .mode-card .mode-icon{font-size:18px;line-height:1;margin-bottom:6px}
+  .mode-card.primary{background:linear-gradient(145deg,#f0faf6,#fffaf0 60%)}
+  .other-row{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 0}
+  .chip{
+    border:1.2px solid var(--line);border-radius:99px;background:rgba(255,250,240,.72);
+    padding:6px 12px;font-size:10px;font-weight:700;color:var(--ink-soft);cursor:pointer;
+  }
+  .chip:hover{border-color:var(--teal-deep);color:var(--ink)}
+  .title-bottom{position:absolute;bottom:30px;left:28px;right:28px;padding-top:10px;border-top:1px dashed var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .tools{display:flex;gap:4px;flex-wrap:wrap}
+  .tool{border:0;background:none;font-size:9px;color:var(--muted);cursor:pointer;padding:4px 6px}
+  .tool:hover{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+  .title-ver{font-size:8px;color:var(--muted);letter-spacing:.1em}
+  .proto-note{position:absolute;bottom:8px;left:0;right:0;font-size:8px;color:var(--muted);text-align:center}
+
+  /* 备战 */
+  #screen-setup{display:flex;flex-direction:column;height:100dvh;padding:0;background:var(--paper)}
+  .setup-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 26px 14px;border-bottom:1.4px solid var(--ink);background:rgba(255,250,240,.66)}
+  .back-btn{border:0;background:none;font-size:10px;font-weight:800;color:var(--ink-soft);cursor:pointer;padding:0}
+  .back-btn:hover{color:var(--ink)}
+  .steps{display:flex;align-items:center;gap:7px;font-size:9px;color:var(--muted)}
+  .steps span.done{color:var(--teal-deep);font-weight:800}
+  .steps span.active{color:var(--ink);font-weight:900}
+  .steps i{width:22px;height:1px;background:var(--line);display:block}
+  .mode-pill{border:1.2px solid var(--line);border-radius:99px;padding:3px 9px;font-size:9px;font-weight:800;color:var(--ink-soft);background:var(--paper-2)}
+  .setup-body{display:grid;grid-template-columns:270px minmax(0,1fr) 250px;gap:16px;padding:16px 26px 12px;flex:1;min-height:0;overflow:auto}
+  .setup-label{font-family:var(--serif);font-size:16px;letter-spacing:1px;margin:0 0 7px;display:flex;justify-content:space-between;align-items:baseline}
+  .hero-detail{border:1.2px solid var(--line);border-radius:10px;background:rgba(255,250,240,.7);padding:12px;align-self:start;position:sticky;top:0}
+  .detail-top{display:flex;align-items:center;gap:10px;border-bottom:1px dashed var(--line);padding-bottom:8px}
+  .detail-top .avatar{width:58px;height:66px;transform:scale(1.28);transform-origin:left center;margin-right:16px;margin-bottom:8px}
+  .detail-top h3{font-family:var(--serif);font-size:25px;margin:0;letter-spacing:2px}
+  .detail-top span{display:block;font-size:9px;color:var(--muted);margin-top:3px}
+  .detail-tags{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0}
+  .detail-tags span{font-size:8px;border:1px solid var(--line);border-radius:99px;padding:2px 6px;color:var(--ink-soft)}
+  .detail-desc{font-size:9px;color:var(--ink-soft);line-height:1.6;margin:0 0 8px}
+  .detail-stats{display:grid;grid-template-columns:1fr 1fr;gap:4px;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:7px 0;margin-bottom:7px}
+  .detail-stats div{display:flex;justify-content:space-between;font-size:8px;color:var(--muted)}
+  .detail-stats b{color:var(--ink);font-family:ui-monospace,monospace;font-size:8px}
+  .detail-skills{display:grid;gap:4px}
+  .detail-skill{display:grid;grid-template-columns:18px 1fr;gap:5px;align-items:center;font-size:8px;color:var(--muted)}
+  .detail-skill b{display:flex;align-items:center;justify-content:center;width:18px;height:18px;border:1px solid var(--line);border-radius:4px;background:var(--paper);font-size:7px;color:var(--ink)}
+  .detail-note{font-size:7px;color:var(--muted);margin:8px 0 0;border-top:1px dotted var(--line);padding-top:5px}
+  .setup-label em{font-family:inherit;font-style:normal;font-size:8px;color:var(--muted);letter-spacing:.08em}
+  .side-list{display:flex;flex-direction:column;gap:8px}
+  .side-card{
+    border:1.5px solid var(--line);border-radius:10px;background:var(--paper-2);padding:11px 12px;
+    text-align:left;cursor:pointer;position:relative;overflow:hidden;
+  }
+  .side-card h4{font-family:var(--serif);font-size:21px;margin:0;letter-spacing:2px}
+  .side-card p{font-size:9px;line-height:1.55;color:var(--ink-soft);margin:4px 0 0}
+  .side-card.student:before,.side-card.teacher:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--teal)}
+  .side-card.teacher:before{background:var(--red)}
+  .side-card.active{border-color:var(--ink);box-shadow:4px 4px 0 rgba(46,42,36,.1)}
+  .side-card.active:after{content:"已选";position:absolute;right:9px;top:9px;font-size:8px;color:var(--teal-deep);font-weight:900}
+  .side-card.teacher.active:after{color:var(--red-deep)}
+  .side-note{font-size:8px;color:var(--muted);line-height:1.6;margin:7px 0 0;border-left:2px solid var(--line);padding-left:8px}
+  .hero-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;align-content:start}
+  .hero-card{
+    display:flex;gap:7px;align-items:center;text-align:left;border:1.2px solid var(--line);
+    border-radius:8px;background:var(--paper-2);padding:6px;cursor:pointer;min-height:62px;
+  }
+  .hero-card:hover{border-color:var(--teal-deep)}
+  .hero-card.active{border-color:var(--ink);background:rgba(63,175,155,.09);box-shadow:2px 2px 0 rgba(46,42,36,.09)}
+  .avatar{width:39px;height:45px;flex:0 0 auto;position:relative}
+  .avatar .a-head{position:absolute;left:9px;top:2px;width:21px;height:21px;border-radius:50%;background:var(--skin,#e6b98e);border:1.3px solid var(--ink)}
+  .avatar .a-hair{position:absolute;left:7px;top:0;width:25px;height:11px;border-radius:12px 12px 5px 5px;background:var(--hair,#2b2119);border:1.2px solid var(--ink)}
+  .avatar .a-body{position:absolute;left:7px;top:23px;width:25px;height:19px;border-radius:6px 6px 4px 4px;background:var(--outfit,#3faf9b);border:1.3px solid var(--ink)}
+  .avatar .a-eye{position:absolute;top:11px;width:2px;height:3px;border-radius:50%;background:var(--ink)}
+  .avatar .a-eye.l{left:15px}.avatar .a-eye.r{left:24px}
+  .hero-info{min-width:0}
+  .hero-info b{display:block;font-family:var(--serif);font-size:13px;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hero-info span{display:block;font-size:8px;color:var(--muted);margin-top:2px}
+  .setup-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 26px;border-top:1.4px solid var(--ink);background:rgba(255,250,240,.94);flex-wrap:wrap}
+  .setup-summary{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:9px;color:var(--muted)}
+  .setup-summary b{font-family:var(--serif);font-size:18px;color:var(--ink);letter-spacing:1px}
+  .setup-summary span{font-size:9px}
+  .btn{border:1.4px solid var(--ink);border-radius:6px;background:var(--paper-2);padding:8px 14px;font-size:10px;font-weight:800;cursor:pointer;letter-spacing:.03em}
+  .btn.primary{background:var(--ink);color:var(--paper-2)}
+  .btn.ghost{border-color:var(--line);color:var(--ink-soft);background:transparent}
+  .btn.danger{border-color:rgba(217,79,61,.4);color:var(--red-deep)}
+  .btn:hover{border-color:var(--teal-deep)}
+  .btn.primary:hover{background:#171411}
+  .btn.big{padding:11px 23px;font-size:12px;box-shadow:3px 3px 0 rgba(46,42,36,.12)}
+
+  /* 对局 */
+  #screen-game{overflow:hidden;background:#f7f1e2}
+  #battlefield{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .game-top{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:0;background:rgba(255,250,240,.93);border:1.3px solid var(--ink);border-top:0;border-radius:0 0 10px 10px;padding:4px 10px;box-shadow:0 3px 0 rgba(46,42,36,.07)}
+  .score{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:800;min-width:92px}
+  .score.teacher{justify-content:flex-end}
+  .score .dot{width:7px;height:7px;border-radius:50%;background:var(--teal)}
+  .score.teacher .dot{background:var(--red)}
+  .score b{font-size:17px;font-family:var(--serif)}
+  .pips{display:flex;gap:2px}.pips i{width:5px;height:5px;border-radius:50%;background:var(--teal);display:block}.pips.teacher i{background:var(--red)}
+  .clock{font-family:ui-monospace,monospace;font-size:12px;font-weight:800;padding:0 12px;letter-spacing:.05em}
+  .objective{position:absolute;top:52px;left:50%;transform:translateX(-50%);z-index:19;border:1px solid rgba(201,162,39,.45);background:rgba(255,250,240,.94);border-radius:99px;padding:3px 12px;font-size:9px;font-weight:700;color:var(--gold-deep);white-space:nowrap}
+  .online-strip{position:absolute;top:64px;left:12px;z-index:21;width:180px;background:rgba(255,250,240,.94);border:1.2px solid var(--line);border-radius:8px;box-shadow:2px 2px 0 rgba(46,42,36,.06);overflow:hidden}
+  .oh-summary{width:100%;border:0;background:transparent;display:flex;align-items:center;gap:6px;padding:6px 8px;font-size:9px;font-weight:800;color:var(--ink);cursor:pointer;text-align:left}
+  .oh-summary .live{width:5px;height:5px;border-radius:50%;background:var(--teal)}
+  .oh-summary .value{margin-left:auto;font-family:ui-monospace,monospace;color:var(--teal-deep);font-size:8px}
+  .oh-detail{display:none;border-top:1px dashed var(--line);padding:6px 8px;font-size:8px;color:var(--muted);line-height:1.7;grid-template-columns:36px 1fr 36px 1fr;gap:1px 4px}
+  .online-strip.open .oh-detail{display:grid}
+  .oh-detail b{color:var(--ink);font-family:ui-monospace,monospace;font-size:8px}
+  .minimap{position:absolute;top:16px;right:14px;z-index:20;width:190px;border:1.3px solid var(--ink);border-radius:8px;background:var(--paper-2);padding:4px;box-shadow:4px 4px 0 rgba(46,42,36,.08)}
+  .minimap canvas{width:100%;display:block;border-radius:4px}
+  .minimap span{display:block;text-align:center;font-size:8px;color:var(--muted);padding:2px 0 0}
+  .hero-panel{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:20;width:min(850px,calc(100% - 36px));display:flex;align-items:stretch;gap:7px;background:rgba(255,250,240,.95);border:1.3px solid var(--ink);border-radius:9px;padding:7px 8px;box-shadow:4px 4px 0 rgba(46,42,36,.09)}
+  .hp-portrait{width:48px;flex:0 0 auto;border-right:1px dashed var(--line);padding-right:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+  .hp-portrait .avatar{transform:scale(.9);height:42px}
+  .hp-portrait b{font-family:var(--serif);font-size:13px;white-space:nowrap}
+  .hp-portrait span{font-size:7px;color:var(--muted)}
+  .hp-bars{width:150px;flex:0 0 auto;display:flex;flex-direction:column;justify-content:center;gap:3px;padding:0 3px}
+  .bar{height:9px;border:1px solid rgba(46,42,36,.35);border-radius:2px;background:rgba(46,42,36,.08);overflow:hidden;position:relative}
+  .bar i{display:block;height:100%;background:var(--teal)}
+  .bar.mp i{background:#6a9fd8}.bar.xp i{background:var(--gold)}
+  .bar em{position:absolute;inset:0;text-align:center;font-size:6px;line-height:9px;font-style:normal;color:rgba(255,255,255,.9)}
+  .skills{display:flex;gap:4px;align-items:center;flex:1;min-width:0}
+  .skill{width:42px;height:44px;border:1.1px solid var(--line);border-radius:5px;background:var(--paper);position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;flex:0 0 auto}
+  .skill b{font-size:13px;line-height:1}.skill span{font-size:6px;color:var(--muted)}
+  .skill .key{position:absolute;right:2px;top:2px;font-size:6px;color:var(--muted)}
+  .items{display:flex;gap:3px;align-items:center;padding-left:4px;border-left:1px dashed var(--line)}
+  .item{width:24px;height:26px;border:1px dashed var(--line);border-radius:4px;background:rgba(246,240,223,.65);display:flex;align-items:center;justify-content:center;font-size:10px}
+  .hint{position:absolute;bottom:4px;left:14px;font-size:8px;color:var(--muted);z-index:21}
+  .demo-actions{position:absolute;bottom:4px;right:14px;z-index:22;display:flex;gap:5px}
+  .demo-actions button{font-size:8px;border:1px solid var(--line);border-radius:4px;background:rgba(255,250,240,.85);padding:3px 7px;cursor:pointer;color:var(--ink-soft)}
+
+  /* 弹窗 */
+  .modal-backdrop{position:fixed;inset:0;z-index:100;background:rgba(24,20,15,.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:18px}
+  .sheet{width:min(430px,94vw);max-height:88dvh;overflow:auto;background:var(--paper-2);border:1.6px solid var(--ink);border-radius:12px;box-shadow:7px 7px 0 rgba(0,0,0,.16);padding:15px}
+  .sheet.wide{width:min(620px,94vw)}
+  .sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1.4px solid var(--ink);padding-bottom:8px;margin-bottom:10px}
+  .sheet-head h3{font-family:var(--serif);font-size:22px;margin:0;letter-spacing:2px}
+  .sheet-head p{font-size:9px;color:var(--muted);margin:3px 0 0;line-height:1.5}
+  .sheet-head button{border:0;background:none;font-size:16px;color:var(--muted);cursor:pointer;padding:0 2px}
+  .sheet-section{border:1px dashed var(--line);border-radius:7px;padding:8px 10px;margin:8px 0}
+  .sheet-section h4{margin:0 0 6px;font-size:10px;letter-spacing:.06em;color:var(--gold-deep)}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;font-size:10px;border-bottom:1px dotted rgba(46,42,36,.12)}
+  .row:last-child{border-bottom:0}
+  .row small{font-size:8px;color:var(--muted);display:block;margin-top:1px}
+  .fake-toggle{width:28px;height:15px;border:1px solid var(--line);border-radius:99px;background:rgba(46,42,36,.08);position:relative;flex:0 0 auto}
+  .fake-toggle:after{content:"";position:absolute;left:2px;top:2px;width:9px;height:9px;border-radius:50%;background:var(--muted)}
+  .fake-toggle.on{background:rgba(63,175,155,.3);border-color:var(--teal)}.fake-toggle.on:after{left:auto;right:2px;background:var(--teal-deep)}
+  .sheet-foot{display:flex;justify-content:flex-end;gap:6px;border-top:1px dashed var(--line);padding-top:9px;margin-top:10px}
+  .code-box{display:flex;justify-content:center;align-items:baseline;gap:8px;margin:8px 0}
+  .code-box b{font-family:ui-monospace,monospace;font-size:32px;letter-spacing:.18em;color:var(--red-deep)}
+  .code-box span{font-size:9px;color:var(--muted)}
+  .online-picks{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:6px 0}
+  .online-pick{border:1px solid var(--line);border-radius:5px;background:var(--paper);padding:5px 6px;font-size:9px;text-align:left;cursor:pointer}
+  .online-pick.active{border-color:var(--teal);background:rgba(63,175,155,.1);font-weight:800}
+  .modal-actions{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+  .modal-actions .btn{width:100%;text-align:center}
+  .result-stamp{position:absolute;right:20px;top:18px;border:2px solid var(--red);color:var(--red-deep);border-radius:8px;padding:6px 12px;font-family:var(--serif);font-size:22px;letter-spacing:.12em;transform:rotate(5deg);opacity:.85}
+  .result-head{text-align:center;padding:20px 16px 12px}
+  .result-head h2{font-family:var(--serif);font-size:48px;letter-spacing:8px;margin:0}
+  .result-head p{font-size:10px;color:var(--muted);margin:5px 0 0}
+  .mvp{display:flex;align-items:center;gap:12px;border:1.4px solid var(--ink);border-radius:9px;background:var(--paper);padding:10px 12px;margin:10px 0}
+  .mvp .avatar{transform:scale(1.15);margin-right:3px}
+  .mvp h4{font-family:var(--serif);font-size:20px;margin:0}
+  .mvp span{font-size:9px;color:var(--muted)}
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:9px 0}
+  .stat{border:1px solid var(--line);border-radius:6px;padding:6px;text-align:center;background:rgba(246,240,223,.55)}
+  .stat b{display:block;font-family:var(--serif);font-size:17px}
+  .stat span{font-size:7px;color:var(--muted)}
+  .teams{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+  .team-box{border:1px solid var(--line);border-radius:6px;padding:6px;font-size:9px;line-height:1.7}
+  .team-box b{display:block;font-size:10px;margin-bottom:2px}
+  .team-box.student{border-left:4px solid var(--teal)}.team-box.teacher{border-left:4px solid var(--red)}
+  .result .modal-actions{flex-direction:row}.result .modal-actions .btn{flex:1}
+
+  /* toast */
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(12px);z-index:300;background:rgba(46,42,36,.92);color:var(--paper-2);font-size:10px;border-radius:99px;padding:6px 14px;opacity:0;pointer-events:none;transition:.2s}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media(max-width:900px){
+.title-wrap{padding:66px 14px 60px}
+    .title-top{top:34px;left:14px;right:14px}
+    .title-bottom{bottom:22px;left:14px;right:14px}
+    .proto-note{display:none}
+    h1.logo{font-size:58px;letter-spacing:7px}
+    .mode-grid{grid-template-columns:1fr}
+    .mode-card{min-height:96px}
+    .setup-body{grid-template-columns:1fr;padding:12px 14px}
+    .hero-detail{position:static;order:3}
+    .hero-grid{grid-template-columns:repeat(2,1fr)}
+    .setup-head{padding:14px}
+    .setup-foot{padding:9px 14px}
+    .online-strip{top:60px;left:8px;width:160px}
+    .minimap{width:132px;top:12px;right:8px}
+    .hero-panel{bottom:12px;width:calc(100% - 20px);overflow-x:auto}
+    .hp-bars{width:110px}.items{display:none}
+    .hint{display:none}
+    .demo-actions{bottom:auto;top:8px;right:8px}
+  }
+  @media(max-width:520px){
+    h1.logo{font-size:44px;letter-spacing:5px}
+    .title-hero{margin:10px 0 14px}
+    .title-top{align-items:flex-start}
+    .notice{font-size:8px;padding:4px 8px}
+    .mode-grid{gap:7px}
+    .mode-card{min-height:86px;padding:9px 12px}
+    .mode-card h3{font-size:22px}
+    .mode-card p{font-size:9px;margin-top:3px;line-height:1.45}
+    .mode-card .mode-icon{display:none}
+    .mode-card .mode-meta{margin-top:5px}
+    .mode-card .mode-meta span{font-size:7px;padding:1px 5px}
+    .other-row{gap:5px}
+    .chip{font-size:9px;padding:5px 9px}
+    .steps{display:none}
+    .sheet{padding:12px}
+    .hero-grid{grid-template-columns:1fr}
+    .game-top{width:100%;border-radius:0;justify-content:center}
+    .score{min-width:72px;font-size:8px}
+    .clock{font-size:11px;padding:0 6px}
+    .minimap{width:104px}
+    .online-strip{width:146px}
+    .hp-portrait{display:none}
+    .hp-bars{width:80px}
+  }
+</style>
+</head>
+<body>
+<div class="proto-bar">UI HIERARCHY <b>PREVIEW v2</b> · 标题/HUD 参考 · 选人沿用旧版</div>
+
+<!-- ================= 标题 ================= -->
+<section id="screen-title" class="screen">
+  <div class="title-wrap">
+    <div class="title-top">
+      <div class="brand-mini"><b>SYM</b>铃响之前 · UI 层级重构</div>
+      <button class="notice" data-utility="release"><i></i>正式版即将推出</button>
+    </div>
+
+    <div class="title-hero">
+      <div class="title-mark">2D · 3v3 / 5v5 · 草稿纸战场</div>
+      <h1 class="logo">铃响之前</h1>
+      <p class="tagline">最后一节自习课，草稿纸活了过来。</p>
+    </div>
+
+    <section>
+      <div class="section-label">主模式 <em>PLAY</em></div>
+      <div class="mode-grid">
+        <button class="mode-card primary teal" data-mode="3v3">
+          <span class="mode-arrow">→</span>
+          <div><div class="mode-icon">✎</div><h3>3v3 MOBA</h3><p>推掉核心，决定今天到底放不放学。标准三路对局。</p></div>
+          <div class="mode-meta"><span>你 + 2 AI</span><span>三路</span><span>完整局</span></div>
+        </button>
+        <button class="mode-card red" data-mode="5v5">
+          <span class="mode-arrow">→</span>
+          <div><div class="mode-icon">5×5</div><h3>5v5 团战</h3><p>每边 5 名英雄，10 人同屏。更挤、更乱、更像课间。</p></div>
+          <div class="mode-meta"><span>你 + 4 AI</span><span>10 人</span></div>
+        </button>
+        <button class="mode-card gold" data-mode="online">
+          <span class="mode-arrow">→</span>
+          <div><div class="mode-icon">⌁</div><h3>联机 1v1</h3><p>房间码，真实英雄，P2P 锁步。先拿 5 个人头。</p></div>
+          <div class="mode-meta"><span>2 人</span><span>RTT / 重连</span></div>
+        </button>
+      </div>
+    </section>
+
+    <section style="margin-top:18px">
+      <div class="section-label">其他玩法 <em>MORE</em></div>
+      <div class="other-row">
+        <button class="chip" data-mode="quick">快速模式</button>
+        <button class="chip" data-mode="duel">单挑</button>
+        <button class="chip" data-mode="story">剧情</button>
+        <button class="chip" data-mode="tutorial">新手指导</button>
+      </div>
+    </section>
+
+    <div class="title-bottom">
+      <div class="tools">
+        <button class="tool" data-utility="settings">设置</button>
+        <button class="tool" data-utility="help">帮助</button>
+        <button class="tool" data-utility="changelog">更新日志</button>
+      </div>
+      <div class="title-ver">UI PROTOTYPE v2 · 2026.11</div>
+    </div>
+    <div class="proto-note">公告改为右上角徽章 · 主模式前置 · 不再有「进入草稿纸战场」中间层</div>
+  </div>
+</section>
+
+<!-- ================= 备战 ================= -->
+<section id="screen-setup" class="screen hidden">
+  <header class="setup-head">
+    <button class="back-btn" id="setup-back">← 返回标题</button>
+    <div class="steps"><span class="done">标题</span><i></i><span class="active">备战</span><i></i><span>战场</span></div>
+    <div class="mode-pill" id="setup-mode">3v3 MOBA</div>
+  </header>
+  <div class="setup-body">
+    <section>
+      <div class="setup-label">01 / 选择阵营 <em>先选边</em></div>
+      <div class="side-list">
+        <button class="side-card student active" data-side="student">
+          <h4>学生</h4>
+          <p>涂鸦同盟<br/>“再拖堂就来不及了！”</p>
+        </button>
+        <button class="side-card teacher" data-side="teacher">
+          <h4>教师</h4>
+          <p>红笔联盟<br/>“今天谁都别想跑。”</p>
+        </button>
+      </div>
+      <p class="side-note">两边都能玩。选边只影响视角、队友和出生点，不影响英雄强度。</p>
+    </section>
+    <section>
+      <div class="setup-label">02 / 选择英雄 <em id="pool-count">9 名可选</em></div>
+      <div class="hero-grid" id="hero-grid"></div>
+    </section>
+    <aside class="hero-detail" id="hero-detail"></aside>
+  </div>
+  <footer class="setup-foot">
+    <div class="setup-summary">
+      <span>已选</span><b id="sum-hero">老尻</b><span>·</span><span id="sum-side">学生</span><span>·</span><span id="sum-mode">3v3 MOBA</span>
+    </div>
+    <button class="btn primary big" id="setup-start">进入战场 →</button>
+  </footer>
+</section>
+
+<!-- ================= 对局 ================= -->
+<section id="screen-game" class="screen hidden">
+  <canvas id="battlefield"></canvas>
+  <div class="game-top">
+    <div class="score student"><span class="dot"></span><span>涂鸦同盟</span><b>12</b><span class="pips" id="pips-s"></span></div>
+    <div class="clock">08:42</div>
+    <div class="score teacher"><span class="pips teacher" id="pips-t"></span><b>9</b><span>红笔联盟</span><span class="dot"></span></div>
+  </div>
+  <div class="objective" id="game-objective">下课铃 00:48 · 先拿 5 个人头</div>
+
+  <div class="online-strip" id="online-strip">
+    <button class="oh-summary" id="online-toggle"><span class="live"></span>联机 <span class="value">32ms · 同步</span><span style="margin-left:auto;font-size:8px;color:var(--muted)">⌄</span></button>
+    <div class="oh-detail">
+      <span>房间</span><b>A7K2</b><span>身份</span><b>房主</b>
+      <span>链路</span><b>直连</b><span>帧号</span><b>1284</b>
+    </div>
+  </div>
+
+  <div class="minimap"><canvas id="map-mini" width="240" height="160"></canvas><span>草稿纸战场</span></div>
+
+  <div class="hero-panel">
+    <div class="hp-portrait">
+      <div class="avatar" style="--outfit:#3faf9b;--hair:#2b2119"><span class="a-head"></span><span class="a-hair"></span><span class="a-body"></span><span class="a-eye l"></span><span class="a-eye r"></span></div>
+      <b id="game-hero-name">老尻</b><span>Lv.7</span>
+    </div>
+    <div class="hp-bars">
+      <div class="bar"><i style="width:76%"></i><em>1160 / 1520</em></div>
+      <div class="bar mp"><i style="width:58%"></i><em>240 / 420</em></div>
+      <div class="bar xp"><i style="width:42%"></i></div>
+    </div>
+    <div class="skills">
+      <div class="skill"><b>✎</b><span>被动</span></div>
+      <div class="skill"><b>✎</b><span>淡过来</span><span class="key">J</span></div>
+      <div class="skill"><b>坐</b><span>坐一下</span><span class="key">K</span></div>
+      <div class="skill"><b>山</b><span>泰山压顶</span><span class="key">L</span></div>
+      <div class="skill"><b>∅</b><span>摊开</span><span class="key">U</span></div>
+    </div>
+    <div class="items"><span class="item">✎</span><span class="item">▭</span><span class="item">⌂</span></div>
+  </div>
+
+  <div class="hint">WASD 移动 · J/K/L/U 技能 · P 商店 · Tab 记分板 · Esc 暂停</div>
+  <div class="demo-actions">
+    <button data-demo="pause">暂停</button>
+    <button data-demo="result">结算</button>
+    <button data-demo="setup">返回备战</button>
+  </div>
+</section>
+
+<!-- ================= 结算 ================= -->
+<section id="screen-result" class="screen hidden result" style="display:flex;align-items:center;justify-content:center;padding:20px">
+  <div class="sheet wide" style="position:relative;max-height:92dvh">
+    <div class="result-stamp">放学</div>
+    <div class="result-head"><h2>赢了</h2><p>最后一节自习课，草稿纸站到了你这边。</p></div>
+    <div class="mvp">
+      <div class="avatar" style="--outfit:#3faf9b;--hair:#2b2119"><span class="a-head"></span><span class="a-hair"></span><span class="a-body"></span><span class="a-eye l"></span><span class="a-eye r"></span></div>
+      <div><h4>老尻 · MVP</h4><span>8 / 2 / 6 · 18.4k 伤害</span></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><b>21:36</b><span>对局时长</span></div>
+      <div class="stat"><b>32</b><span>总击杀</span></div>
+      <div class="stat"><b>15</b><span>推塔</span></div>
+      <div class="stat"><b>+28</b><span>本局评分</span></div>
+    </div>
+    <div class="teams">
+      <div class="team-box student"><b>涂鸦同盟</b>老尻 · 沼泽 · 大壮<br/>阿太 · 超然</div>
+      <div class="team-box teacher"><b>红笔联盟</b>王主任 · 红肠 · 李杰<br/>香飘飘 · 中刚</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" id="result-again">再来一局</button>
+      <button class="btn ghost" id="result-home">返回标题</button>
+    </div>
+  </div>
+</section>
+
+<div id="modal-root"></div>
+<div id="toast"></div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => [...document.querySelectorAll(s)];
+  const screens = ['screen-title','screen-setup','screen-game','screen-result'];
+  const modeName = {'3v3':'3v3 MOBA','5v5':'5v5 团战','quick':'快速模式','duel':'单挑','story':'剧情','tutorial':'新手指导','online':'联机 1v1'};
+  const HEROES = {
+    student:[
+      ['laokao','老尻','坦克'],['zhaoze','沼泽','法师'],['dazhuang','大壮','战士'],
+      ['atai','阿太','射手'],['chaoran','超然','刺客'],['nianqingren','老年人','法师'],
+      ['huohua','火华','辅助'],['jiao','脚','刺客'],['messi','梅西','战士']
+    ],
+    teacher:[
+      ['wuhongchang','红肠','坦克'],['liji','李杰','战士'],['xiangpiaopiao','香飘飘','射手'],
+      ['chengyaojin','程咬金','法师'],['wangdi','王主任','辅助'],['zhonggang','中刚','坦克'],
+      ['dajiuma','大舅妈','辅助'],['fan','范老师','战士'],['shitang','食堂老头','战士']
+    ]
+  };
+  const colors = ['#3faf9b','#6f8a6a','#c9a227','#8b6fd8','#d94f3d','#4a89a8','#b98252','#7a7263','#35a894'];
+  let mode = '3v3';
+  let side = 'student';
+  let hero = 'laokao';
+
+  function show(id){
+    screens.forEach(s => document.getElementById(s).classList.toggle('hidden', s !== id));
+    document.body.classList.toggle('in-game', id === 'screen-game');
+    window.scrollTo(0,0);
+  }
+  function toast(text){
+    const t = document.getElementById('toast'); t.textContent = text; t.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+  function avatarHtml(h, i){
+    const color = colors[i % colors.length];
+    return `<div class="avatar" style="--outfit:${color};--hair:#2b2119"><span class="a-head"></span><span class="a-hair"></span><span class="a-body"></span><span class="a-eye l"></span><span class="a-eye r"></span></div>`;
+  }
+  function renderHeroes(){
+    const list = HEROES[side];
+    if (!list.some(h => h[0] === hero)) hero = list[0][0];
+    const grid = document.getElementById('hero-grid');
+    grid.innerHTML = list.map((h,i) => `
+      <button class="hero-card ${h[0]===hero?'active':''}" data-hero="${h[0]}">
+        ${avatarHtml(h,i)}
+        <div class="hero-info"><b>${h[1]}</b><span>${h[2]}</span></div>
+      </button>`).join('');
+    grid.querySelectorAll('[data-hero]').forEach(btn => btn.addEventListener('click', () => {
+      hero = btn.dataset.hero; renderHeroes();
+    }));
+    document.getElementById('pool-count').textContent = `${list.length} 名可选`;
+    updateSummary();
+  }
+  function updateDetail(){
+    const list = HEROES[side]; const def = list.find(h => h[0] === hero); if (!def) return;
+    const i = list.findIndex(h => h[0] === hero); const color = colors[i % colors.length];
+    const hp = 760 + (i * 37) % 320, ad = 52 + (i * 11) % 30;
+    document.getElementById('hero-detail').innerHTML = `
+      <div class="detail-top">
+        <div class="avatar" style="--outfit:${color};--hair:#2b2119"><span class="a-head"></span><span class="a-hair"></span><span class="a-body"></span><span class="a-eye l"></span><span class="a-eye r"></span></div>
+        <div><h3>${def[1]}</h3><span>${def[2]} · ${side === 'student' ? '学生' : '教师'}</span></div>
+      </div>
+      <div class="detail-tags"><span>近战</span><span>难度 ★★</span><span>${mode === '5v5' ? '5v5' : mode === 'online' ? '联机' : '3v3'}</span></div>
+      <p class="detail-desc">草稿纸上的${def[2]}。选择后进入战场，技能与装备在局内成长。</p>
+      <div class="detail-stats"><div><span>生命</span><b>${hp}</b></div><div><span>攻击</span><b>${ad}</b></div><div><span>护甲</span><b>${22 + i}</b></div><div><span>移速</span><b>${310 + (i % 4) * 5}</b></div></div>
+      <div class="detail-skills">
+        <div class="detail-skill"><b>Q</b><span>主动技能 · 命中后积累优势</span></div>
+        <div class="detail-skill"><b>E</b><span>控制 / 位移 · 看准时机</span></div>
+        <div class="detail-skill"><b>R</b><span>大招 · 团战核心</span></div>
+        <div class="detail-skill"><b>T</b><span>终结技 · 长冷却</span></div>
+      </div>
+      <div class="detail-note">当前选择：${def[1]} · ${side === 'student' ? '涂鸦同盟' : '红笔联盟'}</div>`;
+  }
+  function updateSummary(){
+    const list = HEROES[side];
+    const def = list.find(h => h[0] === hero);
+    document.getElementById('sum-hero').textContent = def ? def[1] : '—';
+    document.getElementById('sum-side').textContent = side === 'student' ? '学生' : '教师';
+    document.getElementById('sum-mode').textContent = modeName[mode] || mode;
+    updateDetail();
+  }
+  function openSetup(m){
+    mode = m;
+    if (m === '5v5') side = 'student';
+    if (m === 'duel' && side === 'student') side = 'student';
+    if (m === 'story' || m === 'tutorial') side = 'student';
+    hero = HEROES[side][0][0];
+    document.getElementById('setup-mode').textContent = modeName[m] || m;
+    $$('.side-card').forEach(s => s.classList.toggle('active', s.dataset.side === side));
+    renderHeroes();
+    show('screen-setup');
+  }
+  function startGame(){
+    document.getElementById('game-hero-name').textContent = (HEROES[side].find(h => h[0] === hero) || [0,'英雄'])[1];
+    document.getElementById('game-objective').textContent = mode === 'online' ? '联机 1v1 · 学生 0/5 · 教师 0/5' : mode === '5v5' ? '5v5 团战 · 先推核心' : mode === 'quick' ? '快速模式 · 10 分钟内结束' : '下课铃 00:48 · 先拿 5 个人头';
+    show('screen-game');
+    initGameCanvas();
+    toast(modeName[mode] + ' · ' + (side === 'student' ? '学生' : '教师') + ' · ' + document.getElementById('game-hero-name').textContent);
+  }
+
+  $$('[data-mode]').forEach(btn => btn.addEventListener('click', () => {
+    const m = btn.dataset.mode;
+    if (m === 'online') openOnline(); else openSetup(m);
+  }));
+  $$('.chip').forEach(btn => btn.addEventListener('click', () => openSetup(btn.dataset.mode)));
+  $$('.side-card').forEach(btn => btn.addEventListener('click', () => {
+    side = btn.dataset.side; hero = HEROES[side][0][0];
+    $$('.side-card').forEach(s => s.classList.toggle('active', s === btn));
+    renderHeroes();
+  }));
+  document.getElementById('setup-back').addEventListener('click', () => show('screen-title'));
+  document.getElementById('setup-start').addEventListener('click', startGame);
+  document.getElementById('online-toggle').addEventListener('click', () => document.getElementById('online-strip').classList.toggle('open'));
+  document.getElementById('result-again').addEventListener('click', () => { if (mode === 'online') openSetup('3v3'); else openSetup(mode); });
+  document.getElementById('result-home').addEventListener('click', () => { closeModal(); show('screen-title'); });
+
+  $$('[data-demo]').forEach(btn => btn.addEventListener('click', () => {
+    const d = btn.dataset.demo;
+    if (d === 'pause') openPause();
+    else if (d === 'result') showResult();
+    else if (d === 'setup') openSetup(mode);
+  }));
+
+  // 弹窗
+  function modal(content, cls=''){
+    const root = document.getElementById('modal-root');
+    root.innerHTML = `<div class="modal-backdrop"><div class="sheet ${cls}">${content}</div></div>`;
+    root.querySelector('.modal-backdrop').addEventListener('pointerdown', e => { if (e.target.classList.contains('modal-backdrop')) closeModal(); });
+    root.querySelector('[data-close]')?.addEventListener('click', closeModal);
+    return root.firstElementChild;
+  }
+  function closeModal(){ document.getElementById('modal-root').innerHTML = ''; }
+  function openPause(){
+    const m = modal(`
+      <div class="sheet-head"><div><h3>对局暂停</h3><p>草稿纸先摊在这里。</p></div><button data-close>×</button></div>
+      <div class="modal-actions">
+        <button class="btn primary" data-close>继续对局</button>
+        <button class="btn" id="pause-settings">设置</button>
+        <button class="btn ghost" id="pause-home">返回标题</button>
+      </div>`);
+    m.querySelector('#pause-settings').addEventListener('click', openSettings);
+    m.querySelector('#pause-home').addEventListener('click', () => { closeModal(); show('screen-title'); });
+  }
+  function openSettings(){
+    const m = modal(`
+      <div class="sheet-head"><div><h3>设置</h3><p>画面、声音、操作、玩法分层。</p></div><button data-close>×</button></div>
+      <div class="sheet-section"><h4>画面与声音</h4>
+        <div class="row"><span>背景音乐<small>程序生成，无音频文件</small></span><span class="fake-toggle on"></span></div>
+        <div class="row"><span>护眼纸色</span><span class="fake-toggle"></span></div>
+        <div class="row"><span>音量</span><span style="font-size:9px;color:var(--muted)">70%</span></div>
+      </div>
+      <div class="sheet-section"><h4>操作</h4>
+        <div class="row"><span>手机按键布局<small>仅触屏设备</small></span><button class="btn" style="padding:4px 8px;font-size:8px">调整</button></div>
+        <div class="row"><span>PC 自定义键位</span><button class="btn" style="padding:4px 8px;font-size:8px">修改</button></div>
+      </div>
+      <div class="sheet-section"><h4>玩法</h4>
+        <div class="row"><span>局内天赋<small>3 / 6 / 9 级三选一 · 默认关闭</small></span><span class="fake-toggle"></span></div>
+      </div>
+      <div class="sheet-foot"><button class="btn ghost" data-close>关闭</button><button class="btn primary" data-close>保存</button></div>`);
+    return m;
+  }
+  function openOnline(){
+    const m = modal(`
+      <div class="sheet-head"><div><h3>联机 1v1</h3><p>房间码 · 真实英雄 · P2P 锁步</p></div><button data-close>×</button></div>
+      <div class="code-box"><span>房间</span><b>A7K2</b></div>
+      <div class="online-picks">
+        ${HEROES.student.map((h,i)=>`<button class="online-pick ${i===0?'active':''}" data-online-hero="${h[1]}">${h[1]}</button>`).join('')}
+      </div>
+      <div class="row"><span>对手<small>红笔联盟</small></span><b style="font-size:10px">食堂老头</b></div>
+      <div class="row"><span>延迟 / 链路</span><b style="font-size:10px;color:var(--teal-deep)">32ms · 直连</b></div>
+      <div class="sheet-foot"><button class="btn ghost" data-close>取消</button><button class="btn primary" id="online-start">开始对局</button></div>`,'wide');
+    m.querySelectorAll('[data-online-hero]').forEach(b => b.addEventListener('click', () => {
+      m.querySelectorAll('[data-online-hero]').forEach(x => x.classList.toggle('active', x === b));
+      toast('已选择 ' + b.dataset.onlineHero);
+    }));
+    m.querySelector('#online-start').addEventListener('click', () => { mode='online'; closeModal(); startGame(); });
+  }
+  function showResult(){ closeModal(); show('screen-result'); }
+  function openUtility(kind){
+    if (kind === 'settings') return openSettings();
+    if (kind === 'release') return toast('正式版即将推出 · 具体日期待定');
+    if (kind === 'help') return modal(`<div class="sheet-head"><div><h3>帮助</h3><p>先看新手指导，再打一局。</p></div><button data-close>×</button></div><div class="modal-actions"><button class="btn primary" data-close>知道了</button></div>`);
+    if (kind === 'changelog') return modal(`<div class="sheet-head"><div><h3>更新日志</h3><p>UI 层级重构预览</p></div><button data-close>×</button></div><div class="sheet-section"><h4>v2 原型</h4><div class="row"><span>标题页层级</span><b>主模式前置</b></div><div class="row"><span>备战页</span><b>选边 + 选英雄</b></div><div class="row"><span>对局 HUD</span><b>联机折叠</b></div></div><div class="sheet-foot"><button class="btn" data-close>关闭</button></div>`);
+  }
+  $$('[data-utility]').forEach(b => b.addEventListener('click', () => openUtility(b.dataset.utility)));
+
+  // 键盘
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (document.getElementById('modal-root').innerHTML) { closeModal(); return; }
+      if (!document.getElementById('screen-game').classList.contains('hidden')) { openPause(); return; }
+      if (!document.getElementById('screen-setup').classList.contains('hidden')) { show('screen-title'); return; }
+    }
+  });
+
+  // 战场纸面
+  function paper(ctx,w,h,seed=3){
+    let s=seed; const rnd=()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
+    ctx.fillStyle='#f7f1e2'; ctx.fillRect(0,0,w,h);
+    for(let i=0;i<700;i++){ctx.fillStyle=rnd()>.5?'rgba(120,103,76,.05)':'rgba(255,255,255,.18)';ctx.fillRect(rnd()*w,rnd()*h,1+rnd()*2,.5+rnd());}
+    ctx.strokeStyle='rgba(46,42,36,.045)';ctx.lineWidth=1;
+    for(let x=0;x<w;x+=30){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+    for(let y=0;y<h;y+=30){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+    // desks
+    for(let i=0;i<7;i++){const x=80+i*180,y=90+(i%2)*34;drawDesk(ctx,x,y,1);}
+    for(let i=0;i<7;i++){const x=120+i*180,y=h-150-(i%2)*26;drawDesk(ctx,x,y,1);}
+    // lane
+    ctx.strokeStyle='rgba(46,42,36,.25)';ctx.lineWidth=2;ctx.setLineDash([10,12]);
+    ctx.beginPath();ctx.moveTo(40,h*.52);ctx.bezierCurveTo(w*.3,h*.47,w*.7,h*.57,w-40,h*.52);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(40,h*.58);ctx.bezierCurveTo(w*.3,h*.62,w*.7,h*.53,w-40,h*.58);ctx.stroke();ctx.setLineDash([]);
+    // hero marks
+    ctx.save();ctx.translate(w*.5,h*.44);
+    ctx.fillStyle='rgba(63,175,155,.95)';ctx.beginPath();ctx.arc(0,0,18,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#2e2a24';ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle='#fffaf0';ctx.font='900 10px sans-serif';ctx.textAlign='center';ctx.fillText('你',0,4);ctx.restore();
+    ctx.save();ctx.translate(w*.66,h*.42);
+    ctx.fillStyle='rgba(217,79,61,.95)';ctx.beginPath();ctx.arc(0,0,16,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#2e2a24';ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle='#fffaf0';ctx.font='900 9px sans-serif';ctx.textAlign='center';ctx.fillText('敌',0,3);ctx.restore();
+    const v=ctx.createRadialGradient(w/2,h/2,120,w/2,h/2,Math.max(w,h)*.7);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(80,58,35,.12)');ctx.fillStyle=v;ctx.fillRect(0,0,w,h);
+  }
+  function drawDesk(ctx,x,y,s){
+    ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+    ctx.save();ctx.globalAlpha=.16;ctx.fillStyle='#5d4a32';ctx.beginPath();ctx.ellipse(5,14,45,10,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    ctx.fillStyle='#b98252';ctx.strokeStyle='rgba(46,42,36,.55)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.roundRect(-38,-9,76,10,3);ctx.fill();ctx.stroke();
+    ctx.strokeStyle='#2e2a24';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(-30,1);ctx.lineTo(-34,17);ctx.moveTo(30,1);ctx.lineTo(34,17);ctx.stroke();
+    ctx.restore();
+  }
+  function initGameCanvas(){
+    const c=document.getElementById('battlefield'); if(!c) return;
+    const dpr=Math.min(2,window.devicePixelRatio||1);
+    const w=window.innerWidth,h=window.innerHeight;
+    c.width=w*dpr;c.height=h*dpr;c.style.width=w+'px';c.style.height=h+'px';
+    const ctx=c.getContext('2d');ctx.scale(dpr,dpr);paper(ctx,w,h,8);
+    drawMini();
+  }
+  function drawMini(){
+    const c=document.getElementById('map-mini'); if(!c) return;
+    const ctx=c.getContext('2d'); const w=c.width,h=c.height;
+    ctx.fillStyle='#f7f1e2';ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle='rgba(46,42,36,.14)';ctx.lineWidth=1;
+    for(let x=0;x<w;x+=20){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+    for(let y=0;y<h;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+    ctx.fillStyle='rgba(63,175,155,.18)';ctx.beginPath();ctx.arc(w*.5,h*.5,34,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#3faf9b';ctx.beginPath();ctx.arc(w*.5,h*.5,6,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#d94f3d';ctx.beginPath();ctx.arc(w*.66,h*.44,5,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(201,162,39,.5)';ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(w*.5,h*.5,34,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+  }
+  window.addEventListener('resize',()=>{if(!document.getElementById('screen-game').classList.contains('hidden'))initGameCanvas();});
+
+  renderHeroes();
+  const preview = new URLSearchParams(location.search).get('screen');
+  if (preview === 'setup') openSetup('3v3');
+  if (preview === 'game') { openSetup('3v3'); startGame(); }
+  if (preview === 'result') showResult();
+  if (preview === 'online') openOnline();
+})();
+</script>
+</body>
+</html>
