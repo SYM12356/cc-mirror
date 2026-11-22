@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>这是预备铃</title>
+<title>这是预备铃！HD</title>
 <style>
   * { box-sizing: border-box; }
   html, body {
@@ -255,7 +255,7 @@
     ruler:      { name: '直尺',     cost: 200, cd: 8,  hp: 320 },
     stapler:    { name: '订书机',   cost: 175, cd: 12, hp: 130 },
     kaka:       { name: '尻尻',     cost: 150, cd: 25, hp: 130 },
-    chaoran:    { name: '超然',     cost: 150, cd: 22, hp: 1 }
+    chaoran:    { name: '超然',     cost: 125, cd: 22, hp: 1 }
   };
   // 全部文具池（第 4 关起从中选 6 张；第 5 关起解锁超然）
   const CARD_ORDER = ['sunflower', 'peashooter', 'wallnut', 'snowpea', 'repeater', 'cherry', 'ruler', 'stapler', 'kaka', 'chaoran'];
@@ -1682,7 +1682,7 @@
   }
 
   /* ---- 超然：前方一格索敌 / 出拳 / 亡语 ---- */
-  const CHAORAN_PUNCH_DMG = 13;           // 铅笔子弹(26)的一半
+  const CHAORAN_PUNCH_DMG = 26;           // 每拳 = 一发铅笔子弹伤害
   function chaoranTargets(p) {
     const col = p.col + 1;
     if (col >= cols) return [];
@@ -1700,12 +1700,26 @@
   function chaoranPunch(p) {
     const ts = chaoranTargets(p);
     const fx = p.x + cellW * 0.62, fy = p.y - 4;
+    const hitSome = ts.length > 0;
     for (const z of ts) {
       damageZombie(z, CHAORAN_PUNCH_DMG);
-      if (z.type !== 'boss' || z.hp > 0) burst(fx + 10, fy, 6, '#ffe3b0', 150, 3.5, 0.3);
+      if (z.type !== 'boss' || z.hp > 0) {
+        burst(z.x - 14, z.y, 10, '#ffe3b0', 180, 4.5, 0.35);
+        burst(z.x - 8, z.y - 6, 6, '#fff8dc', 120, 3, 0.25);
+      }
     }
-    ring(fx, fy, 4, 22, 'rgba(255,220,150,.8)', 0.18);
-    tone(rand(200, 260), 0.05, 'square', 0.05, 130);
+    if (hitSome) {
+      // 命中冲击：双圈冲击波 + 挥拳残影 + 微震屏
+      ring(fx + 6, fy, 6, 34, 'rgba(255,235,170,.9)', 0.22);
+      ring(fx + 6, fy, 3, 22, 'rgba(255,190,120,.7)', 0.16);
+      G.shake = Math.max(G.shake, 2.5);
+      tone(rand(180, 240), 0.06, 'square', 0.06, 120);
+      tone(rand(320, 420), 0.04, 'triangle', 0.035, 200);
+    } else {
+      // 空拳：只有小挥空风
+      ring(fx, fy, 4, 20, 'rgba(255,240,210,.55)', 0.14);
+      tone(rand(200, 260), 0.05, 'square', 0.04, 130);
+    }
   }
   function chaoranLastWord(p) {
     removePlant(p);
@@ -2530,18 +2544,46 @@
         const ph = t * 10 + sgn;
         const ext = Math.max(0, Math.sin(ph));         // 0~1 伸出
         const ax = 16 + ext * 20, ay = -4 + Math.sin(ph + 1.2) * 4;
+        // 挥拳残影（伸出过程中的速度线）
+        if (ext > 0.35 && ext < 0.92) {
+          ctx.strokeStyle = 'rgba(255,255,255,' + (0.28 * ext).toFixed(2) + ')';
+          ctx.lineWidth = 3; ctx.lineCap = 'round';
+          for (let k = 1; k <= 3; k++) {
+            const tx = ax - 9 * k;
+            ctx.beginPath(); ctx.moveTo(tx, ay - 5); ctx.lineTo(tx - 7, ay - 5); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(tx, ay + 5); ctx.lineTo(tx - 7, ay + 5); ctx.stroke();
+          }
+        }
         ctx.strokeStyle = skin1; ctx.lineWidth = 7; ctx.lineCap = 'round';
         ctx.beginPath(); ctx.moveTo(12 * (sgn ? 1 : 1), -8 + sgn * 3); ctx.lineTo(ax, ay); ctx.stroke();
+        // 拳头：伸出越满越大、越亮
         ctx.fillStyle = skin0;
-        ctx.beginPath(); ctx.arc(ax + 3, ay, 5.5, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(ax + 3, ay, 5.5 + ext * 1.6, 0, TAU); ctx.fill();
+        if (ext > 0.6) {
+          ctx.fillStyle = 'rgba(255,245,200,' + ((ext - 0.6) * 1.6).toFixed(2) + ')';
+          ctx.beginPath(); ctx.arc(ax + 3, ay, 6.5 + ext * 2, 0, TAU); ctx.fill();
+        }
         ctx.fillStyle = skin1;
         if (ext > 0.75) {
-          // 拳风
-          ctx.strokeStyle = 'rgba(255,240,200,.8)'; ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(ax + 6, ay, 9, -0.8, 0.8); ctx.stroke();
+          // 拳风 + 命中星芒
+          ctx.strokeStyle = 'rgba(255,240,200,.85)'; ctx.lineWidth = 2.2;
+          ctx.beginPath(); ctx.arc(ax + 6, ay, 10, -0.8, 0.8); ctx.stroke();
+          ctx.strokeStyle = 'rgba(255,230,150,.9)'; ctx.lineWidth = 2;
+          const sx = ax + 12;
+          for (let k = 0; k < 4; k++) {
+            const a = k * Math.PI / 2 + 0.4 + t * 14;
+            ctx.beginPath();
+            ctx.moveTo(sx + Math.cos(a) * 3, ay + Math.sin(a) * 3);
+            ctx.lineTo(sx + Math.cos(a) * 10, ay + Math.sin(a) * 10);
+            ctx.stroke();
+          }
           ctx.strokeStyle = skin1;
         }
       }
+      // 出拳气势：脚下尘土
+      ctx.fillStyle = 'rgba(200,190,170,.3)';
+      ctx.beginPath(); ctx.ellipse(-13, 37, 9, 3.5, 0, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(13, 37, 9, 3.5, 0, 0, TAU); ctx.fill();
     } else {
       const sw = Math.sin(t * 2) * 2;
       ctx.strokeStyle = skin1; ctx.lineWidth = 7; ctx.lineCap = 'round';

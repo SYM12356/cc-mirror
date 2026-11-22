@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>汪义轩突围 · WAREGY BREAKOUT</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="game-canvas"></canvas>
+  <div id="vignette"></div>
+  <div id="damage-flash"></div>
+
+  <!-- ========== HUD ========== -->
+  <div id="hud" class="hidden">
+    <div id="hud-top">
+      <div id="hud-objective"><span class="tag">目标</span><span id="objective-text">搜刮物资并前往撤离点</span></div>
+      <div id="hud-compass"><span id="compass-dir">N</span><span id="compass-deg">000°</span></div>
+      <div id="hud-extract" class="hidden"><span class="tag warn">撤离</span><span id="extract-countdown">--:--</span></div>
+    </div>
+    <!-- 撤离指引 -->
+    <div id="extract-guide"><span class="eg-tag">最近撤离点</span><span id="eg-name">--</span><span id="eg-dist">-- m</span><span id="eg-arrow">▲</span></div>
+
+    <div id="hud-crosshair"><i></i><i></i><i></i><i></i><b></b></div>
+
+    <!-- 狙击镜覆盖层 -->
+    <div id="scope-overlay" class="hidden">
+      <div class="scope-mask"></div>
+      <div class="scope-circle">
+        <div class="scope-reticle-v"></div>
+        <div class="scope-reticle-h"></div>
+        <div class="scope-mil m1"></div><div class="scope-mil m2"></div>
+        <div class="scope-mil m3"></div><div class="scope-mil m4"></div>
+        <div class="scope-center"></div>
+        <div class="scope-range" id="scope-range">---- m</div>
+      </div>
+      <div class="scope-info"><span id="scope-zoom">4.0×</span><span id="scope-breath">屏息 [Shift]</span></div>
+    </div>
+
+    <div id="hud-prompt" class="hidden"></div>
+    <div id="hud-loot-progress" class="hidden"><div class="bar"><div id="loot-bar-fill"></div></div><span id="loot-bar-label">搜刮中…</span></div>
+    <div id="hud-killfeed"></div>
+    <div id="hud-hitmarker"></div>
+
+    <div id="hud-bottom">
+      <div id="hud-vitals">
+        <div class="vital-row"><span class="vital-label">生命</span><div class="vital-bar"><div id="health-fill"></div></div><span id="health-num">100</span></div>
+        <div class="vital-row"><span class="vital-label">体力</span><div class="vital-bar stam"><div id="stam-fill"></div></div></div>
+        <div id="hud-parts">
+          <span class="part" data-part="head">头</span>
+          <span class="part" data-part="chest">胸</span>
+          <span class="part" data-part="arm">臂</span>
+          <span class="part" data-part="leg">腿</span>
+        </div>
+        <div id="hud-status"></div>
+      </div>
+      <div id="hud-weapon">
+        <div id="weapon-name">未装备</div>
+        <div id="weapon-ammo"><span id="ammo-mag">--</span><span class="slash">/</span><span id="ammo-res">--</span></div>
+        <div id="weapon-meta"><span id="fire-mode">全自动</span><span id="ammo-type">普通弹</span></div>
+      </div>
+      <div id="hud-quick">
+        <div class="slot" data-slot="1">1</div>
+        <div class="slot" data-slot="2">2</div>
+        <div class="slot" data-slot="3">3</div>
+        <div class="slot" data-slot="med">医疗</div>
+      </div>
+    </div>
+
+    <canvas id="minimap" width="180" height="180"></canvas>
+    <div id="hud-zone"><span id="zone-label">安全区</span></div>
+  </div>
+
+  <!-- ========== 移动端控件 ========== -->
+  <div id="mobile-controls" class="hidden">
+    <div id="stick-base"><div id="stick-knob"></div></div>
+    <div id="look-zone"></div>
+    <div class="m-buttons">
+      <button class="m-btn fire" id="btn-fire">射击</button>
+      <button class="m-btn" id="btn-ads">瞄准</button>
+      <button class="m-btn" id="btn-reload">换弹</button>
+      <button class="m-btn" id="btn-crouch">蹲</button>
+      <button class="m-btn" id="btn-prone">趴</button>
+      <button class="m-btn" id="btn-jump">跳</button>
+      <button class="m-btn act" id="btn-interact">互动</button>
+      <button class="m-btn act" id="btn-inventory">背包</button>
+      <button class="m-btn act" id="btn-view">视角</button>
+    </div>
+    <div id="m-weapon-swap"><button id="btn-w1">1</button><button id="btn-w2">2</button><button id="btn-w3">3</button></div>
+  </div>
+
+  <!-- ========== 加载 ========== -->
+  <div id="screen-loading" class="screen">
+    <div class="load-box">
+      <div class="load-title">汪 义 轩 突 围</div>
+      <div class="load-sub">WAREGY BREAKOUT · 写实战术突围</div>
+      <div class="load-bar"><div id="load-fill"></div></div>
+      <div id="load-text">正在载入场景…</div>
+    </div>
+  </div>
+
+  <!-- ========== 主菜单 ========== -->
+  <div id="screen-menu" class="screen hidden">
+    <div class="menu-bg"></div>
+    <div class="menu-content">
+      <div class="game-logo">
+        <div class="logo-cn">汪义轩突围</div>
+        <div class="logo-en">WAREGY BREAKOUT</div>
+        <div class="logo-line"></div>
+        <div class="logo-desc">虚构战术生存 · 搜刮 · 交火 · 突围</div>
+      </div>
+      <div class="menu-buttons">
+        <button class="btn-primary" id="btn-start">进入战区</button>
+        <button class="btn-ghost" id="btn-explore">探索模式（无敌人）</button>
+        <button class="btn-ghost" id="btn-stash-menu">仓库与整备</button>
+        <button class="btn-ghost" id="btn-help">操作说明</button>
+        <button class="btn-ghost" id="btn-settings">设置</button>
+      </div>
+      <div class="menu-footer">
+        <span id="menu-meta">角色：汪义轩 · 高年级成年学员</span>
+        <span id="menu-record">资产：¥0 · 等级 1</span>
+      </div>
+    </div>
+    <div class="menu-note">全部人物、组织与场景均为原创虚构，不对应任何现实学校或事件。</div>
+  </div>
+
+  <!-- ========== 仓库整备 ========== -->
+  <div id="screen-stash" class="screen hidden">
+    <div class="panel wide">
+      <div class="panel-head"><h2>仓库与整备</h2><button class="x" data-close="stash">✕</button></div>
+      <div class="stash-layout">
+        <div class="stash-col">
+          <h3>可用装备</h3>
+          <div id="stash-list" class="item-grid"></div>
+        </div>
+        <div class="stash-col loadout">
+          <h3>出击配置</h3>
+          <div id="loadout-slots"></div>
+          <div class="loadout-actions">
+            <button id="btn-equip-suggest" class="btn-ghost small">推荐配置</button>
+            <button id="btn-go-deploy" class="btn-primary">携带配置出击</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel-foot"><span id="stash-cash">现金：¥0</span><span>点击装备加入/移出击击配置</span></div>
+    </div>
+  </div>
+
+  <!-- ========== 局内背包 ========== -->
+  <div id="screen-inventory" class="screen hidden">
+    <div class="panel wide">
+      <div class="panel-head"><h2>战术背包</h2><button class="x" data-close="inventory">✕</button></div>
+      <div class="inv-layout">
+        <div class="inv-col"><h3>背包 <span id="inv-weight"></span></h3><div id="inv-list" class="item-grid"></div></div>
+        <div class="inv-col"><h3>装备栏</h3><div id="inv-equipped"></div><h3>身体状态</h3><div id="inv-health"></div></div>
+      </div>
+      <div class="panel-foot"><span>点击物品可使用/装备/丢弃</span><span>按 Tab 或 ✕ 关闭</span></div>
+    </div>
+  </div>
+
+  <!-- ========== 结算 ========== -->
+  <div id="screen-result" class="screen hidden">
+    <div class="panel result-panel">
+      <div id="result-title">撤离成功</div>
+      <div id="result-sub"></div>
+      <div class="result-stats" id="result-stats"></div>
+      <div class="result-loot" id="result-loot"></div>
+      <div class="result-actions">
+        <button id="btn-result-stash" class="btn-primary">返回仓库</button>
+        <button id="btn-result-again" class="btn-ghost">再次出击</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 帮助 / 设置 / 暂停 ========== -->
+  <div id="screen-help" class="screen hidden">
+    <div class="panel">
+      <div class="panel-head"><h2>操作说明</h2><button class="x" data-close="help">✕</button></div>
+      <div class="help-grid" id="help-grid"></div>
+    </div>
+  </div>
+
+  <div id="screen-settings" class="screen hidden">
+    <div class="panel">
+      <div class="panel-head"><h2>设置</h2><button class="x" data-close="settings">✕</button></div>
+      <div class="settings-list">
+        <label>画质 <select id="set-quality"><option value="high">高（PC）</option><option value="medium">中（推荐）</option><option value="low">低（移动端）</option></select></label>
+        <label>视野 FOV <input type="range" id="set-fov" min="60" max="100" value="75"><span id="fov-val">75</span></label>
+        <label>鼠标灵敏度 <input type="range" id="set-sens" min="1" max="20" value="8"><span id="sens-val">8</span></label>
+        <label>音效 <input type="range" id="set-volume" min="0" max="100" value="60"><span id="vol-val">60</span></label>
+        <label>操作模式 <select id="set-control"><option value="auto">自动检测</option><option value="pc">键鼠</option><option value="mobile">触控</option></select></label>
+      </div>
+      <div class="panel-foot"><button id="btn-reset-save" class="danger">重置存档</button></div>
+    </div>
+  </div>
+
+  <div id="screen-pause" class="screen hidden">
+    <div class="panel small-panel">
+      <div class="panel-head"><h2>暂停</h2></div>
+      <div class="menu-buttons">
+        <button class="btn-primary" id="btn-resume">继续行动</button>
+        <button class="btn-ghost" id="btn-pause-settings">设置</button>
+        <button class="btn-ghost" id="btn-abandon">放弃行动（损失装备）</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-layer"></div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/core.js"></script>
+<script src="js/world.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/systems.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
