@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MECH ARENA · 机甲对决</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+  <canvas id="game-canvas" width="1280" height="720"></canvas>
+
+  <!-- ============ 主菜单 ============ -->
+  <div id="menu" class="screen active">
+    <div class="menu-hud">
+      <span class="menu-version">MECH ARENA · 竞技场</span>
+      <div class="menu-hud-right">
+        <div class="menu-coins" id="menu-coins">0</div>
+        <span class="menu-user" id="menu-user"></span>
+        <button class="btn ghost top-btn" id="btn-profile">📊 档案</button>
+        <button class="btn ghost top-btn" id="btn-quests">📋 任务</button>
+        <button class="btn ghost top-btn" id="btn-hangar">🛠 机库</button>
+        <button class="btn ghost top-btn" id="btn-shop">🛒 商店</button>
+        <button class="btn ghost top-btn" id="btn-settings">⚙ 设置</button>
+        <button class="btn ghost top-btn" id="btn-logout">🚪 退出</button>
+      </div>
+    </div>
+    <div class="menu-inner">
+      <div class="logo-wrap">
+        <h1 class="logo">MECH <span>ARENA</span></h1>
+        <div class="logo-sub">机 甲 对 决</div>
+      </div>
+      <div class="mode-cards">
+        <button class="mode-card" data-mode="ranked">
+          <span class="mc-icon">🏅</span>
+          <span class="mc-title">排位赛</span>
+          <span class="mc-desc">六段位 · 冲击大师</span>
+        </button>
+        <button class="mode-card" data-mode="tournament">
+          <span class="mc-icon">🏆</span>
+          <span class="mc-title">锦标赛</span>
+          <span class="mc-desc">八强淘汰 · 夺冠赢赏</span>
+        </button>
+        <button class="mode-card" data-mode="survival">
+          <span class="mc-icon">🌊</span>
+          <span class="mc-title">生存模式</span>
+          <span class="mc-desc">无尽波次 · 挑战极限</span>
+        </button>
+        <button class="mode-card" data-mode="training">
+          <span class="mc-icon">🎯</span>
+          <span class="mc-title">训练场</span>
+          <span class="mc-desc">自由练习 · 无惩罚</span>
+        </button>
+        <button class="mode-card accent" data-mode="duel">
+          <span class="mc-icon">🤝</span>
+          <span class="mc-title">双人对战</span>
+          <span class="mc-desc">同屏竞技 · 好友切磋</span>
+        </button>
+        <button class="mode-card" data-mode="lan">
+          <span class="mc-icon">🌐</span>
+          <span class="mc-title">局域网对战</span>
+          <span class="mc-desc">两台电脑 · 无线联机</span>
+        </button>
+        <button class="mode-card danger" data-mode="boss">
+          <span class="mc-icon">👾</span>
+          <span class="mc-title">Boss 战</span>
+          <span class="mc-desc">挑战巨兽 · 三阶段</span>
+        </button>
+      </div>
+      <div class="menu-actions">
+        <button class="btn ghost" id="btn-help">❔ 操作说明</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 选机甲 ============ -->
+  <div id="mech-select" class="screen">
+    <div class="select-inner">
+      <h2 id="select-title">选择你的机甲</h2>
+      <div id="mech-cards" class="mech-grid"></div>
+    </div>
+  </div>
+
+  <!-- ============ 游戏画面 ============ -->
+  <div id="game-screen" class="screen">
+    <!-- 移动端触控层（触屏设备自动显示） -->
+    <div id="touch-ui">
+      <div id="t-stick">
+        <div id="t-stick-knob"></div>
+      </div>
+      <div id="t-buttons">
+        <button class="t-btn" id="t-fire" data-act="fire">🔥</button>
+        <button class="t-btn" id="t-switch" data-act="sub">⇄</button>
+        <button class="t-btn" id="t-skill" data-act="skill">✦</button>
+        <button class="t-btn" id="t-ulti" data-act="ulti">★</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 排位赛 ============ -->
+  <div id="ranked" class="screen">
+    <div class="ranked-inner">
+      <div class="hangar-top">
+        <button class="btn ghost" id="btn-ranked-back">← 主菜单</button>
+        <h2>🏅 排 位 赛</h2>
+        <div class="coin-display">🪙 <b id="ranked-coins">0</b></div>
+      </div>
+      <div class="rank-panel">
+        <div class="rank-badge" id="rank-badge">Ⅱ</div>
+        <div class="rank-info">
+          <div class="rank-name" id="rank-name">白银</div>
+          <div class="rank-score">分数 <b id="rank-score">1000</b></div>
+          <div class="rank-bar"><i id="rank-bar-fill" style="width:0%"></i></div>
+          <div class="rank-wl">战绩 胜 <b id="rank-wins">0</b> · 负 <b id="rank-losses">0</b>　·　🏆 冠军 <b id="rank-champs">0</b> 次</div>
+        </div>
+      </div>
+      <div class="hangar-tip">胜利 +30 分 · 失败 -20 分 · 段位越高 AI 越强 · 排位同样获得金币与经验</div>
+      <button class="btn primary big" id="btn-ranked-start">⚔ 开始排位</button>
+    </div>
+  </div>
+
+  <!-- ============ 锦标赛 ============ -->
+  <div id="tournament" class="screen">
+    <div class="tournament-inner">
+      <div class="hangar-top">
+        <button class="btn ghost" id="btn-tournament-back">← 主菜单</button>
+        <h2>🏆 锦 标 赛</h2>
+        <div class="coin-display">🏆 <b id="tournament-champs">0</b> 冠</div>
+      </div>
+      <div class="tournament-title" id="tournament-title">八强淘汰赛 · 8 名机师</div>
+      <div class="bracket" id="tournament-bracket"></div>
+      <div class="hangar-tip">淘汰即出局，连赢 3 场夺冠！冠军奖金 +400 🪙</div>
+      <button class="btn primary big" id="btn-tournament-start">▶ 开始比赛</button>
+      <button class="btn ghost" id="btn-tournament-menu" style="display:none">返回主菜单</button>
+    </div>
+  </div>
+
+  <!-- ============ 训练场 ============ -->
+  <div id="training" class="screen">
+    <div class="training-inner">
+      <div class="hangar-top">
+        <button class="btn ghost" id="btn-training-back">← 主菜单</button>
+        <h2>🎯 训 练 场</h2>
+        <div class="coin-display">🪙 <b id="training-coins">0</b></div>
+      </div>
+      <div class="training-opts">
+        <div class="training-block">
+          <div class="menu-label">AI 对手强度</div>
+          <div class="opt-row" id="training-diffs">
+            <button class="opt-btn" data-diff="dummy">木桩</button>
+            <button class="opt-btn" data-diff="easy">简单</button>
+            <button class="opt-btn" data-diff="normal">普通</button>
+            <button class="opt-btn" data-diff="hard">困难</button>
+          </div>
+        </div>
+        <div class="training-block">
+          <div class="menu-label">AI 使用机甲</div>
+          <div class="opt-row" id="training-mechs"></div>
+        </div>
+      </div>
+      <div class="hangar-tip">训练场无奖励、无惩罚 · 木桩 = 不动的靶子 · 适合练走位与武器手感</div>
+      <button class="btn primary big" id="btn-training-start">⚔ 开始训练</button>
+    </div>
+  </div>
+
+  <!-- ============ 局域网对战 ============ -->
+  <div id="lan" class="screen">
+    <div class="lan-inner">
+      <div class="hangar-top">
+        <button class="btn ghost" id="btn-lan-back">← 主菜单</button>
+        <h2>🌐 局域网对战</h2>
+      </div>
+      <div class="lan-panels">
+        <div class="lan-panel">
+          <div class="menu-label">🏠 创建房间（房主）</div>
+          <p>创建后把 <b>房间号</b> 和 <b>本机 IP</b> 告诉对方</p>
+          <button class="btn primary" id="btn-lan-create">创建房间</button>
+        </div>
+        <div class="lan-panel">
+          <div class="menu-label">🔗 加入房间（对手）</div>
+          <input id="lan-ip" class="lan-input" placeholder="房主 IP，如 192.168.1.5">
+          <input id="lan-room" class="lan-input" placeholder="房间号（4 位，可留空自动加入）">
+          <button class="btn primary" id="btn-lan-join">加入房间</button>
+        </div>
+      </div>
+      <div id="lan-status" class="lan-status"></div>
+      <div class="lan-chat">
+        <div id="lan-chat-list" class="lan-chat-list"></div>
+        <div class="lan-chat-input-row">
+          <input id="lan-chat-input" class="lan-input" placeholder="输入消息，Enter 发送">
+          <button class="btn primary small" id="btn-lan-send">发送</button>
+        </div>
+      </div>
+      <div class="hangar-tip">两台电脑需在同一局域网 · 双方都要运行服务器（node server.js）· 第三台可加入观战</div>
+    </div>
+  </div>
+
+  <!-- ============ Boss 选关 ============ -->
+  <div id="boss-select" class="screen">
+    <div class="hangar-top" style="max-width:760px;margin:0 auto 18px;width:100%;padding:0 22px;">
+      <button class="btn ghost" id="btn-boss-back">← 主菜单</button>
+      <h2>👾 选择 Boss</h2>
+    </div>
+    <div class="boss-options" id="boss-options"></div>
+    <div class="hangar-tip">击败 Boss 获得徽章与金币 · 冰霜巨兽免疫冰冻</div>
+  </div>
+
+  <!-- ============ 战绩档案 ============ -->
+  <div id="profile" class="screen">
+    <div class="profile-inner">
+      <div class="hangar-top">
+        <button class="btn ghost" id="btn-profile-back">← 主菜单</button>
+        <h2>📊 战 绩 档 案</h2>
+        <div class="coin-display">🪙 <b id="profile-coins">0</b></div>
+      </div>
+      <div class="profile-grid" id="profile-grid"></div>
+    </div>
+  </div>
+
+  <!-- ============ 任务中心（每日任务 + 成就） ============ -->
+  <div id="quests" class="screen">
+    <div class="quests-inner">
+      <div class="hangar-top">
+        <button class="btn ghost" id="btn-quests-back">← 主菜单</button>
+        <h2>📋 任务中心</h2>
+        <div class="coin-display">🪙 <b id="quests-coins">0</b></div>
+      </div>
+      <div class="quests-section-title">每日任务 · 次日刷新</div>
+      <div class="quests-daily" id="quests-daily"></div>
+      <div class="quests-section-title">🏆 成就 · 永久</div>
+      <div class="quests-ach" id="quests-achievements"></div>
+    </div>
+  </div>
+
+  <!-- ============ 设置 ============ -->
+  <div id="settings" class="screen">
+    <div class="settings-inner">
+      <div class="hangar-top">
+        <button class="btn ghost" id="btn-settings-back">← 主菜单</button>
+        <h2>⚙ 设 置</h2>
+      </div>
+      <div class="set-row">
+        <span class="set-label">音量</span>
+        <input type="range" id="set-volume" min="0" max="100" value="80">
+        <b id="set-volume-label">80%</b>
+      </div>
+      <div class="set-row">
+        <span class="set-label">特效密度</span>
+        <div class="opt-row">
+          <button class="opt-btn fx-opt" data-fx="low">低</button>
+          <button class="opt-btn fx-opt" data-fx="medium">中</button>
+          <button class="opt-btn fx-opt" data-fx="high">高</button>
+        </div>
+      </div>
+      <div class="set-row">
+        <span class="set-label">屏幕震动</span>
+        <input type="checkbox" id="set-shake">
+      </div>
+      <div class="set-row">
+        <span class="set-label">背景音乐</span>
+        <input type="checkbox" id="set-music">
+      </div>
+      <div class="set-row">
+        <span class="set-label">显示帧率</span>
+        <input type="checkbox" id="set-fps">
+      </div>
+      <div class="set-row">
+        <span class="set-label">键位自定义</span>
+        <div class="keybinds" id="keybind-list"></div>
+      </div>
+      <div class="set-row">
+        <span class="set-label">存档备份</span>
+        <div class="opt-row">
+          <button class="btn ghost small" id="btn-export-save">📤 导出存档</button>
+          <button class="btn ghost small" id="btn-import-save">📥 导入存档</button>
+        </div>
+      </div>
+      <div class="set-row danger">
+        <button class="btn ghost" id="btn-reset-save">🗑 重置全部存档</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 机库（养成 & 经济） ============ -->
+  <div id="hangar" class="screen">
+    <div class="hangar-inner">
+      <div class="hangar-top">
+        <button class="btn ghost" id="btn-hangar-back">← 主菜单</button>
+        <h2>🛠 机 库</h2>
+        <div class="coin-display">🪙 <b id="hangar-coins">0</b>　🏅 <b id="hangar-medals">0</b>　<button class="btn ghost small" id="btn-hangar-shop">🛒 商店</button></div>
+      </div>
+      <div class="hangar-grid" id="hangar-mechs"></div>
+      <div class="hangar-tip">每升 1 级获得 1 个属性点 · 在卡片中自由搭配主/副武器 · 新武器去商店购买</div>
+    </div>
+  </div>
+
+  <!-- ============ 商店 ============ -->
+  <div id="shop" class="screen">
+    <div class="shop-inner">
+      <div class="hangar-top">
+        <button class="btn ghost" id="btn-shop-back">← 主菜单</button>
+        <h2>🛒 商 店</h2>
+        <div class="coin-display">🪙 <b id="shop-coins">0</b>　🏅 <b id="shop-medals">0</b></div>
+      </div>
+      <div class="shop-grid" id="shop-items"></div>
+      <div class="hangar-tip">购买后永久拥有 · 武器在机库中自由装配 · 底盘购买后解锁出战</div>
+    </div>
+  </div>
+
+  <!-- ============ 结算 ============ -->
+  <div id="result" class="screen">
+    <div class="result-inner">
+      <h2 id="result-title">胜 利 !</h2>
+      <div id="result-sub" class="result-sub"></div>
+      <div id="result-info" class="result-info"></div>
+      <div id="result-reward" class="result-reward"></div>
+      <div class="result-buttons">
+        <button class="btn primary" id="btn-rematch">再来一局</button>
+        <button class="btn ghost" id="btn-result-menu">返回主菜单</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 操作说明 ============ -->
+  <div id="help" class="screen">
+    <div class="help-inner">
+      <h2>操作说明</h2>
+      <table class="help-table">
+        <tr><th></th><th>玩家 1</th><th>玩家 2</th></tr>
+        <tr><td>移动</td><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd></td></tr>
+        <tr><td>开火（自动瞄准）</td><td><kbd>J</kbd></td><td><kbd>右Shift</kbd></td></tr>
+        <tr><td>切换武器</td><td><kbd>K</kbd> / <kbd>Q</kbd></td><td><kbd>/</kbd></td></tr>
+        <tr><td>技能</td><td><kbd>L</kbd></td><td><kbd>.</kbd></td></tr>
+        <tr><td>专属大招</td><td><kbd>空格</kbd></td><td><kbd>,</kbd></td></tr>
+      </table>
+      <div class="help-tips">
+        <p>· 炮塔自动瞄准最近的敌人，你只需控制走位与开火时机</p>
+        <p>· 主武器过热后需要冷却，副武器消耗弹药（拾取弹药箱补充）</p>
+        <p>· 战场会刷新 修复包 / 弹药箱 / 推进器 / 护盾核心，记得抢夺</p>
+        <p>· 冲刺瞬间无敌，EMP 可瘫痪敌人，湮灭炮蓄力时无法移动</p>
+        <p>· 攻击命中/受击/击杀都会积攒大招能量，满 100% 后按大招键释放专属大招</p>
+        <p>· 玩家 2 的键位全部贴近方向键，紧凑型键盘同样顺手</p>
+      </div>
+      <button class="btn ghost" id="btn-back-menu">返回主菜单</button>
+    </div>
+  </div>
+
+  <!-- ============ 新手引导 ============ -->
+  <div id="guide" class="screen">
+    <div class="guide-inner">
+      <div class="guide-icon" id="guide-icon">👋</div>
+      <div class="guide-title" id="guide-title">欢迎加入 MECH ARENA</div>
+      <div class="guide-text" id="guide-text"></div>
+      <div class="guide-buttons">
+        <button class="btn ghost" id="btn-guide-skip">跳过</button>
+        <button class="btn primary" id="btn-guide-action" style="display:none">去训练场</button>
+        <button class="btn primary" id="btn-guide-next">下一步</button>
+      </div>
+      <div class="guide-dots" id="guide-dots"></div>
+    </div>
+  </div>
+
+  <!-- ============ 用户登录 ============ -->
+  <div id="login" class="screen active">
+    <div class="login-inner">
+      <div class="logo-wrap">
+        <h1 class="logo">MECH <span>ARENA</span></h1>
+        <div class="logo-sub">机 甲 对 决</div>
+      </div>
+      <div class="login-box">
+        <div class="login-tabs">
+          <button class="ltab sel" id="ltab-login">登 录</button>
+          <button class="ltab" id="ltab-register">注 册</button>
+        </div>
+        <div class="login-field">
+          <label>用户名</label>
+          <input id="login-user" type="text" maxlength="16" placeholder="2~16 位（中文/字母/数字）" autocomplete="username">
+        </div>
+        <div class="login-field">
+          <label>密码</label>
+          <input id="login-pass" type="password" maxlength="32" placeholder="至少 4 位" autocomplete="current-password">
+        </div>
+        <div class="login-field" id="login-pass2-wrap" style="display:none">
+          <label>确认密码</label>
+          <input id="login-pass2" type="password" maxlength="32" placeholder="再次输入密码" autocomplete="new-password">
+        </div>
+        <div class="login-msg" id="login-msg"></div>
+        <button class="btn primary" id="btn-login-go">登 录</button>
+        <button class="btn ghost small" id="btn-login-skip">以游客身份游玩（进度不保存）</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 轻提示 ============ -->
+  <div id="toast" class="toast"></div>
+</div>
+
+<script src="js/utils.js"></script>
+<script src="js/config.js"></script>
+<script src="js/account.js"></script>
+<script src="js/progress.js"></script>
+<script src="js/input.js"></script>
+<script src="js/sfx.js"></script>
+<script src="js/music.js"></script>
+<script src="js/bullet.js"></script>
+<script src="js/drone.js"></script>
+<script src="js/pickup.js"></script>
+<script src="js/map.js"></script>
+<script src="js/robot.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/game.js"></script>
+<script src="js/net.js"></script>
+<script src="js/survival.js"></script>
+<script src="js/boss.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

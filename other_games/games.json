@@ -13,11 +13,41 @@
       "author": "SYM"
     },
     {
+      "name": "海战棋",
+      "name_en": ""
+      "desc": "与AI进行对战，在海上争锋，早期作品，简陋见谅",
+      "desc_en": " ",
+      "url": "other_games/SYM/haizhan/",
+      "tag": "模拟桌游",
+      "tag_en": " ",
+      "author": "SYM"
+    },
+    {
+      "name": "古尘录",
+      "name_en": " ",
+      "desc": "古代像素人生模拟器，早期作品，简陋见谅",
+      "desc_en": " ",
+      "url": "other_games/SYM/guchen/",
+      "tag": "模拟器",
+      "tag_en": "",
+      "author": "SYM"
+    },
+    {
+      "name": "机甲对决",
+      "name_en": " ",
+      "desc": "机甲对决，早期作品，简陋见谅",
+      "desc_en": " ",
+      "url": "other_games/SYM/mech-arena/",
+      "tag": "2D战斗",
+      "tag_en": "",
+      "author": "SYM"
+    },
+    {
       "name": "这是预备铃！",
       "name_en": "This Is the Prep Bell!",
       "desc": "课桌塔防 · 用文具拦住墨水，重置版",
       "desc_en": "Desk tower defence - stop the ink with stationery",
-      "url": "other_games/ying/yubei.html",
+      "url": "other_games/ying/yubei/",
       "tag": "塔防",
       "tag_en": "TD",
       "author": "章鱼烤章鱼"

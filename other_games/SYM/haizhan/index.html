@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>海战棋：风暴舰队 · AI对战</title>
+    <style>
+        :root {
+            --ocean-deep: #1a3a5c;
+            --player1: #4a90d9;
+            --player1-light: #7ab8f5;
+            --player2: #d94a4a;
+            --player2-light: #f57a7a;
+            --gold: #e2c044;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0d1117; font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none; overflow-x: hidden; }
+        .game-container { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px; max-width: 950px; width: 100%; }
+        .game-header { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; justify-content: center; background: #16213e; border-radius: 12px; padding: 10px 20px; width: 100%; border: 1px solid #2a3a5c; }
+        .game-header .title { font-size: 1.3em; font-weight: bold; letter-spacing: 2px; background: linear-gradient(135deg, #e2c044, #f0d060); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .info-badge { background: #1a2a44; border-radius: 8px; padding: 6px 14px; font-size: 0.9em; border: 1px solid #3a4a6c; white-space: nowrap; }
+        .info-badge.weather { border-color: #e2c044; color: #e2c044; }
+        .info-badge.turn { border-color: #4a90d9; }
+        .info-badge.turn.ai { border-color: #d94a4a; }
+        .vp-display { display: flex; gap: 15px; align-items: center; font-weight: bold; }
+        .vp-p1 { color: #7ab8f5; } .vp-p2 { color: #f57a7a; }
+        .main-area { display: flex; gap: 10px; width: 100%; flex-wrap: wrap; justify-content: center; }
+        .canvas-wrapper { border-radius: 12px; overflow: hidden; border: 2px solid #3a5a7c; box-shadow: 0 0 25px rgba(30,80,140,0.3); }
+        canvas { display: block; cursor: crosshair; }
+        .side-panel { background: #16213e; border-radius: 12px; padding: 12px 16px; border: 1px solid #2a3a5c; min-width: 230px; max-width: 280px; display: flex; flex-direction: column; gap: 8px; font-size: 0.85em; max-height: 550px; overflow-y: auto; }
+        .side-panel h3 { text-align: center; color: #e2c044; }
+        .fleet-info { background: #1a2a44; border-radius: 8px; padding: 8px 10px; border: 1px solid #2a3a5c; cursor: pointer; }
+        .fleet-name { font-weight: bold; color: #ddd; }
+        .ship-row { display: flex; justify-content: space-between; font-size: 0.8em; }
+        .ship-hp.low { color: #f55; } .ship-hp.mid { color: #fa0; } .ship-hp { color: #5f5; }
+        .action-panel { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+        .action-panel button { padding: 6px 10px; border-radius: 6px; border: 1px solid #4a6a8c; background: #1e3050; color: #ddd; cursor: pointer; font-size: 0.78em; transition: all 0.2s; white-space: nowrap; font-family: inherit; }
+        .action-panel button:hover:not(:disabled) { background: #2a4a6c; border-color: #6a9ac8; }
+        .action-panel button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .action-panel button.attack-btn { background: #8a3a3a; border-color: #ca5a5a; font-weight: bold; color: #fff; }
+        .ap-dot { width: 16px; height: 16px; border-radius: 50%; background: #e2c044; display: inline-block; margin: 0 2px; box-shadow: 0 0 8px rgba(226,192,68,0.6); }
+        .ap-dot.spent { background: #333; box-shadow: none; }
+        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:100; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px; cursor:pointer; }
+        .overlay .message { font-size:1.5em; font-weight:bold; color:#e2c044; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+        .modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:200; display:flex; align-items:center; justify-content:center; }
+        .modal-content { background:#1a2a3a; border-radius:14px; padding:20px; border:2px solid #4a6a8c; max-width:550px; width:95%; max-height:85vh; overflow-y:auto; }
+        .modal-content button { padding:8px 16px; border-radius:8px; border:1px solid #5a7a9a; background:#1e3050; color:#ddd; cursor:pointer; margin:4px; font-size:0.85em; }
+        .log-area { background:#0d1520; border-radius:8px; padding:8px; font-size:0.75em; max-height:120px; overflow-y:auto; color:#999; line-height:1.4; }
+        .log-entry.important { color:#e2c044; } .log-entry.damage { color:#f55; }
+        .deploy-ship-btn { display: inline-block; padding: 4px 8px; margin: 3px; border-radius: 6px; cursor: pointer; font-size: 0.8em; border: 1px solid rgba(255,255,255,0.2); background: #1a2a3a; color: #ddd; transition: all 0.2s; }
+        .deploy-ship-btn:hover { background: #2a3a5a; }
+        .deploy-ship-btn.fleet1 { background: #2a4a3a; border-color: #5a9a5a; }
+        .deploy-ship-btn.fleet2 { background: #3a2a2a; border-color: #8a4a4a; }
+        .shortcut-hint { font-size:0.7em; color:#888; margin-left:4px; }
+        .ai-thinking { display: inline-block; animation: pulse 0.8s infinite; color: #e2c044; }
+    </style>
+</head>
+<body>
+<div class="game-container" id="gameContainer">
+    <div class="game-header">
+        <span class="title">⚓ 风暴舰队 · AI对战 ⚓</span>
+        <span class="info-badge turn" id="turnBadge">🔵 你的回合</span>
+        <span class="info-badge weather" id="weatherBadge">☀️ 晴朗</span>
+        <span class="vp-display"><span class="vp-p1">🔵 <span id="vp1">0</span>分</span> | <span class="vp-p2">🔴 AI <span id="vp2">0</span>分</span></span>
+        <span class="ap-indicator">⚡ <span id="apDots"></span></span>
+    </div>
+    <div class="main-area">
+        <div class="canvas-wrapper"><canvas id="hexCanvas"></canvas></div>
+        <div class="side-panel" id="sidePanel">
+            <h3>📋 舰队状态</h3>
+            <div id="fleetDisplay"></div>
+            <div class="action-panel" id="actionPanel"></div>
+            <div class="log-area" id="logArea"></div>
+        </div>
+    </div>
+</div>
+<div class="overlay" id="screenOverlay" style="display:none;"><div class="message" id="overlayMessage">AI思考中...</div><div class="sub-message" id="overlaySub"></div></div>
+<div class="modal" id="gameModal" style="display:none;"><div class="modal-content" id="modalContent"></div></div>
+
+<script>
+    (function() {
+        const HEX_SIZE = 27, COLS = 10, ROWS = 8;
+        const HORIZ_SPACING = 1.5 * HEX_SIZE, VERT_SPACING = Math.sqrt(3) * HEX_SIZE;
+        const canvasWidth = COLS * HORIZ_SPACING + HEX_SIZE * 0.5 + 20;
+        const canvasHeight = ROWS * VERT_SPACING + HEX_SIZE + 20;
+
+        const SHIP_TYPES = {
+            'CV': { name:'航母', hp:5, move:2, gun:1, torpedo:0, scout:5, maxHp:5, range:3 },
+            'BB': { name:'战列舰', hp:6, move:1, gun:5, torpedo:0, scout:2, maxHp:6, range:3 },
+            'CA': { name:'巡洋舰', hp:3, move:3, gun:3, torpedo:0, scout:4, maxHp:3, range:2 },
+            'DD': { name:'驱逐舰', hp:2, move:4, gun:1, torpedo:3, scout:3, maxHp:2, range:1 },
+            'SS': { name:'潜艇', hp:1, move:2, gun:0, torpedo:4, scout:1, maxHp:1, range:1 }
+        };
+        const VP_VALUES = { CV:5, BB:6, CA:3, DD:2, SS:1 };
+        const TOTAL_VP_TO_WIN = 20;
+        const WEATHER_TABLE = [
+            { name:'晴朗', icon:'☀️', scoutMod:0, moveMod:0, atkMod:0, airAllowed:true },
+            { name:'晴朗', icon:'☀️', scoutMod:0, moveMod:0, atkMod:0, airAllowed:true },
+            { name:'薄雾', icon:'🌫️', scoutMod:-1, moveMod:0, atkMod:0, airAllowed:true },
+            { name:'暴雨', icon:'🌧️', scoutMod:-2, moveMod:-1, atkMod:-1, airAllowed:true },
+            { name:'风暴', icon:'⛈️', scoutMod:-2, moveMod:-1, atkMod:-1, airAllowed:false },
+            { name:'极光', icon:'🌌', scoutMod:1, moveMod:0, atkMod:0, airAllowed:true }
+        ];
+        const ISLANDS = new Set(['4,3','5,4','4,5','6,3','3,4','5,3']);
+        const REEFS = new Set(['3,3','6,4','4,4','5,5','4,2','6,5']);
+        const SHALLOW = new Set(['1,0','1,1','1,2','1,6','1,7','8,0','8,1','8,6','8,7','2,0','2,7','7,0','7,7','0,3','0,4','9,3','9,4']);
+        const P1_BASE = new Set(['0,3','0,4','1,3','1,4']);
+        const P2_BASE = new Set(['9,3','9,4','8,3','8,4']);
+
+        const canvas = document.getElementById('hexCanvas');
+        canvas.width = canvasWidth; canvas.height = canvasHeight;
+        const ctx = canvas.getContext('2d');
+
+        const AI_PLAYER = 2;
+        const HUMAN_PLAYER = 1;
+
+        let gameState = {
+            phase: 'setup', currentPlayer: HUMAN_PLAYER, weather: WEATHER_TABLE[0], actionPoints: 3, turnNumber: 1,
+            players: { [HUMAN_PLAYER]:{ fleets:[], vp:0, name:'你' }, [AI_PLAYER]:{ fleets:[], vp:0, name:'AI' } },
+            selectedFleetId: null, pendingAction: null, pendingFleetForAction: null,
+            battleInProgress: false, log: [], highlightCells: [], aiThinking: false, battleTriggeredBy: null
+        };
+        let fleetIdCounter = 0;
+        window._mines = new Set();
+        let keyboardHandler = null;
+
+        function createFleet(player, ships, col, row) {
+            return {
+                id: fleetIdCounter++, player,
+                ships: ships.map(s => ({ type:s.type, hp:SHIP_TYPES[s.type].hp, maxHp:SHIP_TYPES[s.type].maxHp, attackedThisBattle:false })),
+                col, row, hidden:true, submerged:false, hasMovedThisTurn:false, hasScoutedThisTurn:false
+            };
+        }
+
+        function getFleetMaxMove(f) { return Math.max(1, Math.min(...f.ships.map(s=>SHIP_TYPES[s.type].move)) + gameState.weather.moveMod); }
+        function getFleetMaxScout(f) { return Math.max(...f.ships.filter(s=>s.hp>0).map(s=>SHIP_TYPES[s.type].scout)); }
+        function getFleetScoutRange(f) { return Math.max(1, Math.ceil(getFleetMaxScout(f)/2) + gameState.weather.scoutMod); }
+        function hasShipType(f, type) { return f.ships.some(s=>s.type===type && s.hp>0); }
+        function getAliveShips(f) { return f.ships.filter(s=>s.hp>0); }
+        function isFleetAlive(f) { return getAliveShips(f).length>0; }
+
+        function hexToPixel(col,row) { return { x: col*HORIZ_SPACING + (row%2)*(HORIZ_SPACING/2) + HEX_SIZE + 10, y: row*VERT_SPACING + HEX_SIZE + 10 }; }
+        function pixelToHex(px,py) {
+            let row = Math.round((py-HEX_SIZE-10)/VERT_SPACING); row = Math.max(0,Math.min(ROWS-1,row));
+            let col = Math.round(((px-HEX_SIZE-10) - (row%2)*(HORIZ_SPACING/2)) / HORIZ_SPACING); col = Math.max(0,Math.min(COLS-1,col));
+            return {col,row};
+        }
+        function hexDistance(c1,r1,c2,r2) {
+            let toCube = (c,r)=>{ let x=c-(r-(r&1))/2, z=r; return {x,y:-x-z,z}; };
+            let a=toCube(c1,r1), b=toCube(c2,r2);
+            return Math.max(Math.abs(a.x-b.x), Math.abs(a.y-b.y), Math.abs(a.z-b.z));
+        }
+        function getCellsInRange(col,row,range) {
+            let cells=[]; for (let c=0;c<COLS;c++) for (let r=0;r<ROWS;r++) if (hexDistance(col,row,c,r)<=range) cells.push({col:c,row:r});
+            return cells;
+        }
+        function getAdjacentCells(col,row) { return getCellsInRange(col,row,1).filter(c=>!(c.col===col&&c.row===row)); }
+        function findFleetById(id) { for (let p of[1,2]) for (let f of gameState.players[p].fleets) if (f.id===id) return f; return null; }
+        function findFleetAt(col,row,player) { return gameState.players[player].fleets.find(f=>f.col===col&&f.row===row&&isFleetAlive(f)); }
+        function findAnyEnemyFleetAt(col,row,player) { return findFleetAt(col,row, player===1?2:1); }
+        function getEnemyFleetsInRange(fleet) {
+            let enemy = fleet.player===1?2:1;
+            let targets = [];
+            for (let ef of gameState.players[enemy].fleets) {
+                if (!isFleetAlive(ef) || ef.hidden) continue;
+                let dist = hexDistance(fleet.col, fleet.row, ef.col, ef.row);
+                if (getAliveShips(fleet).some(s => SHIP_TYPES[s.type].range >= dist)) targets.push(ef);
+            }
+            return targets;
+        }
+
+        function drawBoard() {
+            ctx.clearRect(0,0,canvasWidth,canvasHeight);
+            ctx.fillStyle='#152535'; ctx.fillRect(0,0,canvasWidth,canvasHeight);
+            for (let col=0;col<COLS;col++) for (let row=0;row<ROWS;row++) {
+                let {x,y}=hexToPixel(col,row), key=`${col},${row}`;
+                let fill = ISLANDS.has(key)?'#5a8a4a':REEFS.has(key)?'#8a6a4a':SHALLOW.has(key)?'#3a7aba':'#2a5a8a';
+                ctx.beginPath(); for(let i=0;i<6;i++){ let a=Math.PI/6+i*Math.PI/3; i===0?ctx.moveTo(x+HEX_SIZE*Math.cos(a),y+HEX_SIZE*Math.sin(a)):ctx.lineTo(x+HEX_SIZE*Math.cos(a),y+HEX_SIZE*Math.sin(a)); } ctx.closePath(); ctx.fillStyle=fill; ctx.fill(); ctx.strokeStyle='#1a3a5a'; ctx.stroke();
+                if(ISLANDS.has(key)){ ctx.fillStyle='#4a7a3a'; ctx.beginPath(); ctx.arc(x,y,HEX_SIZE*0.35,0,Math.PI*2); ctx.fill(); }
+                if(REEFS.has(key)){ ctx.fillStyle='#a08060'; for(let i=0;i<3;i++){ let a=i*Math.PI*2/3; ctx.beginPath(); ctx.arc(x+Math.cos(a)*HEX_SIZE*0.25,y+Math.sin(a)*HEX_SIZE*0.25,3,0,Math.PI*2); ctx.fill(); } }
+                let hl = gameState.highlightCells.some(c=>c.col===col&&c.row===row);
+                if (hl) { ctx.strokeStyle='#ffcc00'; ctx.lineWidth=2.5; ctx.stroke(); }
+            }
+            let cp = gameState.currentPlayer;
+            for (let f of [...gameState.players[1].fleets, ...gameState.players[2].fleets]) {
+                if (!isFleetAlive(f)) continue;
+                let isOwn = f.player === HUMAN_PLAYER;
+                let isVisible = isOwn || !f.hidden;
+                if (!isVisible) continue;
+                let {x,y}=hexToPixel(f.col,f.row);
+                if (isOwn) {
+                    ctx.beginPath(); ctx.arc(x,y,HEX_SIZE*0.5,0,Math.PI*2); ctx.fillStyle=f.submerged?'rgba(60,180,120,0.4)':'rgba(80,150,230,0.5)'; ctx.fill();
+                    ctx.fillStyle=f.submerged?'#3a8a6a':'#4a90d9';
+                    ctx.beginPath(); for(let i=0;i<6;i++){ let a=Math.PI/6+i*Math.PI/3; i===0?ctx.moveTo(x+HEX_SIZE*0.4*Math.cos(a),y+HEX_SIZE*0.4*Math.sin(a)):ctx.lineTo(x+HEX_SIZE*0.4*Math.cos(a),y+HEX_SIZE*0.4*Math.sin(a)); } ctx.closePath(); ctx.fill(); ctx.strokeStyle='#fff'; ctx.stroke();
+                    ctx.fillStyle='#fff'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center'; ctx.fillText(`F${f.id%100}`,x,y-6); ctx.fillText(`${getAliveShips(f).length}艘`,x,y+14);
+                    if (f.id === gameState.selectedFleetId) { ctx.strokeStyle='#ffcc00'; ctx.lineWidth=3; ctx.stroke(); }
+                } else {
+                    ctx.beginPath(); ctx.arc(x,y,HEX_SIZE*0.5,0,Math.PI*2); ctx.fillStyle='rgba(255,60,60,0.45)'; ctx.fill();
+                    ctx.fillStyle='#c03030'; ctx.beginPath(); for(let i=0;i<6;i++){ let a=Math.PI/6+i*Math.PI/3; i===0?ctx.moveTo(x+HEX_SIZE*0.35*Math.cos(a),y+HEX_SIZE*0.35*Math.sin(a)):ctx.lineTo(x+HEX_SIZE*0.35*Math.cos(a),y+HEX_SIZE*0.35*Math.sin(a)); } ctx.closePath(); ctx.fill();
+                    ctx.fillStyle='#fff'; ctx.font='bold 9px sans-serif'; ctx.fillText(`敌${getAliveShips(f).length}艘`,x,y+4);
+                }
+            }
+        }
+
+        function addLog(text, imp=false, dmg=false) { gameState.log.push({text:`[回合${gameState.turnNumber}] ${text}`, important:imp, damage:dmg}); if(gameState.log.length>60) gameState.log.shift(); }
+        function setupKeyboardShortcuts() {
+            if (keyboardHandler) document.removeEventListener('keydown', keyboardHandler);
+            keyboardHandler = (e) => {
+                if (gameState.phase !== 'play') return;
+                if (gameState.currentPlayer !== HUMAN_PLAYER) return;
+                if (gameState.battleInProgress) return;
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+                let key = e.key.toLowerCase();
+                if (key === 'e') { e.preventDefault(); selectAction('move'); }
+                else if (key === 'f') { e.preventDefault(); selectAction('attack'); }
+                else if (key === 'v') { e.preventDefault(); selectAction('scout'); }
+            };
+            document.addEventListener('keydown', keyboardHandler);
+        }
+
+        function updateUI() {
+            let cp = gameState.currentPlayer;
+            let isPlayerTurn = cp === HUMAN_PLAYER;
+            document.getElementById('turnBadge').textContent = isPlayerTurn ? '🔵 你的回合' : '🔴 AI思考中...';
+            document.getElementById('turnBadge').className = 'info-badge turn' + (isPlayerTurn ? '' : ' ai');
+            document.getElementById('weatherBadge').textContent = `${gameState.weather.icon} ${gameState.weather.name}`;
+            document.getElementById('vp1').textContent = gameState.players[HUMAN_PLAYER].vp;
+            document.getElementById('vp2').textContent = gameState.players[AI_PLAYER].vp;
+            let dots = ''; for(let i=0;i<3;i++) dots += `<span class="ap-dot${i>=gameState.actionPoints?' spent':''}"></span>`;
+            document.getElementById('apDots').innerHTML = dots;
+
+            let fleetHtml = '';
+            for (let f of gameState.players[HUMAN_PLAYER].fleets) {
+                if(!isFleetAlive(f) && f.ships.length===0) continue;
+                fleetHtml += `<div class="fleet-info" style="border-left:3px solid #4a90d9" onclick="window._selectFleet(${f.id})">`;
+                fleetHtml += `<div class="fleet-name">🚢 舰队#${f.id%100} [${f.col},${f.row}] ${f.hidden?'🔒':'👁'} ${f.submerged?'🌊':''} ${f.hasMovedThisTurn?'✓':''}</div>`;
+                for (let s of f.ships) {
+                    let cls = s.hp/s.maxHp<=0.25?'low':(s.hp/s.maxHp<=0.5?'mid':'');
+                    fleetHtml += `<div class="ship-row"><span>${SHIP_TYPES[s.type].name} (射程${SHIP_TYPES[s.type].range})</span><span class="ship-hp ${cls}">❤️${s.hp}/${s.maxHp}</span></div>`;
+                }
+                fleetHtml += `</div>`;
+            }
+            document.getElementById('fleetDisplay').innerHTML = fleetHtml || '<div style="color:#888;">无存活舰队</div>';
+
+            let selFleet = (gameState.selectedFleetId != null) ? findFleetById(gameState.selectedFleetId) : null;
+            let btns = '';
+            if (isPlayerTurn && selFleet && selFleet.player === HUMAN_PLAYER && isFleetAlive(selFleet)) {
+                let enemyTargets = getEnemyFleetsInRange(selFleet);
+                let canAttack = enemyTargets.length > 0;
+                btns += `<button onclick="window._selectAction('move')" ${gameState.actionPoints<1||selFleet.hasMovedThisTurn?'disabled':''}>🚢 移动<span class="shortcut-hint">[E]</span></button>`;
+                if (canAttack) btns += `<button class="attack-btn" onclick="window._selectAction('attack')" ${gameState.actionPoints<1?'disabled':''}>⚔️ 攻击<span class="shortcut-hint">[F]</span></button>`;
+                btns += `<button class="scout-btn" onclick="window._selectAction('scout')" ${gameState.actionPoints<1||selFleet.hasScoutedThisTurn?'disabled':''}>🔍 侦察<span class="shortcut-hint">[V]</span></button>`;
+                if (hasShipType(selFleet,'CV') && gameState.weather.airAllowed) btns += `<button onclick="window._selectAction('airscout')" ${gameState.actionPoints<1?'disabled':''}>✈️ 航空侦察</button>`;
+                if (hasShipType(selFleet,'DD')) btns += `<button onclick="window._selectAction('sonar')" ${gameState.actionPoints<1?'disabled':''}>📡 声呐</button>`;
+                btns += `<button onclick="window._selectAction('repair')" ${gameState.actionPoints<2?'disabled':''}>🔧 修复</button>`;
+                if (hasShipType(selFleet,'DD')||hasShipType(selFleet,'SS')) btns += `<button onclick="window._selectAction('mine')" ${gameState.actionPoints<2?'disabled':''}>💣 水雷</button>`;
+                if (selFleet.ships.every(s=>s.type==='SS')) btns += `<button onclick="window._selectAction('submerge')" ${gameState.actionPoints<1?'disabled':''}>🌊 ${selFleet.submerged?'上浮':'下潜'}</button>`;
+            } else if (isPlayerTurn) {
+                btns += '<span style="color:#888;font-size:0.8em;">点击己方舰队选择</span>';
+            }
+            if (isPlayerTurn) {
+                btns += `<button onclick="window._endTurn()" ${gameState.actionPoints===3||gameState.battleInProgress?'disabled':''}>⏭ 结束回合</button>`;
+                btns += `<button onclick="window._deselectFleet()" style="background:#333;">✖ 取消</button>`;
+            } else {
+                btns += '<span style="color:#e2c044;" class="ai-thinking">🤖 AI思考中...</span>';
+            }
+            document.getElementById('actionPanel').innerHTML = btns;
+
+            document.getElementById('logArea').innerHTML = gameState.log.slice(-25).map(l=>`<div class="log-entry${l.important?' important':''}${l.damage?' damage':''}">${l.text}</div>`).join('');
+            document.getElementById('logArea').scrollTop = document.getElementById('logArea').scrollHeight;
+
+            if (isPlayerTurn && !gameState.battleInProgress) setupKeyboardShortcuts();
+        }
+
+        function spendAP(n) { if(gameState.actionPoints>=n){ gameState.actionPoints-=n; return true; } return false; }
+        function selectFleet(id) {
+            let f = findFleetById(id);
+            if (f && f.player === HUMAN_PLAYER && isFleetAlive(f)) {
+                gameState.selectedFleetId = id; gameState.pendingAction = null; gameState.pendingFleetForAction = null;
+                addLog(`选中舰队#${id%100} (${f.col},${f.row})`);
+            } else { addLog('无法选择该舰队'); }
+            drawBoard(); updateUI();
+        }
+        function deselectFleet() {
+            gameState.selectedFleetId = null; gameState.pendingAction = null; gameState.pendingFleetForAction = null;
+            gameState.highlightCells = []; drawBoard(); updateUI();
+        }
+
+        function selectAction(action) {
+            let f = (gameState.selectedFleetId != null) ? findFleetById(gameState.selectedFleetId) : null;
+            if (!f || f.player !== HUMAN_PLAYER) { addLog('请先选择你的舰队'); return; }
+            if (action === 'attack') {
+                let targets = getEnemyFleetsInRange(f);
+                if (targets.length === 0) { addLog('射程内无暴露敌舰队'); return; }
+                if (targets.length === 1) { if (!spendAP(1)) return; gameState.battleTriggeredBy = 'player'; triggerBattle(f, targets[0]); }
+                else { showTargetSelectionModal(f, targets); }
+                return;
+            }
+            if (action==='move' && f.hasMovedThisTurn) { addLog('本回合已移动'); return; }
+            if (action==='scout' && f.hasScoutedThisTurn) { addLog('本回合已侦察'); return; }
+            let cost = (action==='repair'||action==='mine')?2:1;
+            if (!spendAP(cost)) { addLog('行动点不足'); updateUI(); return; }
+            gameState.pendingAction = action; gameState.pendingFleetForAction = f.id;
+            if (action==='move') { gameState.highlightCells = getCellsInRange(f.col,f.row,getFleetMaxMove(f)); addLog('点击目标格移动'); }
+            else if (action==='scout') { executeScout(f); }
+            else if (action==='airscout') { gameState.pendingAction='airscout_target'; addLog('点击目标格进行航空侦察'); }
+            else if (action==='sonar') { gameState.pendingAction='sonar_target'; addLog('点击目标格进行声呐搜索'); }
+            else if (action==='repair') { executeRepair(f); }
+            else if (action==='mine') { executeMine(f); }
+            else if (action==='submerge') { f.submerged=!f.submerged; addLog(`舰队#${f.id%100} ${f.submerged?'下潜':'上浮'}`); deselectFleet(); }
+            drawBoard(); updateUI();
+        }
+
+        function showTargetSelectionModal(attacker, targets) {
+            let modal = document.getElementById('gameModal');
+            let content = document.getElementById('modalContent');
+            let html = `<h3>选择攻击目标</h3>`;
+            targets.forEach(t => { html += `<button onclick="window._confirmAttackTarget(${attacker.id},${t.id})" style="display:block;width:100%;">舰队#${t.id%100} [${t.col},${t.row}] (${getAliveShips(t).length}艘)</button>`; });
+            html += `<button onclick="document.getElementById('gameModal').style.display='none'" style="background:#444;">取消</button>`;
+            content.innerHTML = html; modal.style.display = 'flex';
+        }
+        window._confirmAttackTarget = function(attackerId, targetId) {
+            document.getElementById('gameModal').style.display = 'none';
+            let attacker = findFleetById(attackerId), target = findFleetById(targetId);
+            if (attacker && target && spendAP(1)) { gameState.battleTriggeredBy = 'player'; triggerBattle(attacker, target); }
+            else { addLog('攻击失败'); updateUI(); }
+        };
+
+        function handleHexClick(col,row) {
+            if (gameState.currentPlayer !== HUMAN_PLAYER || gameState.battleInProgress) return;
+            if (gameState.pendingAction === 'move') {
+                let f = (gameState.pendingFleetForAction != null) ? findFleetById(gameState.pendingFleetForAction) : null;
+                if (f && hexDistance(f.col,f.row,col,row) <= getFleetMaxMove(f) && !ISLANDS.has(`${col},${row}`)) {
+                    f.col=col; f.row=row; f.hasMovedThisTurn=true; addLog(`移动到 (${col},${row})`);
+                    if (REEFS.has(`${col},${row}`) && Math.random()<1/3) { let a=getAliveShips(f); if(a.length){ a[0].hp=Math.max(0,a[0].hp-1); addLog('礁石损伤',false,true); if(a[0].hp<=0) handleShipSunk(f,a[0]); } }
+                    checkMines(f); checkEncounter(f);
+                } else addLog('无法移动到该格');
+                deselectFleet();
+            } else if (gameState.pendingAction === 'airscout_target') {
+                let f = (gameState.pendingFleetForAction != null) ? findFleetById(gameState.pendingFleetForAction) : null;
+                if (f) executeAirScout(f,col,row);
+                deselectFleet();
+            } else if (gameState.pendingAction === 'sonar_target') {
+                let f = (gameState.pendingFleetForAction != null) ? findFleetById(gameState.pendingFleetForAction) : null;
+                if (f) executeSonar(f,col,row);
+                deselectFleet();
+            } else {
+                let enemy = findAnyEnemyFleetAt(col,row,HUMAN_PLAYER);
+                if (enemy && !enemy.hidden) {
+                    let myFleet = findFleetAt(col,row,HUMAN_PLAYER);
+                    if (myFleet) { gameState.battleTriggeredBy = 'player'; triggerBattle(myFleet, enemy); }
+                    else addLog('我方无舰队在此格');
+                } else { let own = findFleetAt(col,row,HUMAN_PLAYER); if (own) selectFleet(own.id); else deselectFleet(); }
+            }
+            drawBoard(); updateUI();
+        }
+
+        function checkEncounter(f) {
+            let ef = findAnyEnemyFleetAt(f.col,f.row, f.player);
+            if (ef && isFleetAlive(ef) && (!f.hidden||!ef.hidden)) { gameState.battleTriggeredBy = f.player===HUMAN_PLAYER?'player':'ai'; triggerBattle(f,ef); }
+        }
+        function checkMines(f) {
+            if (window._mines.has(`${f.col},${f.row}`)) { let a=getAliveShips(f); if(a.length){ a[0].hp=Math.max(0,a[0].hp-2); addLog('💥 触发水雷！',false,true); window._mines.delete(`${f.col},${f.row}`); if(a[0].hp<=0) handleShipSunk(f,a[0]); } }
+        }
+
+        function executeScout(f) {
+            if (f.hidden) { f.hidden=false; addLog(`舰队#${f.id%100} 暴露位置进行侦察`); }
+            f.hasScoutedThisTurn=true;
+            let range = getFleetScoutRange(f), val = getFleetMaxScout(f);
+            let roll = Math.floor(Math.random()*6)+1, success = roll <= val;
+            if (!success && hasShipType(f,'CA')) { let r2=Math.floor(Math.random()*6)+1; if(r2<=val){ success=true; roll=r2; } }
+            addLog(`侦察检定: ${roll} (需≤${val}) ${success?'成功':'失败'}`);
+            if (success) {
+                let enemy = f.player===1?2:1;
+                for (let ef of gameState.players[enemy].fleets) {
+                    if (!isFleetAlive(ef)||(ef.submerged&&!hasShipType(f,'DD'))) continue;
+                    if (hexDistance(f.col,f.row,ef.col,ef.row) <= range && ef.hidden) { ef.hidden=false; addLog(`发现敌舰队#${ef.id%100} 于 (${ef.col},${ef.row})`,true); }
+                }
+            }
+            gameState.highlightCells = getCellsInRange(f.col,f.row,range);
+            setTimeout(()=>{ gameState.highlightCells=[]; drawBoard(); updateUI(); },2000);
+            deselectFleet();
+        }
+
+        function executeAirScout(f,col,row) {
+            let cells = getCellsInRange(col,row,1), enemy = f.player===1?2:1;
+            for (let ef of gameState.players[enemy].fleets) {
+                if (!isFleetAlive(ef)||ef.submerged) continue;
+                if (cells.some(c=>c.col===ef.col&&c.row===ef.row) && ef.hidden) { ef.hidden=false; addLog(`航空侦察发现敌舰队#${ef.id%100} 于 (${ef.col},${ef.row})`,true); }
+            }
+            gameState.highlightCells=cells; setTimeout(()=>{ gameState.highlightCells=[]; drawBoard(); updateUI(); },2000);
+        }
+
+        function executeSonar(f,col,row) {
+            let enemy = f.player===1?2:1, tf = findFleetAt(col,row,enemy);
+            if (tf && hasShipType(tf,'SS')) { if (tf.hidden||tf.submerged) { tf.hidden=false; tf.submerged=false; addLog(`声呐发现潜艇！舰队#${tf.id%100} 于 (${col},${row})`,true); } }
+            else addLog('未发现潜艇');
+            gameState.highlightCells=[{col,row}]; setTimeout(()=>{ gameState.highlightCells=[]; drawBoard(); updateUI(); },1500);
+        }
+
+        function executeRepair(f) { let dmg = getAliveShips(f).filter(s=>s.hp<s.maxHp); if (dmg.length) { dmg[0].hp = Math.min(dmg[0].maxHp, dmg[0].hp+1); addLog(`修复${SHIP_TYPES[dmg[0].type].name} +1HP`); } else addLog('无损伤'); deselectFleet(); }
+        function executeMine(f) { window._mines.add(`${f.col},${f.row}`); addLog(`在 (${f.col},${f.row}) 布设水雷`); deselectFleet(); }
+
+        function triggerBattle(attacker, defender) {
+            if (gameState.battleInProgress) return;
+            gameState.battleInProgress = true; attacker.hidden = defender.hidden = false;
+            attacker.ships.forEach(s=>s.attackedThisBattle=false); defender.ships.forEach(s=>s.attackedThisBattle=false);
+            let dist = hexDistance(attacker.col, attacker.row, defender.col, defender.row);
+            let scoutA=getFleetMaxScout(attacker), scoutB=getFleetMaxScout(defender);
+            let first = scoutA>=scoutB?attacker:defender, second = first===attacker?defender:attacker;
+            if (scoutA===scoutB && Math.random()<0.5)[first,second]=[second,first];
+            addLog(`⚔️ 战斗！距离${dist}格 先攻:舰队#${first.id%100}`,true);
+            showBattleModal(attacker,defender,first,second,dist);
+        }
+
+        function showBattleModal(f1,f2,first,second,dist) {
+            let modal = document.getElementById('gameModal'), content = document.getElementById('modalContent');
+            let isAiBattle = gameState.battleTriggeredBy === 'ai';
+            let html = `<h3>⚔️ 海战 (距离${dist}格)</h3><p>舰队#${f1.id%100} vs #${f2.id%100}</p><p style="color:#e2c044;">先攻: 舰队#${first.id%100}</p>`;
+            html += `<div id="battleLog" style="max-height:150px;overflow-y:auto;font-size:0.8em;margin:8px 0;"></div>`;
+            html += `<div id="battleButtons"></div><button id="closeBattleBtn" style="margin-top:10px;">结束战斗</button>`;
+            content.innerHTML = html; modal.style.display = 'flex';
+            let state = { f1, f2, first, second, currentAttacker:first, currentDefender:second, log:[], over:false, distance:dist, isAiBattle };
+            window._battleState = state;
+            document.getElementById('closeBattleBtn').onclick = ()=>{
+                modal.style.display='none'; gameState.battleInProgress=false; window._battleState=null; gameState.battleTriggeredBy=null;
+                for (let f of [f1,f2]) { if (!isFleetAlive(f)) continue; let enemy = f.player===1?2:1; let seen = gameState.players[enemy].fleets.some(ef=>isFleetAlive(ef)&&hexDistance(f.col,f.row,ef.col,ef.row)<=getFleetScoutRange(ef)); if (!seen) f.hidden = true; }
+                deselectFleet(); drawBoard(); updateUI();
+                if (gameState.currentPlayer === AI_PLAYER && !gameState.aiThinking) startAiTurn();
+            };
+            updateBattleUI();
+            if (isAiBattle && state.currentAttacker.player === AI_PLAYER && !state.over) {
+                setTimeout(()=>{ if(window._battleState===state && !state.over && state.currentAttacker.player===AI_PLAYER) battleAttack(); },800);
+            }
+        }
+
+        function updateBattleUI() {
+            let bs = window._battleState; if (!bs) return;
+            document.getElementById('battleLog').innerHTML = bs.log.map(e=>`<div style="color:${e.damage?'#f55':'#ddd'}">${e.text}</div>`).join('');
+            let btnsDiv = document.getElementById('battleButtons'); if (!btnsDiv) return;
+            if (bs.over) { btnsDiv.innerHTML = '<span style="color:#e2c044;">战斗结束</span>'; return; }
+            let ca = bs.currentAttacker, cd = bs.currentDefender, dist = hexDistance(ca.col, ca.row, cd.col, cd.row);
+            let validShips = getAliveShips(ca).filter(s => SHIP_TYPES[s.type].range >= dist && !s.attackedThisBattle);
+            if (validShips.length === 0) {
+                let defValid = getAliveShips(cd).filter(s => SHIP_TYPES[s.type].range >= dist && !s.attackedThisBattle);
+                if (defValid.length > 0) { [bs.currentAttacker, bs.currentDefender] = [cd, ca]; updateBattleUI(); if (bs.isAiBattle && bs.currentAttacker.player===AI_PLAYER && !bs.over) setTimeout(()=>battleAttack(),800); return; }
+                else { bs.over = true; btnsDiv.innerHTML = '<span>双方无可攻击舰船</span>'; return; }
+            }
+            // 关键修复：AI攻击方完全不显示按钮，自动执行攻击
+            if (bs.isAiBattle && ca.player === AI_PLAYER) {
+                btnsDiv.innerHTML = `<span style="color:#e2c044;">🤖 AI 舰队#${ca.id%100} 攻击中...</span>`;
+                // 自动触发攻击（如果尚未自动执行）
+                if (!bs.autoAttackScheduled) {
+                    bs.autoAttackScheduled = true;
+                    setTimeout(() => {
+                        if (window._battleState === bs && !bs.over && bs.currentAttacker.player === AI_PLAYER) {
+                            battleAttack();
+                            bs.autoAttackScheduled = false;
+                        }
+                    }, 600);
+                }
+            } else {
+                // 玩家攻击方或玩家触发的战斗轮到玩家时，显示按钮
+                btnsDiv.innerHTML = `<button id="attackBtn">🎯 舰队#${ca.id%100} 攻击 (${validShips.length}艘)</button>
+                                     <button id="retreatBtn">🏃 舰队#${ca.id%100} 撤退</button>`;
+                document.getElementById('attackBtn').onclick = ()=> battleAttack();
+                document.getElementById('retreatBtn').onclick = ()=> battleRetreat();
+            }
+        }
+
+        function battleAttack() {
+            let bs = window._battleState; if (!bs||bs.over) return;
+            let attacker = bs.currentAttacker, defender = bs.currentDefender, dist = hexDistance(attacker.col, attacker.row, defender.col, defender.row);
+            let valid = getAliveShips(attacker).filter(s => SHIP_TYPES[s.type].range >= dist && !s.attackedThisBattle);
+            if (valid.length===0) { updateBattleUI(); return; }
+            let ship = valid[0]; ship.attackedThisBattle = true;
+            let weapon='gun', dmg=SHIP_TYPES[ship.type].gun;
+            if ((ship.type==='SS'||ship.type==='DD') && SHIP_TYPES[ship.type].torpedo>0) { weapon='torpedo'; dmg=SHIP_TYPES[ship.type].torpedo; }
+            if (ship.type==='CV') { weapon='airstrike'; dmg=3; }
+            let defAlive = getAliveShips(defender);
+            if (defAlive.length===0) { bs.over=true; updateBattleUI(); return; }
+            let target = defAlive.find(s=>s.type==='BB') || defAlive[Math.floor(Math.random()*defAlive.length)];
+            let hitNeed = 5; if (target.type==='BB'||target.type==='CV') hitNeed++; if (gameState.weather.atkMod<0) hitNeed+=gameState.weather.atkMod;
+            if (getFleetMaxScout(attacker) > getFleetMaxScout(defender)) hitNeed--; if (weapon==='torpedo' && hasShipType(defender,'DD')) hitNeed++; if (weapon==='airstrike') hitNeed=4;
+            hitNeed = Math.max(2, Math.min(6, hitNeed));
+            let roll = Math.floor(Math.random()*6)+1, hit = roll>=hitNeed;
+            let log = `${SHIP_TYPES[ship.type].name} ${weapon==='gun'?'主炮':weapon==='torpedo'?'鱼雷':'航空'} → ${SHIP_TYPES[target.type].name} [${roll}≥${hitNeed}] `;
+            if (hit) { target.hp = Math.max(0, target.hp-dmg); log += `命中！-${dmg} (剩${target.hp})`; if(target.hp<=0){ log+='💀沉没'; handleShipSunk(defender,target); } }
+            else log += '未命中';
+            bs.log.push({text:log, damage:hit}); [bs.currentAttacker, bs.currentDefender] = [defender, attacker];
+            if (!isFleetAlive(defender) || !isFleetAlive(attacker)) bs.over = true;
+            bs.autoAttackScheduled = false; // 重置标记
+            updateBattleUI(); drawBoard(); updateUI();
+            // AI继续自动攻击
+            if (bs.isAiBattle && !bs.over && bs.currentAttacker.player === AI_PLAYER) {
+                setTimeout(() => {
+                    if (window._battleState === bs && !bs.over && bs.currentAttacker.player === AI_PLAYER) {
+                        battleAttack();
+                    }
+                }, 700);
+            }
+        }
+
+        function battleRetreat() {
+            let bs = window._battleState; if (!bs) return;
+            // 只有玩家可以撤退（AI不撤退）
+            if (bs.currentAttacker.player !== HUMAN_PLAYER) return;
+            let ret = bs.currentAttacker;
+            bs.log.push({text:`舰队#${ret.id%100} 撤退！敌方追击`, damage:false});
+            let enemy = ret===bs.f1?bs.f2:bs.f1, eAlive = getAliveShips(enemy);
+            if (eAlive.length) { let rAlive = getAliveShips(ret); if (rAlive.length && Math.random()<0.5) { let d = SHIP_TYPES[eAlive[0].type].gun||2; rAlive[0].hp = Math.max(0, rAlive[0].hp-d); bs.log.push({text:`追击造成${d}伤害`, damage:true}); if(rAlive[0].hp<=0) handleShipSunk(ret, rAlive[0]); } }
+            let adj = getAdjacentCells(ret.col,ret.row).filter(c=>!ISLANDS.has(`${c.col},${c.row}`) && !findFleetAt(c.col,c.row,1) && !findFleetAt(c.col,c.row,2));
+            if (adj.length) { ret.col=adj[0].col; ret.row=adj[0].row; } bs.over = true; updateBattleUI(); drawBoard(); updateUI();
+        }
+
+        function handleShipSunk(fleet, ship) {
+            let vp = VP_VALUES[ship.type]; gameState.players[fleet.player===1?2:1].vp += vp;
+            addLog(`💀 ${SHIP_TYPES[ship.type].name}沉没！+${vp}分`,true,true);
+            fleet.ships = fleet.ships.filter(s=>s.hp>0);
+            if (!isFleetAlive(fleet)) { gameState.players[fleet.player===1?2:1].vp += 3; addLog(`舰队全灭+3分`,true); }
+            checkWinCondition();
+        }
+        function checkWinCondition() { for(let p of[1,2]) if(gameState.players[p].vp>=TOTAL_VP_TO_WIN){ gameState.phase='game_over'; showGameOverModal(p); } }
+
+        function endTurn() {
+            if (gameState.battleInProgress || gameState.currentPlayer !== HUMAN_PLAYER) return;
+            for (let f of gameState.players[HUMAN_PLAYER].fleets) { f.hasMovedThisTurn=false; f.hasScoutedThisTurn=false; }
+            for (let ef of gameState.players[AI_PLAYER].fleets) { if (!isFleetAlive(ef)||ef.hidden) continue; if (!gameState.players[HUMAN_PLAYER].fleets.some(mf=>isFleetAlive(mf)&&hexDistance(mf.col,mf.row,ef.col,ef.row)<=getFleetScoutRange(mf))) ef.hidden=true; }
+            deselectFleet(); gameState.actionPoints=3; gameState.currentPlayer=AI_PLAYER; gameState.turnNumber++;
+            gameState.weather = WEATHER_TABLE[Math.floor(Math.random()*6)];
+            gameState.log = []; addLog(`--- 回合${gameState.turnNumber}，AI回合 ---`,true); addLog(`天气: ${gameState.weather.icon} ${gameState.weather.name}`);
+            drawBoard(); updateUI(); setTimeout(()=> startAiTurn(), 500);
+        }
+
+        // ==================== AI ====================
+        function startAiTurn() {
+            if (gameState.currentPlayer !== AI_PLAYER || gameState.phase==='game_over' || gameState.battleInProgress) return;
+            gameState.aiThinking = true; gameState.actionPoints = 3;
+            for (let f of gameState.players[AI_PLAYER].fleets) { f.hasMovedThisTurn=false; f.hasScoutedThisTurn=false; }
+            drawBoard(); updateUI();
+            document.getElementById('screenOverlay').style.display='flex';
+            document.getElementById('overlayMessage').textContent='🤖 AI思考中...';
+            document.getElementById('overlaySub').textContent='';
+            setTimeout(()=>{ document.getElementById('screenOverlay').style.display='none'; aiProcessAction(); },600);
+        }
+
+        function aiProcessAction() {
+            if (gameState.phase==='game_over') { finishAiTurn(); return; }
+            if (gameState.battleInProgress) { setTimeout(()=>aiProcessAction(),300); return; }
+            if (gameState.actionPoints <= 0) { finishAiTurn(); return; }
+            if (aiTryAttack()) { gameState.actionPoints--; drawBoard(); updateUI(); setTimeout(()=>aiProcessAction(),900); return; }
+            if (aiTryScout()) { gameState.actionPoints--; drawBoard(); updateUI(); setTimeout(()=>aiProcessAction(),900); return; }
+            if (aiTryMove()) { gameState.actionPoints--; drawBoard(); updateUI(); setTimeout(()=>aiProcessAction(),700); return; }
+            if (gameState.actionPoints>=2 && aiTryRepair()) { gameState.actionPoints-=2; drawBoard(); updateUI(); setTimeout(()=>aiProcessAction(),600); return; }
+            if (aiTryAirScout()) { gameState.actionPoints--; drawBoard(); updateUI(); setTimeout(()=>aiProcessAction(),800); return; }
+            finishAiTurn();
+        }
+
+        function aiTryAttack() {
+            let aiFleets = gameState.players[AI_PLAYER].fleets.filter(f=>isFleetAlive(f)&&!f.submerged);
+            aiFleets.sort((a,b)=>getFleetMaxScout(b)-getFleetMaxScout(a));
+            for (let f of aiFleets) {
+                let targets = getEnemyFleetsInRange(f);
+                if (targets.length > 0) {
+                    targets.sort((a,b)=>getAliveShips(a).reduce((s,sh)=>s+sh.hp,0)-getAliveShips(b).reduce((s,sh)=>s+sh.hp,0));
+                    gameState.battleTriggeredBy = 'ai'; triggerBattle(f, targets[0]);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function aiTryScout() {
+            let aiFleets = gameState.players[AI_PLAYER].fleets.filter(f=>isFleetAlive(f)&&!f.hasScoutedThisTurn);
+            aiFleets.sort((a,b)=>getFleetMaxScout(b)-getFleetMaxScout(a));
+            if (aiFleets.length > 0) { executeScoutAI(aiFleets[0]); return true; }
+            return false;
+        }
+
+        function executeScoutAI(f) {
+            if (f.hidden) f.hidden = false;
+            f.hasScoutedThisTurn = true;
+            let range = getFleetScoutRange(f), val = getFleetMaxScout(f);
+            let roll = Math.floor(Math.random()*6)+1, success = roll <= val;
+            if (!success && hasShipType(f,'CA')) { let r2=Math.floor(Math.random()*6)+1; if(r2<=val){ success=true; roll=r2; } }
+            if (success) {
+                for (let ef of gameState.players[HUMAN_PLAYER].fleets) {
+                    if (!isFleetAlive(ef)||(ef.submerged&&!hasShipType(f,'DD'))) continue;
+                    if (hexDistance(f.col,f.row,ef.col,ef.row) <= range && ef.hidden) { ef.hidden = false; addLog(`AI发现你的舰队#${ef.id%100} 于 (${ef.col},${ef.row})！`, true); }
+                }
+            }
+        }
+
+        function aiTryMove() {
+            let aiFleets = gameState.players[AI_PLAYER].fleets.filter(f=>isFleetAlive(f)&&!f.hasMovedThisTurn);
+            aiFleets.sort((a,b)=>getFleetMaxMove(b)-getFleetMaxMove(a));
+            if (aiFleets.length > 0) {
+                let f = aiFleets[0], maxMove = getFleetMaxMove(f), candidates = [];
+                for (let dc=-maxMove; dc<=maxMove; dc++) for (let dr=-maxMove; dr<=maxMove; dr++) {
+                    let nc=f.col+dc, nr=f.row+dr;
+                    if (nc>=0&&nc<COLS&&nr>=0&&nr<ROWS&&!ISLANDS.has(`${nc},${nr}`)&&!findFleetAt(nc,nr,AI_PLAYER)) {
+                        let dist = hexDistance(f.col,f.row,nc,nr);
+                        if (dist<=maxMove && dist>0) candidates.push({col:nc, row:nr, score: -nc*10 + dist});
+                    }
+                }
+                if (candidates.length > 0) {
+                    candidates.sort((a,b)=>a.score-b.score);
+                    let chosen = candidates[Math.floor(Math.random()*Math.min(3,candidates.length))];
+                    f.col=chosen.col; f.row=chosen.row; f.hasMovedThisTurn=true;
+                    if (REEFS.has(`${chosen.col},${chosen.row}`) && Math.random()<1/3) { let a=getAliveShips(f); if(a.length){ a[0].hp=Math.max(0,a[0].hp-1); if(a[0].hp<=0) handleShipSunk(f,a[0]); } }
+                    checkMinesAI(f); checkEncounterAI(f);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function checkEncounterAI(f) { let ef=findAnyEnemyFleetAt(f.col,f.row,f.player); if(ef&&isFleetAlive(ef)&&(!f.hidden||!ef.hidden)){ gameState.battleTriggeredBy='ai'; triggerBattle(f,ef); } }
+        function checkMinesAI(f) { if(window._mines.has(`${f.col},${f.row}`)){ let a=getAliveShips(f); if(a.length){ a[0].hp=Math.max(0,a[0].hp-2); window._mines.delete(`${f.col},${f.row}`); if(a[0].hp<=0) handleShipSunk(f,a[0]); } } }
+
+        function aiTryRepair() {
+            for (let f of gameState.players[AI_PLAYER].fleets) {
+                if (!isFleetAlive(f)) continue;
+                let dmg = getAliveShips(f).filter(s=>s.hp<s.maxHp);
+                if (dmg.length) { dmg[0].hp = Math.min(dmg[0].maxHp, dmg[0].hp+1); return true; }
+            }
+            return false;
+        }
+
+        function aiTryAirScout() {
+            if (!gameState.weather.airAllowed) return false;
+            let aiFleets = gameState.players[AI_PLAYER].fleets.filter(f=>isFleetAlive(f)&&hasShipType(f,'CV'));
+            if (aiFleets.length) {
+                let targetCol = Math.floor(Math.random()*4), targetRow = Math.floor(Math.random()*ROWS);
+                let cells = getCellsInRange(targetCol,targetRow,1);
+                for (let ef of gameState.players[HUMAN_PLAYER].fleets) {
+                    if (!isFleetAlive(ef)||ef.submerged) continue;
+                    if (cells.some(c=>c.col===ef.col&&c.row===ef.row) && ef.hidden) { ef.hidden=false; addLog(`AI航空侦察发现你的舰队#${ef.id%100}！`,true); }
+                }
+                return true;
+            }
+            return false;
+        }
+
+        function finishAiTurn() {
+            gameState.aiThinking = false;
+            for (let ef of gameState.players[HUMAN_PLAYER].fleets) { if (!isFleetAlive(ef)||ef.hidden) continue; if (!gameState.players[AI_PLAYER].fleets.some(mf=>isFleetAlive(mf)&&hexDistance(mf.col,mf.row,ef.col,ef.row)<=getFleetScoutRange(mf))) ef.hidden=true; }
+            gameState.actionPoints=3; gameState.currentPlayer=HUMAN_PLAYER; gameState.turnNumber++;
+            gameState.weather = WEATHER_TABLE[Math.floor(Math.random()*6)];
+            addLog(`--- 回合${gameState.turnNumber}，你的回合 ---`,true); addLog(`天气: ${gameState.weather.icon} ${gameState.weather.name}`);
+            deselectFleet(); drawBoard(); updateUI();
+        }
+
+        function showGameOverModal(winner) {
+            let isPlayerWin = winner === HUMAN_PLAYER;
+            document.getElementById('modalContent').innerHTML = `<h3>🏆 ${isPlayerWin?'🎉 你赢了！':'😞 AI获胜'}</h3><p>🔵 你: ${gameState.players[HUMAN_PLAYER].vp}分 | 🔴 AI: ${gameState.players[AI_PLAYER].vp}分</p><div style="text-align:center;"><button onclick="location.reload()">🔄 再来一局</button></div>`;
+            document.getElementById('gameModal').style.display='flex';
+        }
+
+        // ---------- 部署 ----------
+        function startDeployment() {
+            gameState.phase='setup'; gameState.currentPlayer=HUMAN_PLAYER;
+            let modal=document.getElementById('gameModal'), bases=[...P1_BASE], opts=bases.map(c=>`<option>${c}</option>`).join('');
+            document.getElementById('modalContent').innerHTML = `
+                <h3>🔒 部署你的舰队</h3><p>分配12艘船到最多2支舰队，AI将自动部署</p>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                    <div style="flex:1;min-width:180px;"><b>舰队1</b> <select id="f1base">${opts}</select><div id="f1ships" style="margin-top:6px;"></div></div>
+                    <div style="flex:1;min-width:180px;"><b>舰队2</b> <select id="f2base">${opts}</select><div id="f2ships" style="margin-top:6px;"></div></div>
+                </div>
+                <div id="allShips" style="margin-top:12px;"></div>
+                <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;"><button onclick="window._confirmDeploy()">✅ 确认部署</button><button onclick="window._autoDeploy()">🎲 自动分配</button></div>
+            `; modal.style.display='flex';
+            let ships = [{type:'CV',name:'航母'},{type:'BB',name:'战列舰A'},{type:'BB',name:'战列舰B'},{type:'CA',name:'巡洋舰A'},{type:'CA',name:'巡洋舰B'},{type:'CA',name:'巡洋舰C'},{type:'DD',name:'驱逐舰A'},{type:'DD',name:'驱逐舰B'},{type:'DD',name:'驱逐舰C'},{type:'SS',name:'潜艇A'},{type:'SS',name:'潜艇B'},{type:'SS',name:'潜艇C'}].map((s,i)=>({...s,id:i,fleet:0}));
+            window._deployShips = ships; refreshDeployUI();
+        }
+        function refreshDeployUI() {
+            let ships = window._deployShips; if (!ships) return;
+            function shipButton(s) { let info=SHIP_TYPES[s.type], cls=s.fleet===1?'fleet1':(s.fleet===2?'fleet2':''); return `<span class="deploy-ship-btn ${cls}" onclick="window._toggleShip(${s.id})">${info.name} ❤️${info.hp} 🚀${info.move} 🎯${info.range} 🔍${info.scout}</span>`; }
+            let f1=document.getElementById('f1ships'), f2=document.getElementById('f2ships');
+            if (f1) f1.innerHTML = ships.filter(s=>s.fleet===1).map(shipButton).join('')||'<span style="color:#666;">点击下方舰船分配</span>';
+            if (f2) f2.innerHTML = ships.filter(s=>s.fleet===2).map(shipButton).join('')||'<span style="color:#666;">点击下方舰船分配</span>';
+            let allDiv=document.getElementById('allShips'); if (allDiv) allDiv.innerHTML = '<b>所有舰船 (点击切换分配):</b><br>'+ships.map(shipButton).join('');
+        }
+        function toggleShip(id) { let s=window._deployShips.find(s=>s.id===id); if(s) s.fleet=(s.fleet+1)%3; refreshDeployUI(); }
+        function confirmDeploy() {
+            let ships=window._deployShips; if (!ships||ships.some(s=>s.fleet===0)) { alert('所有船必须分配！'); return; }
+            let f1s=ships.filter(s=>s.fleet===1), f2s=ships.filter(s=>s.fleet===2); if (!f1s.length&&!f2s.length) return;
+            let c1=0,r1=3; try { let v=document.getElementById('f1base').value.split(','); c1=parseInt(v[0]); r1=parseInt(v[1]); } catch(e){}
+            let c2=0,r2=4; try { let v=document.getElementById('f2base').value.split(','); c2=parseInt(v[0]); r2=parseInt(v[1]); } catch(e){}
+            let fleets = []; if (f1s.length) fleets.push(createFleet(HUMAN_PLAYER,f1s,c1,r1)); if (f2s.length) fleets.push(createFleet(HUMAN_PLAYER,f2s,f1s.length?c2:c1,f1s.length?r2:r1));
+            gameState.players[HUMAN_PLAYER].fleets = fleets; document.getElementById('gameModal').style.display='none';
+            deployAI(); gameState.phase='play'; gameState.currentPlayer=HUMAN_PLAYER; gameState.actionPoints=3; gameState.turnNumber=1;
+            gameState.weather=WEATHER_TABLE[0]; gameState.log=[]; addLog('--- 游戏开始！你的回合 ---',true); drawBoard(); updateUI();
+        }
+        function deployAI() {
+            let aiShips=[{type:'CV'},{type:'BB'},{type:'BB'},{type:'CA'},{type:'CA'},{type:'CA'},{type:'DD'},{type:'DD'},{type:'DD'},{type:'SS'},{type:'SS'},{type:'SS'}];
+            let shuffled=[...aiShips].sort(()=>Math.random()-0.5), f1s=shuffled.slice(0,6), f2s=shuffled.slice(6);
+            let baseCells=[...P2_BASE], c1=9,r1=3,c2=8,r2=4;
+            if (baseCells.length>=2) { let b1=baseCells[Math.floor(Math.random()*baseCells.length)].split(',').map(Number); c1=b1[0]; r1=b1[1]; let remaining=baseCells.filter(b=>b!==`${c1},${r1}`); if(remaining.length){ let b2=remaining[Math.floor(Math.random()*remaining.length)].split(',').map(Number); c2=b2[0]; r2=b2[1]; } }
+            let fleets=[]; if(f1s.length) fleets.push(createFleet(AI_PLAYER,f1s,c1,r1)); if(f2s.length) fleets.push(createFleet(AI_PLAYER,f2s,c2,r2));
+            gameState.players[AI_PLAYER].fleets = fleets;
+        }
+        function autoDeploy() { let ships=window._deployShips; if(!ships) return; let shuffled=[...ships].sort(()=>Math.random()-0.5); shuffled.forEach((s,i)=>{ s.fleet=i<6?1:2; }); refreshDeployUI(); }
+        window._toggleShip=toggleShip; window._confirmDeploy=confirmDeploy; window._autoDeploy=autoDeploy;
+
+        canvas.addEventListener('click', e => {
+            if (gameState.phase!=='play'||gameState.currentPlayer!==HUMAN_PLAYER||gameState.battleInProgress) return;
+            let rect=canvas.getBoundingClientRect(), scaleX=canvasWidth/rect.width, scaleY=canvasHeight/rect.height;
+            let px=(e.clientX-rect.left)*scaleX, py=(e.clientY-rect.top)*scaleY, hex=pixelToHex(px,py);
+            handleHexClick(hex.col,hex.row);
+        });
+        window.addEventListener('resize', ()=>{ if(window.innerWidth<700){ let w=Math.min(window.innerWidth-20,500); canvas.style.width=w+'px'; canvas.style.height=(w*canvasHeight/canvasWidth)+'px'; } else { canvas.style.width=''; canvas.style.height=''; } });
+        window._selectFleet=selectFleet; window._deselectFleet=deselectFleet; window._selectAction=selectAction; window._endTurn=endTurn;
+
+        document.getElementById('screenOverlay').style.display='flex';
+        document.getElementById('overlayMessage').textContent='⚓ 风暴舰队 · AI对战';
+        document.getElementById('overlaySub').textContent='点击开始部署';
+        document.getElementById('screenOverlay').onclick = ()=>{ document.getElementById('screenOverlay').style.display='none'; startDeployment(); };
+        drawBoard(); updateUI();
+    })();
+</script>
+</body>
+</html>

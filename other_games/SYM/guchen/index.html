@@ -1,0 +1,2336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>古尘录 · 像素人生模拟器</title>
+<style>
+  :root{
+    --bg:#171422; --panel:#241d33; --panel2:#2c2440; --line:#0d0a14;
+    --ink:#efe3cd; --dim:#a99d8a; --gold:#f2c14e; --red:#e05252; --green:#7fd47a;
+    --blue:#7ab8ff; --purple:#c99bff;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+    font-size:14px; overflow:hidden;
+  }
+  #app{max-width:1280px; height:100%; margin:0 auto; display:flex; flex-direction:column; padding:8px;}
+  /* ===== 顶栏 ===== */
+  #topbar{
+    display:flex; align-items:center; gap:14px; padding:8px 12px;
+    background:linear-gradient(#2e2546,#251d38); border:3px solid #0d0a14;
+    box-shadow:inset 0 0 0 1px #4a3b63; margin-bottom:8px;
+  }
+  #topbar .logo{font-size:20px; font-weight:900; color:var(--gold); letter-spacing:4px; text-shadow:2px 2px 0 #000;}
+  #topbar .sub{font-size:10px; color:var(--dim); letter-spacing:2px;}
+  #clock{font-size:15px; font-weight:700; color:var(--blue);}
+  #clock .season{color:var(--green);}
+  #moneybox{font-size:15px; font-weight:700; color:var(--gold);}
+  .spacer{flex:1;}
+  .btn{
+    background:linear-gradient(#4a3b63,#3a2d50); color:var(--ink);
+    border:2px solid #0d0a14; box-shadow:0 3px 0 #0d0a14, inset 0 0 0 1px #6a5588;
+    padding:5px 12px; font-size:13px; cursor:pointer; letter-spacing:1px;
+  }
+  .btn:hover{filter:brightness(1.15);}
+  .btn:active{transform:translateY(2px); box-shadow:0 1px 0 #0d0a14;}
+  .btn.gold{background:linear-gradient(#8a6d2a,#6b5420); color:#ffe9a8;}
+  .btn:disabled{opacity:.4; cursor:not-allowed; filter:grayscale(.6);}
+  /* ===== 主区 ===== */
+  #main{flex:1; display:flex; gap:10px; min-height:0;}
+  #mapWrap{
+    position:relative; flex:0 0 auto; border:3px solid #0d0a14;
+    box-shadow:inset 0 0 0 1px #4a3b63, 0 0 30px rgba(0,0,0,.6); background:#000;
+  }
+  canvas{display:block; image-rendering:pixelated; image-rendering:crisp-edges; cursor:pointer;}
+  #labels{position:absolute; inset:0; pointer-events:none;}
+  .loclabel{
+    position:absolute; transform:translateX(-50%);
+    font-size:11px; color:#ffe9c0; letter-spacing:1px; white-space:nowrap;
+    background:rgba(10,8,16,.72); padding:1px 6px; border:1px solid #4a3b63;
+    text-shadow:1px 1px 0 #000;
+  }
+  #mapHint{
+    position:absolute; left:8px; bottom:8px; font-size:11px; color:#cfc3ae;
+    background:rgba(10,8,16,.7); padding:2px 8px; border:1px solid #4a3b63;
+  }
+  #interactList{display:flex; flex-direction:column; gap:4px; max-height:52vh; overflow-y:auto; padding-right:2px;}
+  /* ===== 侧栏 ===== */
+  #side{flex:1; display:flex; flex-direction:column; gap:8px; min-width:380px; min-height:0;}
+  .panel{
+    background:var(--panel); border:3px solid #0d0a14;
+    box-shadow:inset 0 0 0 1px #4a3b63; padding:8px 10px; overflow:hidden;
+  }
+  .panel h3{
+    font-size:12px; color:var(--gold); letter-spacing:3px; margin-bottom:6px;
+    border-bottom:1px dashed #4a3b63; padding-bottom:4px;
+  }
+  #statsPanel{flex:0 0 auto;}
+  #statGrid{display:grid; grid-template-columns:1fr 1fr; gap:3px 14px;}
+  .stat{display:flex; align-items:center; gap:6px; font-size:12px; white-space:nowrap;}
+  .stat .name{width:52px; color:var(--dim); flex:0 0 auto;}
+  .bar{flex:1; height:10px; background:#14101f; border:1px solid #0d0a14; position:relative; min-width:30px;}
+  .bar .fill{height:100%; background:linear-gradient(#8fd97f,#4c9a4f);}
+  .bar .fill.hp{background:linear-gradient(#ff9d8a,#c0392b);}
+  .bar .fill.md{background:linear-gradient(#ffd97a,#d4a017);}
+  .bar .fill.sk{background:linear-gradient(#9fc0ff,#5b7bd5);}
+  .stat .num{width:38px; text-align:right; color:var(--ink); font-variant-numeric:tabular-nums;}
+  #roleLine{font-size:12px; color:var(--dim); margin-bottom:5px;}
+  #roleLine b{color:var(--ink);}
+  #statGrid2{display:grid; grid-template-columns:1fr 1fr; gap:2px 14px; font-size:12px;}
+  #statGrid2 .k{color:var(--dim);} #statGrid2 .v{color:var(--ink); text-align:right;}
+  #actionPanel{flex:0 1 auto; max-height:30%; display:flex; flex-direction:column;}
+  #actionList{overflow-y:auto; display:flex; flex-direction:column; gap:4px; padding-right:2px;}
+  .lochead{font-size:11px; color:var(--purple); letter-spacing:2px; margin:2px 0 1px;}
+  .actbtn{
+    text-align:left; background:#332a4c; color:var(--ink); border:2px solid #0d0a14;
+    box-shadow:inset 0 0 0 1px #5b4a7e; padding:5px 9px; cursor:pointer; font-size:13px;
+  }
+  .actbtn:hover:not(:disabled){filter:brightness(1.18);}
+  .actbtn:disabled{opacity:.45; cursor:not-allowed;}
+  .actbtn .meta{color:var(--dim); font-size:11px; float:right; margin-left:8px;}
+  #logPanel{flex:1; min-height:0; display:flex; flex-direction:column;}
+  #log{overflow-y:auto; font-size:12.5px; line-height:1.65; flex:1; min-height:0; padding-right:4px;}
+  #log .t{color:var(--dim);}
+  #log .good{color:var(--green);}
+  #log .bad{color:var(--red);}
+  #log .ev{color:var(--purple);}
+  #log .n{color:var(--ink);}
+  /* ===== 滚动条 ===== */
+  ::-webkit-scrollbar{width:8px;}
+  ::-webkit-scrollbar-track{background:#14101f;}
+  ::-webkit-scrollbar-thumb{background:#4a3b63; border:2px solid #14101f;}
+  /* ===== 弹窗 ===== */
+  .overlay{
+    position:fixed; inset:0; background:rgba(8,6,14,.78); z-index:50;
+    display:flex; align-items:center; justify-content:center; overflow:auto; padding:20px;
+  }
+  .modal{
+    background:var(--panel); border:4px solid #0d0a14; max-width:560px; width:100%;
+    box-shadow:inset 0 0 0 1px #6a5588, 0 10px 40px rgba(0,0,0,.8); padding:16px 20px;
+  }
+  .modal h2{color:var(--gold); font-size:18px; letter-spacing:2px; margin-bottom:10px; text-align:center;}
+  .modal .body{font-size:13.5px; line-height:1.9; color:var(--ink); margin-bottom:12px; white-space:pre-wrap;}
+  .modal .opts{display:flex; flex-direction:column; gap:7px;}
+  .modal .optbtn{
+    text-align:left; background:#332a4c; color:var(--ink); border:2px solid #0d0a14;
+    box-shadow:inset 0 0 0 1px #5b4a7e; padding:8px 12px; cursor:pointer; font-size:13.5px; line-height:1.5;
+  }
+  .modal .optbtn:hover:not(:disabled){filter:brightness(1.18);}
+  .modal .optbtn:disabled{opacity:.45;}
+  .modal .optbtn .fx{color:var(--dim); font-size:11px;}
+  /* ===== 开局页 ===== */
+  #startOverlay{z-index:60;}
+  #startPanel{max-width:660px; max-height:90vh; overflow-y:auto;}
+  .pickrow{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;}
+  .pick{
+    background:#332a4c; border:2px solid #0d0a14; color:var(--ink); padding:6px 10px;
+    cursor:pointer; font-size:12.5px; text-align:left; box-shadow:inset 0 0 0 1px #5b4a7e; flex:1; min-width:150px;
+  }
+  .pick.sel{border-color:var(--gold); box-shadow:inset 0 0 0 2px var(--gold); background:#453760;}
+  .pick b{display:block; font-size:13px; color:var(--gold);}
+  .pick small{color:var(--dim);}
+  .inputrow{display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap;}
+  .inputrow input, .inputrow select{
+    background:#14101f; color:var(--ink); border:2px solid #0d0a14; padding:6px 10px; font-size:13px;
+    box-shadow:inset 0 0 0 1px #4a3b63;
+  }
+  .swatch{width:26px; height:26px; border:3px solid #0d0a14; cursor:pointer; display:inline-block;}
+  .swatch.sel{outline:3px solid var(--gold);}
+  /* ===== 结局页 ===== */
+  #endPanel{max-width:640px; max-height:90vh; overflow-y:auto;}
+  #endTitle{font-size:26px; text-align:center; letter-spacing:6px; margin:6px 0 4px; color:var(--gold); text-shadow:2px 2px 0 #000;}
+  #endSub{text-align:center; color:var(--dim); font-size:12px; margin-bottom:12px;}
+  #endStats,#endData{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:12px;}
+  #endStats .cell,#endData .cell{background:#14101f; border:1px solid #3a2d50; padding:6px 8px; text-align:center;}
+  #endStats .cell b,#endData .cell b{display:block; font-size:15px; color:var(--gold);}
+  #endStats .cell span,#endData .cell span{font-size:11px; color:var(--dim);}
+  #catalogList{display:grid; grid-template-columns:1fr 1fr; gap:6px;}
+  .cat{background:#14101f; border:1px solid #3a2d50; padding:6px 9px; font-size:12px; color:var(--dim);}
+  .cat.got{color:var(--gold); border-color:var(--gold);}
+  .cat b{display:block; font-size:13px;}
+  .cat small{color:var(--dim); font-size:11px;}
+  #endChronicle{max-height:170px; overflow-y:auto; background:#14101f; border:1px solid #3a2d50; padding:8px 10px; font-size:12px; line-height:1.7; margin-bottom:12px;}
+  #endAchv{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:14px;}
+  .achv{font-size:11px; border:1px solid #3a2d50; background:#14101f; padding:3px 7px; color:var(--dim);}
+  .achv.got{color:var(--gold); border-color:var(--gold);}
+  .achv.new{animation:blink 1s steps(2) infinite; color:#fff; background:#5a3d1a;}
+  @keyframes blink{50%{opacity:.5;}}
+  .hidden{display:none !important;}
+  #helpPanel{max-width:560px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- 顶栏 -->
+  <div id="topbar">
+    <div>
+      <span class="logo">古尘录</span><br>
+      <span class="sub">· 像素人生模拟器 ·</span>
+    </div>
+    <div id="clock">太初七年 · 春</div>
+    <div id="moneybox">纹银 0 两</div>
+    <div class="spacer"></div>
+    <button class="btn" id="btnSave">存档</button>
+    <button class="btn" id="btnLoad">读档</button>
+    <button class="btn" id="btnHelp">帮助</button>
+    <button class="btn gold" id="btnNew">新一世</button>
+  </div>
+
+  <div id="main">
+    <!-- 地图 -->
+    <div id="mapWrap">
+      <canvas id="cv" width="768" height="480"></canvas>
+      <div id="labels"></div>
+      <div id="mapHint">点击地面或方向键行走 · 走到建筑旁按「空格」互动</div>
+    </div>
+    <!-- 侧栏 -->
+    <div id="side">
+      <div class="panel" id="statsPanel">
+        <h3>人物</h3>
+        <div id="roleLine"></div>
+        <div id="estateLine"></div>
+        <div id="statGrid"></div>
+        <div id="statGrid2" style="margin-top:6px;"></div>
+      </div>
+      <div class="panel" id="actionPanel">
+        <h3>可做之事 <button class="btn" id="btnRepeat" style="float:right;padding:2px 8px;font-size:11px;letter-spacing:0;">重复上次(R)</button></h3>
+        <div id="actionList"></div>
+      </div>
+      <div class="panel" id="logPanel">
+        <h3>生平纪事</h3>
+        <div id="log"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 通用事件弹窗 -->
+<div class="overlay hidden" id="modal">
+  <div class="modal">
+    <h2 id="modalTitle"></h2>
+    <div class="body" id="modalBody"></div>
+    <div class="opts" id="modalOpts"></div>
+  </div>
+</div>
+
+<!-- 互动菜单（走到建筑旁按空格） -->
+<div class="overlay hidden" id="interactOverlay">
+  <div class="modal">
+    <h2 id="interactTitle"></h2>
+    <div class="opts" id="interactList"></div>
+    <div style="text-align:center; margin-top:12px;">
+      <button class="btn" id="interactClose">离开（空格 / Esc）</button>
+    </div>
+  </div>
+</div>
+
+<!-- 开局 -->
+<div class="overlay hidden" id="startOverlay">
+  <div class="modal" id="startPanel">
+    <h2>古 尘 录</h2>
+    <div class="body" style="text-align:center; color:var(--dim);">架空朝代「大夏」· 一方水土，一世浮沉。<br>本朝文教昌明，男女皆可入学、应试、从仕、从商、从军。</div>
+    <div class="inputrow">
+      <label style="color:var(--dim);">姓名</label>
+      <input id="inpName" maxlength="6" placeholder="留空则随机" style="width:140px;">
+      <label style="color:var(--dim);">性别</label>
+      <select id="selGender"><option value="m">男</option><option value="f">女</option></select>
+      <label style="color:var(--dim);">衣色</label>
+      <span id="robeRow"></span>
+    </div>
+    <div class="body" style="margin-bottom:6px; color:var(--gold);">一 · 出身</div>
+    <div class="pickrow" id="pickIdentity"></div>
+    <div class="body" style="margin-bottom:6px; color:var(--gold);">二 · 性情</div>
+    <div class="pickrow" id="pickTrait"></div>
+    <div style="text-align:center; margin-top:4px;">
+      <button class="btn gold" id="btnStart" style="font-size:16px; padding:9px 34px;">开始这一世</button>
+      <button class="btn" id="btnRandom" style="margin-left:10px;">天降随机</button>
+    </div>
+  </div>
+</div>
+
+<!-- 结局 -->
+<div class="overlay hidden" id="endOverlay">
+  <div class="modal" id="endPanel">
+    <div id="endSub">—— 一世终了 · 盖棺定论 ——</div>
+    <div id="endTitle"></div>
+    <div id="endRank" style="text-align:center; color:var(--dim); font-size:12px; margin-bottom:12px;"></div>
+    <div id="endStats"></div>
+    <div class="body" style="margin:8px 0 6px; color:var(--gold);">一生行迹</div>
+    <div id="endData"></div>
+    <div class="body" style="margin-bottom:6px; color:var(--gold);">生平大事记</div>
+    <div id="endChronicle"></div>
+    <div class="body" style="margin-bottom:6px; color:var(--gold);">成就</div>
+    <div id="endAchv"></div>
+    <div style="text-align:center;">
+      <button class="btn gold" id="btnAgain" style="font-size:15px; padding:8px 28px;">再世为人</button>
+      <button class="btn" id="btnEpitaph" style="margin-left:10px;">墓志铭</button>
+      <button class="btn" id="btnCatalog" style="margin-left:10px;">结局图鉴</button>
+      <button class="btn" id="btnLook" style="margin-left:10px;">细看此生</button>
+    </div>
+  </div>
+</div>
+
+<!-- 墓志铭 -->
+<div class="overlay hidden" id="epitaphOverlay">
+  <div class="modal" id="epitaphPanel">
+    <h2>墓 志 铭</h2>
+    <textarea id="epitaphText" readonly spellcheck="false" style="width:100%;height:220px;background:#14101f;color:var(--ink);border:2px solid #0d0a14;box-shadow:inset 0 0 0 1px #4a3b63;padding:10px;font-family:'KaiTi','STKaiti','Kaiti SC',serif;font-size:14px;line-height:1.9;resize:none;"></textarea>
+    <div style="text-align:center; margin-top:12px;">
+      <button class="btn gold" id="btnEpitaphCopy">复制墓志铭</button>
+      <button class="btn" id="btnEpitaphClose" style="margin-left:10px;">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 结局图鉴 -->
+<div class="overlay hidden" id="catalogOverlay">
+  <div class="modal" id="catalogPanel">
+    <h2>结局图鉴</h2>
+    <div class="body" style="color:var(--dim);">已达成的结局点亮金色；未达成的灰字附条件提示。</div>
+    <div id="catalogList"></div>
+    <div style="text-align:center; margin-top:12px;"><button class="btn" id="btnCatalogClose">关闭</button></div>
+  </div>
+</div>
+
+<!-- 帮助 -->
+<div class="overlay hidden" id="helpOverlay">
+  <div class="modal" id="helpPanel">
+    <h2>玩法说明</h2>
+    <div class="body" id="helpBody"></div>
+    <div style="text-align:center;"><button class="btn" id="btnHelpClose">知道了</button></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+   古尘录 · 像素人生模拟器
+   架空古代 大夏朝 · 地图直接操作 · 纯规则+随机 · 多结局 · 本地存档
+   ===================================================================== */
+
+/* ---------- 工具 ---------- */
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const rnd = (a,b)=>a+Math.floor(Math.random()*(b-a+1));
+function mulberry32(seed){return function(){seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296;};}
+function chance(p){return Math.random()<p;}
+
+/* 音效 */
+let AC=null;
+function beep(f,d=0.08,type='square',vol=0.06){
+  try{
+    if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.type=type; o.frequency.value=f; g.gain.value=vol;
+    o.connect(g); g.connect(AC.destination);
+    const t=AC.currentTime;
+    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+d);
+    o.start(t); o.stop(t+d);
+  }catch(e){}
+}
+const sfx={act:()=>beep(330,.05), good:()=>{beep(520,.07);setTimeout(()=>beep(660,.09),60);}, bad:()=>{beep(180,.15,'sawtooth');}, event:()=>{beep(440,.06);setTimeout(()=>beep(587,.07),70);}, death:()=>{beep(220,.3,'sawtooth',.08);setTimeout(()=>beep(140,.5,'sawtooth',.08),150);}};
+
+/* ---------- 贴图（像素画，16x16） ---------- */
+const SPR={};
+SPR.home=[
+"................","......rrrr......","....rrrrrrrr....","...rrrrrrrrrr...",
+"..rrrrrrrrrrrr..","..rbbbbbbbbbbbr.","..rbbbbbbbbbbbr.","..rbbkkbbkkbbr..",
+"..rbbbbbbbbbbbr.","..rbbddbbddbbr..","..rbbbbbbbbbbbr.","..rbbbbbbbbbbbr.",
+"..rrbbbbbbbbbrr.","....bbbbbbbb....","...d...dd...d...","...g...gg...g..."];
+SPR.school=[
+"................","......RRRR......","....RRRRRRRR....","..RRRRRRRRRRRR..",
+"..s..........s..","..s..........s..","..s..bbbbbb..s..","..s..bbbbbb..s..",
+"..s..bk..kb..s..","..s..bk..kb..s..","..s..bbbbbb..s..","..s..bbbbbb..s..",
+"..ssssssssssss..","....d....d......","....g....g......","................"];
+SPR.market=[
+"................","..gg..gg..gg....","..gP..gP..gP....","..YYYYYYYYYYYY..",
+"..YYRRYYRRYYRR..","..YYYYYYYYYYYY..","..d.............","..d..dd..dd.....",
+"..d..dd..dd.....","..d.............","..d..dd..dd.....","..d.............",
+"..dddddddddddd..","................","................","................"];
+SPR.gov=[
+"................","...ssssssssss...","..sRRRRRRRRRRs..","..sRRRRRRRRRRs..",
+"..sRRRRRRRRRRs..","..sRRkkkkkkRRs..","..sRRkkkkkkRRs..","..sRRkkkkkkRRs..",
+"..sRRkkkkkkRRs..","..sRRkkkkkkRRs..","..sRRRRRRRRRRs..","..sRRRRRRRRRRs..",
+"...ssssssssss...","....d....d......","....g....g......","................"];
+SPR.martial=[
+"................","..rrrrrrrrrr....","..rbbbbbbbbbr...","..rbbbbbbbbbr...",
+"..rbbbbbbbbbr...","..rbbkkbbkbr....","..rbbbbbbbbbr...","..rbbbbbbbbbr...",
+"..rrrrrrrrrr....","..R.............","..R..kkkk.......","..R..RRRR.......",
+"..R.............","..d.............","..g.............","................"];
+SPR.med=[
+"................","..rrrrrrrrrr....","..rbbbbbbbbbr...","..rbbbbbbbbbr...",
+"..rbkkbbbbkbr...","..rbkkbbbbkbr...","..rbybbbbbbbybr.","..rbbbbbbbbbr...",
+"..rbbkkbbkkbbr..","..rbbbbbbbbbr...","..rrrrrrrrrr....","................",
+"................","................","................","................"];
+SPR.temple=[
+"................","......RR........","....RRRRRR......","..RRRRRRRRRR....",
+"..RRRRRRRRRR....","..RRRRRRRRRR....","..s..RRRR..s....","..s..bbbb..s....",
+"..s..bbbb..s....","..s..bkbb..s....","..s..bbbb..s....","..ssssssssss....",
+"....dd..dd......","....gg..gg......","................","................"];
+SPR.tavern=[
+"................","...YYYYYYYYYY...","...YRRYRRYRRY...","...YYYYYYYYYY...",
+"...dd......d....","...dd..dd..d....","...dd..dd..d....","...dd......d....",
+"...dd..dd..d....","...dd..dd..d....","...dd......d....","...dddddddddd...",
+"................","................","................","................"];
+SPR.qinglou=[
+"................","......RRRR......","....RRRRRRRR....","...RRRRRRRRRR...",
+"..RRRRRRRRRRRR..","..RbbbbbbbbbbR..","..RbkkbbbbkkbR..","..RbbbbbbbbbbR..",
+"..RRRRRRRRRRRR..","..RbbbbbbbbbbR..","..RbkkbbbbkkbR..","..RbbddbbddbbR..",
+"..RbbbbbbbbbbR..","..yRRRRRRRRRRy..","...d...d...d....","...g...g...g...."];
+SPR.dock=[
+"wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww",
+"wddddddddddddddw","wddddddddddddddw","wwwwddwwddwwwwww","wwwwwwwwwwwwwwww",
+"wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww",
+"wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww"];
+SPR.field=[
+"ffffffffffffffff","ffffffffffffffff","ffdffdffdffdffdf","ffdffdffdffdffdf",
+"ffffffffffffffff","ffffffffffffffff","ffdffdffdffdffdf","ffdffdffdffdffdf",
+"ffffffffffffffff","ffffffffffffffff","ffdffdffdffdffdf","ffdffdffdffdffdf",
+"ffffffffffffffff","ffffffffffffffff","ffdffdffdffdffdf","ffdffdffdffdffdf"];
+SPR.tree=[
+"................",".....CCCC.......","...CCCCCCCC.....","..CCCCCCCCCC....",
+"..CCcCCCCcCC....","..CCCCCCCCCC....","..CCCcCCcCCC....","..CCCCCCCCCC....",
+"...CCCCCCCC.....",".....tttt.......","......tt........","......tt........",
+"......tt........","................","................","................"];
+SPR.mountain=[
+"................","......gg........",".....gggg.......","....gggCgg......",
+"...gggCCggg.....","..gggCCCCggg....",".gggCCCCCCggg...","gggCCCCCCCCggg..",
+"ggCCCCCCCCCCgg..","gCCCCCCCCCCCCg..","gCCCgCCCCgCCCg..",".ggg......ggg...",
+"................","................","................","................"];
+SPR.rock=[
+"................","................","................","................",
+"................",".....ssss.......","....ssssss......","....skssss......",
+"...ssssssss.....","...sskssss......","....ssss........","................",
+"................","................","................","................"];
+SPR.flower=[
+"................","......yy........",".....yggy.......","......gg........",
+"................","................","................","................",
+"................","................","................","................",
+"................","................","................","................"];
+
+const SPAL={
+  '.':'', g:'#3e6b2c', G:'#4c7a34', k:'#1d1a24', d:'#b59a6a', w:'#3f7fd4',
+  t:'#7a5230', c:'#2f6b2e', C:'#4c9a4f', r:'#c98f3d', R:'#b3402f', b:'#d9b98c',
+  s:'#9aa0a6', y:'#f2c14e', p:'#f6cf9a', P:'#d35400', f:'#e8c94e', h:'#2b2320'
+};
+
+/* 玩家像素小人（12x14），方向翻转 */
+const PIX_F1=[
+"...hhhhhh...","..hhhhhhhh..","..pppppppp..",".pPPPPPPPPp.",
+".PPPPPPPPPP.",".PPPPPPPPPP.","..PPPPPPPP..","..pPPPPPPp..",
+"..pPP..PPp..","..pp....pp..","..pB....Bp..","..pB....Bp..",
+"............","............"];
+const PIX_F2=[
+"...hhhhhh...","..hhhhhhhh..","..pppppppp..",".pPPPPPPPPp.",
+".PPPPPPPPPP.",".PPPPPPPPPP.","..PPPPPPPP..","..pPPPPPPp..",
+".pPP....PPp.",".pp......pp.",".Bp......pB.",".Bp......pB.",
+"............","............"];
+
+/* ---------- 地图常量 ---------- */
+const TILE=32, MW=24, MH=15;
+const WATER=13; // 从第13行起为水面
+const REGIONS={
+  home:{name:'临安城',entry:{x:3,y:10},locs:[
+    {id:'home',    name:'茅屋',     x:3,  y:10, spr:'home'},
+    {id:'school',  name:'书院',     x:3,  y:4,  spr:'school'},
+    {id:'market',  name:'集市',     x:12, y:7,  spr:'market'},
+    {id:'gov',     name:'县衙',     x:19, y:4,  spr:'gov'},
+    {id:'martial', name:'武馆',     x:19, y:10, spr:'martial'},
+    {id:'med',     name:'仁济堂',   x:5,  y:12, spr:'med'},
+    {id:'temple',  name:'山神庙',   x:2,  y:1,  spr:'temple'},
+    {id:'tavern',  name:'醉仙楼',   x:14, y:9,  spr:'tavern'},
+    {id:'qinglou', name:'青楼',     x:16, y:8,  spr:'qinglou'},
+    {id:'dock',    name:'渡口',     x:10, y:12, spr:'dock'},
+    {id:'field',   name:'田庄',     x:8,  y:9,  spr:'field'},
+    {id:'wild',    name:'山野',     x:1,  y:3,  spr:'tree'}
+  ]},
+  jingcheng:{name:'京城',entry:{x:3,y:7},locs:[
+    {id:'palace',    name:'金銮殿', x:12, y:4, spr:'gov'},
+    {id:'liubu',     name:'六部',   x:8,  y:4, spr:'gov'},
+    {id:'guozijian', name:'国子监', x:4,  y:4, spr:'school'},
+    {id:'dongshi',   name:'东市',   x:13, y:9, spr:'market'},
+    {id:'kezhan',    name:'客栈',   x:5,  y:9, spr:'tavern'},
+    {id:'xishi',     name:'西市',   x:17, y:9, spr:'market'},
+    {id:'jiaofang',  name:'教坊司', x:15, y:2, spr:'qinglou'}
+  ]},
+  bianguan:{name:'雁门关',entry:{x:4,y:7},locs:[
+    {id:'shuaizhang',name:'帅帐',  x:3,  y:4, spr:'gov'},
+    {id:'xiaochang', name:'校场',  x:7,  y:3, spr:'martial'},
+    {id:'chengqiang',name:'城墙',  x:12, y:3, spr:'gov'},
+    {id:'bianshi',   name:'边市',  x:15, y:9, spr:'market'},
+    {id:'junyi',     name:'军医处',x:6,  y:9, spr:'med'},
+    {id:'fenghuo',   name:'烽火台',x:18, y:2, spr:'temple'}
+  ]},
+  jiangnan:{name:'江南',entry:{x:6,y:9},locs:[
+    {id:'chouzhuang',name:'绸庄',   x:5,  y:4, spr:'market'},
+    {id:'chayuan',   name:'茶园',   x:10, y:3, spr:'field'},
+    {id:'xilou',     name:'戏楼',   x:14, y:4, spr:'tavern'},
+    {id:'qianzhuang',name:'钱庄总号',x:8, y:9, spr:'gov'},
+    {id:'yuanlin',   name:'园林',   x:15, y:10, spr:'home'},
+    {id:'dukou2',    name:'渡口',   x:6,  y:13, spr:'dock'}
+  ]}
+};
+function curLocs(){ return G?((REGIONS[G.region]||REGIONS.home).locs):REGIONS.home.locs; }
+
+/* ---------- 游戏状态 ---------- */
+let G=null;            // 当前局
+let path=[];           // 行走路径 [[x,y],...]
+let walking=false;
+let lastEnding=null;
+let DEAD=false;
+
+const STORE_SAVE='guchen_save_v1', STORE_ACH='guchen_achv_v1', STORE_END='guchen_ends_v1';
+let unlockedAchv={};
+try{ unlockedAchv=JSON.parse(localStorage.getItem(STORE_ACH)||'{}'); }catch(e){}
+let unlockedEndings={};
+try{ unlockedEndings=JSON.parse(localStorage.getItem(STORE_END)||'{}'); }catch(e){}
+const END_CATALOG=[
+  {title:'位极人臣',hint:'官至宰辅 · 政绩声望卓著'},
+  {title:'富可敌国',hint:'家财万贯 · 田产商号产业兴旺'},
+  {title:'一代名将',hint:'沙场百战 · 官拜将军'},
+  {title:'文坛宗师',hint:'文才冠绝当世'},
+  {title:'悬壶济世',hint:'医人无数 · 妙手回春'},
+  {title:'得道高人',hint:'勘破红尘 · 白玉京奇缘'},
+  {title:'风流名士',hint:'才情魅力 · 妻妾知音满堂'},
+  {title:'遗臭万年',hint:'身败名裂 · 道德沦丧'},
+  {title:'英年早逝',hint:'英年陨落 · 天妒英才'},
+  {title:'安然寿终',hint:'寿终正寝 · 安享晚年'},
+  {title:'庸碌一生',hint:'平凡一世 · 安稳度日'}
+];
+
+/* =====================================================================
+   身份 / 性情
+   ===================================================================== */
+const IDENTITIES={
+  nong:{name:'农家之子',  desc:'粗茶淡饭，筋骨结实', fx:{nong:20,str:3,money:10,fields:5}, note:'天赋：农桑+20 · 体力+3 · 田5亩 · 银10两'},
+  shu:{name:'书香门第',  desc:'寒窗苦读，书香盈室', fx:{wen:20,int:3,money:40},            note:'天赋：文才+20 · 智力+3 · 银40两'},
+  shang:{name:'商贾之子', desc:'耳濡目染，市井机变', fx:{shop:20,money:80,luck:1},          note:'天赋：商道+20 · 银80两 · 运气+1'},
+  wu:{name:'将门之后',   desc:'虎父无犬子',          fx:{wu:20,str:4,health:5,money:20},     note:'天赋：武艺+20 · 体力+4 · 健康+5 · 银20两'},
+  yi:{name:'医家子弟',   desc:'仁心仁术，悬壶济世', fx:{med:20,health:5,money:15},          note:'天赋：医术+20 · 健康+5 · 银15两'},
+  han:{name:'寒门孤儿',  desc:'父母早亡，自立门户', fx:{luck:3,money:5},                    note:'天赋：运气+3 · 银5两（白手起家潜力）'}
+};
+const TRAITS={
+  haoshuang:{name:'豪爽', desc:'武艺、体力成长+15%，酒量过人'},
+  jinshen:{name:'谨慎',  desc:'冒险凶险减半，遇事三思'},
+  jimmin:{name:'机敏',   desc:'商道、智力成长+15%，识破骗局'},
+  houthou:{name:'憨厚',  desc:'农桑、道德成长+15%'},
+  fengliu:{name:'风流',  desc:'魅力+5，姻缘易成'},
+  jianyi:{name:'坚毅',   desc:'健康回复更佳，寿数+3'},
+  conghui:{name:'聪慧',  desc:'文才成长+15%，科举更有把握'},
+  danbo:{name:'淡泊',    desc:'修行、布施效果更佳'}
+};
+
+/* ---------- 姓名 ---------- */
+const SURNAMES=['林','沈','苏','顾','谢','陆','温','裴','叶','白','柳','卫','秦','许','江'];
+const MALE_NAMES=['子渊','景行','怀瑾','长卿','敬亭','云深','之涣','若谷','砚舟','既明'];
+const FEM_NAMES=['婉清','疏影','知微','玉衡','采薇','素商','云锦','嫣然','青梧','映雪'];
+const SPOUSE_M=['陆归舟','沈砚','谢青山','温既白','卫长风','秦暮云','白少游','柳停云'];
+const SPOUSE_F=['沈素心','苏听澜','林晚晴','顾清荷','叶知秋','裴月','温小满','白若眉'];
+const QLOU_F=['如烟','若雪','红袖','柳眉','含香','飞燕','玉儿','青鸾'];
+const QLOU_M=['云笙','子墨','弄玉','清歌','怀乐','九霄','凤箫','无衣'];
+
+function randName(g){
+  const sur=SURNAMES[rnd(0,SURNAMES.length-1)];
+  const nm=(g==='f'?FEM_NAMES:MALE_NAMES)[rnd(0,9)];
+  return sur+nm;
+}
+
+/* =====================================================================
+   新局初始化
+   ===================================================================== */
+function newGame(identityId, traitId, gender, name, robe){
+  const idn=IDENTITIES[identityId], tr=TRAITS[traitId];
+  const seed=Math.floor(Math.random()*1e9)|0;
+  G={
+    name:name||randName(gender),
+    gender:gender, robe:robe||'#d35400',
+    identity:identityId, trait:traitId,
+    ageMonths:7*12,           // 从七岁开始
+    health:100, stamina:100, mood:70,
+    money:idn.fx.money||0,
+    fields:idn.fx.fields||0,
+    house:1,
+    fame:0, reput:5, moral:55,  // 声望 / 名声 / 道德
+    str:(idn.fx.str||0)+rnd(2,5)+ (identityId==='wu'?2:0),
+    int:3+rnd(2,5)+(idn.fx.int||0)+(identityId==='shu'?2:0),
+    cha:(idn.fx.cha||0)+rnd(2,5)+(traitId==='fengliu'?5:0),
+    luck:50+(idn.fx.luck||0),
+    skills:{wen:(idn.fx.wen||0), wu:(idn.fx.wu||0), nong:(idn.fx.nong||0), med:(idn.fx.med||0), shop:(idn.fx.shop||0), talent:0},
+    lifespan:58+rnd(0,25)+(traitId==='jianyi'?3:0),
+    rank:'baiyi',         // 布衣/秀才/举人/进士/县令/知州/知府/尚书/宰相
+    military:0,           // 士卒/什长/百夫长/校尉/将军
+    merit:0,              // 政绩
+    battle:0,             // 战功
+    shopOwned:false,
+    shopLv:0,
+    married:false,
+    spouse:null,
+    kids:[],              // {name,gender,ageMonths,path,heal}
+    parentsAlive:true,
+    heals:0,              // 医人次数
+    xiu:0,                // 修行次数
+    lastExamAt:-999, lastAuditAt:-999, lastMatchAt:-999, lastBirthAt:-999,
+    bank:{dep:0,loan:0,loanAt:-999},      // 钱庄存款/借贷
+    houses:0,                            // 0无 1瓦房 2别院 3庄园
+    hold:null,                           // 囤货 {type,buyP}
+    concubines:[],                       // 侧室（妾）
+    grandkids:0,                         // 孙辈
+    stat:{acts:0,reads:0,trades:0,battles:0,caravans:0,travels:0,friends:0},   // 一生统计
+    lastAction:null,                     // 上次行动（重复用）
+    friends:[],                          // 挚友
+    faction:null,                        // 党派：xie/wang/neutral
+    enemies:[],                          // 仇人 {name,grudge,status}
+    books:0,                             // 著作
+    market:{grain:rnd(70,130), silk:rnd(70,130), salt:rnd(70,130)},   // 粮/绸/盐行情
+    marketPrev:{grain:100,silk:100,salt:100},
+    quest:0,              // 白玉京奇遇 0无 1..3
+    flags:{},
+    chronicle:[],         // {y, s}
+    mapSeed:seed, rng:mulberry32(seed),
+    log:[],
+    died:false, deathCause:'',
+    achievements:[]       // 本局已解锁
+  };
+  // 基础数值可视化调整
+  G.luck=clamp(G.luck+10,1,99); // 运气偏低则补足
+  G.modalOpen=false; G.newAchv=null; G.eventQueue=[];
+  pushLog('太初七年春，'+G.name+'降生于大夏朝——'+identityId+'。', 'ev');
+  pushLog('性情'+tr.name+'：'+tr.desc, 'n');
+  G.chronicle.push({y:7,s:'降生于世（'+idn.name+'）'});
+  DEAD=false; lastEnding=null;
+  G.region='home'; G.visited={home:1};
+  G.x=REGIONS.home.entry.x; G.y=REGIONS.home.entry.y;
+  animX=G.x*TILE+16; animY=G.y*TILE+16;
+  path=[]; walking=false;
+  buildMap();
+  renderUI();
+  autoSave();
+}
+
+/* =====================================================================
+   地图
+   ===================================================================== */
+let mapTiles=[], decor=[]; // decor: {x,y,kind}
+function inMap(x,y){return x>=0&&x<MW&&y>=0&&y<MH;}
+function buildMap(){
+  const locs=curLocs();
+  const reg=G.region||'home';
+  mapTiles=[];
+  for(let y=0;y<MH;y++){
+    mapTiles[y]=[];
+    for(let x=0;x<MW;x++){
+      mapTiles[y][x]='grass';
+    }
+  }
+  if(reg==='home'){
+    // 底部水面
+    for(let y=WATER;y<MH;y++) for(let x=0;x<MW;x++) mapTiles[y][x]='water';
+    // 左上山脉
+    for(let y=0;y<3;y++) for(let x=0;x<4;x++){ if(y*4+x<=8 && !(x===0&&y===0)) mapTiles[y][x]='mountain'; }
+    // 道路：横 y=7，竖 x=11
+    for(let x=0;x<MW;x++) if(mapTiles[7][x]!=='water') mapTiles[7][x]='road';
+    for(let y=0;y<MH;y++) if(mapTiles[y][11]!=='water') mapTiles[y][11]='road';
+    // 农田周边
+    [[7,9],[9,9],[7,10],[9,10],[8,10]].forEach(([x,y])=>{ if(inMap(x,y)) mapTiles[y][x]='field'; });
+  }else if(reg==='jingcheng'){
+    // 京城：环城路+井字街
+    for(let y=2;y<12;y++) for(let x=2;x<22;x++){ if(x===2||x===21||y===2||y===11) mapTiles[y][x]='road'; }
+    for(let x=2;x<22;x++){ mapTiles[7][x]='road'; }
+    for(let y=2;y<12;y++){ mapTiles[11][y]='road'; }
+  }else if(reg==='bianguan'){
+    // 边关：北山荒原+两道官道
+    for(let y=0;y<4;y++) for(let x=0;x<MW;x++) mapTiles[y][x]='mountain';
+    for(let x=0;x<MW;x++){ mapTiles[4][x]='road'; mapTiles[8][x]='road'; }
+    // 通往山上建筑（校场/城墙/烽火台）的坡道
+    [[7,3],[12,3],[18,2]].forEach(([x,y])=>{ for(let yy=4;yy>=y;yy--) mapTiles[yy][x]='road'; });
+  }else if(reg==='jiangnan'){
+    // 江南：一条大江横贯 + 两座可通行的石桥，水塘点缀不挡路
+    for(let x=0;x<MW;x++) mapTiles[7][x]='water';
+    mapTiles[7][7]='road';    // 西桥（桥上下均为陆地，可通行）
+    mapTiles[7][15]='road';   // 东桥
+    [[2,3],[2,4],[3,4],[18,2],[19,2],[19,3],[16,12],[17,12],[17,13],[9,2],[10,2],[11,2]].forEach(([x,y])=>{
+      if(inMap(x,y)) mapTiles[y][x]='water';
+    });
+  }
+  // 建筑落位
+  locs.forEach(l=>{ if(inMap(l.x,l.y)) mapTiles[l.y][l.x]='road'; });
+  // 装饰：树/花/石（避开道路建筑水面山脉）
+  const rng=G.rng;
+  for(let y=0;y<MH;y++) for(let x=0;x<MW;x++){
+    if(mapTiles[y][x]!=='grass') continue;
+    if(locs.some(l=>Math.abs(l.x-x)<=1&&Math.abs(l.y-y)<=1)) continue;
+    const r=rng();
+    if(r<0.05) decor.push({x,y,kind:'tree'});
+    else if(r<0.08) decor.push({x,y,kind:'flower'});
+    else if(r<0.09) decor.push({x,y,kind:'rock'});
+  }
+}
+function walkable(x,y){
+  if(!inMap(x,y)) return false;
+  const t=mapTiles[y][x];
+  return t!=='water' && t!=='mountain';
+}
+function tileName(x,y){
+  if(!inMap(x,y)) return null;
+  return mapTiles[y][x];
+}
+
+/* ---------- 画布绘制 ---------- */
+const cv=$('cv'), ctx=cv.getContext('2d');
+let animX=0,animY=0,frame=0,animTick=0,playerDir=1;
+
+function drawSprite(spr, dx, dy, scale){
+  for(let y=0;y<16;y++){
+    const row=spr[y];
+    for(let x=0;x<16;x++){
+      const ch=row[x];
+      if(ch==='.') continue;
+      const col=SPAL[ch];
+      if(!col) continue;
+      ctx.fillStyle=col;
+      ctx.fillRect(dx+x*scale, dy+y*scale, scale, scale);
+    }
+  }
+}
+function drawPlayer(dx,dy,scale){
+  const pix=(frame%2===0)?PIX_F1:PIX_F2;
+  for(let y=0;y<14;y++){
+    const row=pix[y];
+    for(let x=0;x<12;x++){
+      const ch=row[x];
+      if(ch==='.') continue;
+      let col=SPAL[ch];
+      if(ch==='P') col=G.robe;
+      if(ch==='B') col='#5b3a1e';
+      if(ch==='p') col='#f6cf9a';
+      ctx.fillStyle=col;
+      const sx = playerDir>=0 ? x : (11-x);
+      ctx.fillRect(dx+sx*scale, dy+y*scale, scale, scale);
+    }
+  }
+}
+function drawMap(){
+  ctx.fillStyle='#3e6b2c';
+  ctx.fillRect(0,0,cv.width,cv.height);
+  // 地形
+  for(let y=0;y<MH;y++) for(let x=0;x<MW;x++){
+    const t=mapTiles[y][x], dx=x*TILE, dy=y*TILE;
+    if(t==='grass'){
+      const r=((x*7+y*13+G.mapSeed)%5);
+      ctx.fillStyle=(r<2)?'#3e6b2c':'#44742f';
+      ctx.fillRect(dx,dy,TILE,TILE);
+      if((x*3+y*5)%9===0){ ctx.fillStyle='rgba(90,140,60,.35)'; ctx.fillRect(dx+8,dy+20,3,3); ctx.fillRect(dx+22,dy+8,3,3);}
+    }else if(t==='road'){
+      ctx.fillStyle='#c2a06a'; ctx.fillRect(dx,dy,TILE,TILE);
+      ctx.fillStyle='rgba(0,0,0,.12)';
+      for(let i=0;i<3;i++) ctx.fillRect(dx+((x*5+y*7+i*9)%26), dy+((y*3+i*13)%26), 4,3);
+    }else if(t==='water'){
+      ctx.fillStyle='#3f7fd4'; ctx.fillRect(dx,dy,TILE,TILE);
+      if((x+y+Math.floor(animTick/400))%2===0){ ctx.fillStyle='rgba(255,255,255,.10)'; ctx.fillRect(dx+4,dy+6,14,4); ctx.fillRect(dx+18,dy+20,10,3);}
+      else { ctx.fillStyle='rgba(255,255,255,.08)'; ctx.fillRect(dx+16,dy+8,10,3);}
+    }else if(t==='field'){
+      drawSprite(SPR.field,dx,dy,2);
+    }else if(t==='mountain'){
+      drawSprite(SPR.mountain,dx,dy,2);
+    }
+  }
+  // 装饰
+  decor.forEach(d=>{
+    const dx=d.x*TILE, dy=d.y*TILE;
+    if(d.kind==='tree') drawSprite(SPR.tree,dx,dy,2);
+    else if(d.kind==='flower') drawSprite(SPR.flower,dx,dy,2);
+    else if(d.kind==='rock') drawSprite(SPR.rock,dx,dy,2);
+  });
+  // 建筑
+  curLocs().forEach(l=>{
+    const dx=l.x*TILE, dy=l.y*TILE;
+    ctx.fillStyle='rgba(0,0,0,.28)';
+    ctx.fillRect(dx+2,dy+26,TILE-4,8);
+    drawSprite(SPR[l.spr]||SPR.home,dx,dy,2);
+  });
+  // 玩家
+  ctx.fillStyle='rgba(0,0,0,.35)';
+  ctx.fillRect(animX-10,animY+12,20,6);
+  drawPlayer(animX-12,animY-16,2);
+  // 若正在走，路径高亮
+  if(path.length){
+    ctx.strokeStyle='rgba(242,193,78,.6)';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(G.x*TILE+16,G.y*TILE+16);
+    path.forEach(p=>ctx.lineTo(p[0]*TILE+16,p[1]*TILE+16));
+    ctx.stroke();
+  }
+}
+function drawLoop(t){
+  animTick=t;
+  if(!G){ requestAnimationFrame(drawLoop); return; }
+  // 行走动画
+  if(path.length){
+    walking=true; frame++;
+    const target=[path[0][0]*TILE+16, path[0][1]*TILE+16];
+    const dx=target[0]-animX, dy=target[1]-animY;
+    const dist=Math.hypot(dx,dy);
+    const step=Math.min(dist, 2.8);
+    if(dx!==0) playerDir=dx>0?1:-1;
+    animX+=dx/dist*step; animY+=dy/dist*step;
+    if(dist<=step+0.1){
+      G.x=path[0][0]; G.y=path[0][1];
+      animX=G.x*TILE+16; animY=G.y*TILE+16;
+      path.shift();
+    }
+    if(!path.length) walking=false;
+  }
+  drawMap();
+  requestAnimationFrame(drawLoop);
+}
+
+/* ---------- 标签 ---------- */
+function renderLabels(){
+  const box=$('labels'); box.innerHTML='';
+  curLocs().forEach(l=>{
+    const d=document.createElement('div');
+    d.className='loclabel';
+    d.textContent=l.name;
+    d.style.left=(l.x*TILE+16)+'px';
+    d.style.top=(l.y*TILE+32)+'px';
+    box.appendChild(d);
+  });
+}
+
+/* ---------- 移动 ---------- */
+const DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
+function moveTo(tx,ty){
+  if(!G||DEAD) return;
+  if(!walkable(tx,ty)){
+    // 找最近的可行点
+    for(let r=1;r<4;r++){
+      for(let dx=-r;dx<=r;dx++) for(let dy=-r;dy<=r;dy++){
+        if(Math.abs(dx)+Math.abs(dy)!==r) continue;
+        if(walkable(tx+dx,ty+dy)){ tx+=dx; ty+=dy; r=99; break; }
+      }
+      if(r===99) break;
+    }
+    if(!walkable(tx,ty)) return;
+  }
+  const p=findPath(G.x,G.y,tx,ty);
+  if(p&&p.length){ path=p; walking=true; }
+}
+function findPath(sx,sy,tx,ty){
+  if(!walkable(tx,ty)) return null;
+  const q=[[sx,sy]], prev={}, seen=new Set([sx+','+sy]);
+  while(q.length){
+    const [x,y]=q.shift();
+    if(x===tx&&y===ty){
+      const p=[]; let k=tx+','+ty;
+      while(k){ p.push(k.split(',').map(Number)); k=prev[k]; }
+      return p.reverse();
+    }
+    for(let i=0;i<4;i++){
+      const nx=x+DIRS[i][0], ny=y+DIRS[i][1], nk=nx+','+ny;
+      if(inMap(nx,ny)&&walkable(nx,ny)&&!seen.has(nk)){
+        seen.add(nk); prev[nk]=x+','+y; q.push([nx,ny]);
+      }
+    }
+  }
+  return null;
+}
+cv.addEventListener('click',e=>{
+  if(!G||DEAD) return;
+  if($('interactOverlay').classList.contains('hidden')===false) $('interactOverlay').classList.add('hidden');
+  const r=cv.getBoundingClientRect();
+  const x=Math.floor((e.clientX-r.left)/TILE), y=Math.floor((e.clientY-r.top)/TILE);
+  moveTo(x,y);
+});
+document.addEventListener('keydown',e=>{
+  if(!G||DEAD||$('modal').classList.contains('hidden')===false) return;
+  const k=e.key.toLowerCase();
+  const interactOpen=$('interactOverlay').classList.contains('hidden')===false;
+  // 空格 / 回车：打开或关闭互动菜单
+  if(k===' '||k==='enter'){
+    e.preventDefault();
+    if(interactOpen){ $('interactOverlay').classList.add('hidden'); return; }
+    openInteract();
+    return;
+  }
+  if(k==='escape'&&interactOpen){ $('interactOverlay').classList.add('hidden'); return; }
+  if(interactOpen) return;   // 菜单打开时方向键不再移动
+  if(k==='r'){ e.preventDefault(); repeatLast(10); return; }   // R：重复上次行动
+  let dx=0,dy=0;
+  if(k==='arrowup'||k==='w') dy=-1;
+  else if(k==='arrowdown'||k==='s') dy=1;
+  else if(k==='arrowleft'||k==='a') dx=-1;
+  else if(k==='arrowright'||k==='d') dx=1;
+  else return;
+  e.preventDefault();
+  if(walking) return;
+  moveTo(G.x+dx,G.y+dy);
+});
+
+/* =====================================================================
+   时间推进
+   ===================================================================== */
+function yearNow(){ return Math.floor(G.ageMonths/12)+1; }
+function seasonName(){
+  const m=G.ageMonths%12;
+  if(m<3) return '春'; if(m<6) return '夏'; if(m<9) return '秋';
+  return '冬';
+}
+function monthName(){
+  const m=G.ageMonths%12;
+  return ['正月','二月','三月','四月','五月','六月','七月','八月','九月','十月','冬月','腊月'][m];
+}
+function advanceMonths(n){
+  const y0=Math.floor(G.ageMonths/12);
+  G.ageMonths+=n;
+  const y1=Math.floor(G.ageMonths/12);
+  // 每年结算
+  for(let y=y0+1; y<=y1; y++){
+    agingTick();
+    familyTick();
+    businessTick();
+    questTick();
+  }
+}
+function agingTick(){
+  const age=Math.floor(G.ageMonths/12);
+  let loss = age<40?1 : age<60?2 : 3;
+  if(G.trait==='jianyi') loss=Math.max(0,loss-1);
+  G.health=clamp(G.health-loss,1,100);
+  if(age>=60 && chance(0.35)) G.health=clamp(G.health-2,0,100);
+  if(G.spouse) G.spouse.health=clamp(G.spouse.health-(age>50?2:1),10,100);
+  // 里程碑
+  if(age===16){ pushLog('十六岁行冠笄之礼，成年了。', 'ev'); G.chronicle.push({y:age,s:'行成年礼'}); }
+  if(age===30 && !G.married) pushLog('年近而立，家中催婚之声不绝于耳……', 'n');
+  if(age===40) pushLog('不惑之年，回望半生。', 'n');
+  if(age===50 && G.fame<10) pushLog('年过半百，依旧默默无闻。', 'bad');
+  if(age>=G.lifespan-2 && !G.died) pushLog('年事已高，自知大限将至。', 'bad');
+  // 钱庄利息（年息5%）
+  if(G.bank&&G.bank.dep>0){
+    const i=Math.floor(G.bank.dep*0.05);
+    if(i>0){ G.bank.dep+=i; pushLog('钱庄利息入账 '+i+' 两','good'); }
+  }
+  // 田赋商税（每年）
+  const tax=(G.fields||0)+((G.shopOwned)?10:0);
+  if(tax>0){
+    if(G.money>=tax){ G.money-=tax; }
+    else { G.money=0; G.reput=clamp(G.reput-2,-50,100); pushLog('拖欠田赋商税，被里正催缴','bad'); }
+  }
+  // 妾室用度（每年）
+  if(G.concubines&&G.concubines.length){
+    const cost=G.concubines.length*5;
+    if(G.money>=cost){ G.money-=cost; }
+    else { G.money=0; G.concubines.forEach(c=>c.affection=clamp((c.affection||50)-5,0,100)); G.reput=clamp(G.reput-1,-50,100); pushLog('侧室用度无着，后院起了闲话','bad'); }
+  }
+  // 夫妻感情自然流逝（常年冷落会生分）
+  if(G.married&&G.spouse&&!G.spouse.dead&&G.spouse.affection!==undefined){
+    G.spouse.affection=clamp(G.spouse.affection-2,0,100);
+  }
+  // 子女成长
+  G.kids.forEach(k=>{ if(!k.dead) k.ageMonths+=12; });
+  // 幼年夭折
+  G.kids.forEach(k=>{
+    if(!k.dead&&k.ageMonths<120&&chance(.008)){
+      k.dead=true; G.mood=clamp(G.mood-25,0,100);
+      showEvent({title:'白发人送黑发人',text:g=>'幼子（女）'+k.name+'染病夭折，你悲痛欲绝。',opts:[{label:'……',effect(){pushLog('痛失爱子，数日无言','bad');G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'幼子'+k.name+'夭折'});}}]});
+      sfx.bad();
+    }
+  });
+  // 12岁开蒙/拜师
+  G.kids.forEach(k=>{
+    if(k.ageMonths===144&&!k.trained&&!k.dead){ showEvent(kidTrainingEvent(k)); }
+  });
+  // 18岁成年
+  G.kids.forEach(k=>{
+    if(k.ageMonths===216&&!k.adult&&!k.dead){ k.adult=true; showEvent(kidAdultEvent(k)); }
+  });
+  // 成年子女立业收益
+  G.kids.filter(k=>k.adult&&!k.dead).forEach(k=>{
+    if(k.career==='shop'){ const m=rnd(4,12); G.money+=m; }
+    else if(k.career==='farm'){ const m=rnd(3,8); G.money+=m; }
+    else if(k.career==='study'&&chance(.12)){ G.fame=clamp(G.fame+8,0,100); pushLog('喜报！'+k.name+'中了举人','good'); G.chronicle.push({y:Math.floor(G.ageMonths/12),s:k.name+'中举'}); }
+    else if(k.career==='wu'&&chance(.12)){ G.fame=clamp(G.fame+5,0,100); pushLog(k.name+'在军中崭露头角','good'); }
+    else if(k.career==='med'&&chance(.1)){ G.fame=clamp(G.fame+4,0,100); pushLog(k.name+'医名渐起','good'); }
+  });
+  // 成年子女成家（自动，花三十两操办）
+  G.kids.filter(k=>k.adult&&!k.dead&&!k.married&&k.ageMonths>=240).forEach(k=>{
+    if(chance(.2)){
+      k.married=true; G.money=Math.max(0,G.money-30);
+      G.fame=clamp(G.fame+3,0,100);
+      pushLog(k.name+'成家了（操办花去三十两）','good');
+    }
+  });
+  // 孙辈
+  G.kids.filter(k=>k.adult&&!k.dead&&k.married&&k.ageMonths>=252).forEach(k=>{
+    if(chance(.1)){
+      G.grandkids++;
+      G.mood=clamp(G.mood+8,0,100);
+      showEvent({title:'含饴弄孙',text:g=>k.name+'家中添了丁，你当上祖父（母）了！',opts:[{label:'大喜大喜',effect(){pushLog('孙辈降生，阖家欢腾','good');G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'孙辈降生'});}}]});
+      sfx.good();
+    }
+  });
+}
+function familyTick(){
+  if((!G.married||!G.spouse)&&!(G.concubines&&G.concubines.length)) return;
+  const age=Math.floor(G.ageMonths/12);
+  // 正妻生育（感情越笃，添丁越易）
+  if(G.married&&G.spouse&&!G.spouse.dead){
+    const bChance=0.22+(G.spouse.affection||50)/300;
+    if(age>=17&&age<=45&&G.spouse.health>50&&G.ageMonths-G.lastBirthAt>=14&&chance(bChance)){
+      birthChild('正妻'+G.spouse.name);
+    }
+  }
+  // 侧室生育（每年至多一胎）
+  if(G.concubines&&G.concubines.length){
+    for(const c of G.concubines){
+      if(c.health>45&&age>=17&&age<=45&&G.ageMonths-G.lastBirthAt>=14&&chance(0.18)){
+        birthChild('侧室'+c.name);
+        break;
+      }
+    }
+  }
+  // 夫妻纪念日
+  if(G.married&&G.spouse&&!G.spouse.dead&&age%5===0&&chance(0.4)){
+    showEvent({
+      title:'结缡之喜',
+      text:g=>'你与'+G.spouse.name+'结为夫妻，已携手多年。烛影摇红，恍如初见。',
+      opts:[
+        {label:'置办酒席庆祝（-5两）',fx:'-5两',effect(){G.money=Math.max(0,G.money-5);G.spouse.affection=clamp((G.spouse.affection||50)+8,0,100);G.mood=clamp(G.mood+10,0,100);pushLog('烛光下对坐，情意绵绵','good');}},
+        {label:'相视一笑即可',fx:'',effect(){G.spouse.affection=clamp((G.spouse.affection||50)+3,0,100);G.mood=clamp(G.mood+6,0,100);pushLog('老夫老妻，相视一笑','good');}}
+      ]
+    });
+  }
+  // 妻妾争宠
+  if(G.concubines&&G.concubines.length&&chance(0.10+G.concubines.length*0.06)){
+    showEvent({
+      title:'妻妾争风',
+      text:g=>'正室与侧室为了鸡毛蒜皮闹到跟前，各自垂泪。',
+      opts:[
+        {label:'好言安抚（-5两）',fx:'-5两',effect(){G.concubines.forEach(c=>c.affection=clamp((c.affection||50)+3,0,100));G.spouse.affection=clamp((G.spouse.affection||50)+3,0,100);G.money=Math.max(0,G.money-5);G.mood=clamp(G.mood+3,0,100);pushLog('破费几两，总算哄住了','good');}},
+        {label:'各打五十大板',fx:'',effect(){G.concubines.forEach(c=>c.affection=clamp((c.affection||50)-3,0,100));G.spouse.affection=clamp((G.spouse.affection||50)-3,0,100);G.mood=clamp(G.mood-4,0,100);pushLog('立下家规，众人噤声','n');}}
+      ]
+    });
+  }
+  // 配偶离世（老年）
+  if(age>=55&&chance(0.02)&&G.spouse&&!G.spouse.dead){
+    showEvent({
+      title:'丧偶之痛',
+      text:g=>'相伴多年，'+G.spouse.name+'病逝。你悲痛难抑，数月不能自已。',
+      opts:[{label:'……',effect(){const af=G.spouse.affection||50;pushLog('丧偶，悲痛难当','bad');G.mood=af>60?5:20;G.spouse.dead=true;G.chronicle.push({y:age,s:G.spouse.name+'病逝'});}}]
+    });
+    sfx.bad();
+  }
+}
+function birthChild(mother){
+  const g=chance(0.5)?'m':'f';
+  const child={name:randName(g), gender:g, ageMonths:0, trained:false, path:null, adult:false, career:null, mother:mother, married:false, dead:false};
+  G.kids.push(child);
+  G.lastBirthAt=G.ageMonths;
+  G.mood=clamp(G.mood+12,0,100);
+  const age=Math.floor(G.ageMonths/12);
+  showEvent({
+    title:g==='m'?'弄璋之喜':'弄瓦之喜',
+    text:mother+'诞下一名'+(g==='m'?'男婴':'女婴')+'，取名「'+child.name+'」。阖家欢喜。',
+    opts:[
+      {label:'好！多子多福', fx:'多子多福', effect(){ pushLog('喜得'+(g==='m'?'子':'女')+'「'+child.name+'」', 'good'); G.chronicle.push({y:age,s:mother+'诞下'+child.name}); }},
+    ]
+  });
+  sfx.good();
+}
+function kidAdultEvent(k){
+  return {
+    title:'儿女成年',
+    text:k.name+'已满十八岁，行过冠笄之礼，到了选择前程的时候。',
+    opts:[
+      {label:'资助赴考（-20两）',fx:'文才之路',effect(){k.career='study';G.money=Math.max(0,G.money-20);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:k.name+'赴考'});pushLog(k.name+'踏上科举之路','good');}},
+      {label:'送进军营',fx:'从军',effect(){k.career='wu';pushLog(k.name+'投身行伍','n');}},
+      {label:'带去经商',fx:'商道',effect(){k.career='shop';pushLog(k.name+'跟商号学做买卖','n');}},
+      {label:'留在田庄',fx:'务农',effect(){k.career='farm';pushLog(k.name+'安心务农','n');}},
+      {label:'拜师学医',fx:'医术',effect(){k.career='med';pushLog(k.name+'从师学医','n');}}
+    ]
+  };
+}
+function affairCaughtEvent(){
+  return {
+    title:'私会败露',
+    text:g=>'你与'+(G.zhiji?G.zhiji.name:'相好的')+'私会之事，竟被'+(G.spouse&&G.married?G.spouse.name:'家中')+'撞破！一时间闹得不可开交。',
+    opts:[
+      {label:'跪地认错，发誓断绝',fx:'感情大伤',effect(){if(G.spouse)G.spouse.affection=clamp((G.spouse.affection||50)-30,0,100);G.reput=clamp(G.reput-5,-50,100);G.moral=clamp(G.moral-5,0,100);G.mood=clamp(G.mood-10,0,100);if(G.zhiji)G.zhiji.aff=Math.max(1,G.zhiji.aff-2);pushLog('风波过后，家中气压极低','bad');}},
+      {label:'破罐破摔，和离纵情',fx:'与妻和离',effect(){if(G.married&&G.spouse){G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'与'+G.spouse.name+'和离'});G.married=false;}G.reput=clamp(G.reput-8,-50,100);G.mood=clamp(G.mood-5,0,100);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'私会败露，一纸和离'});pushLog('一纸和离书，从此各奔东西','bad');}},
+      {label:'花银子摆平（-50两）',fx:'-50两',effect(){if(G.money>=50){G.money-=50;if(G.spouse)G.spouse.affection=clamp((G.spouse.affection||50)-10,0,100);G.reput=clamp(G.reput-2,-50,100);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'花钱摆平私会风波'});pushLog('破财消灾，风声压了下去','n');}else pushLog('囊中羞涩，摆不平了……','bad');}}
+    ]
+  };
+}
+function businessTick(){
+  // 商号结算（半年一次）
+  if(G.shopOwned && (G.ageMonths%6===0)){
+    const gain=Math.max(5, Math.round(25+G.skills.shop*0.5+(G.shopLv*12))+rnd(-15,15));
+    G.money+=Math.max(2,gain);
+    pushLog('商号半年结账：盈利 '+Math.max(2,gain)+' 两', gain>20?'good':'n');
+  }
+  // 田产租佃（每年）
+  if(G.fields>=10){
+    const rent=Math.floor(G.fields/2);
+    G.money+=rent;
+  }
+  // 市场行情波动（每年）
+  const m=G.market, prev=G.marketPrev||{};
+  for(const k of ['grain','silk','salt']){
+    m[k]=clamp(m[k]+rnd(-22,22),55,170);
+  }
+  if(G.ageMonths%12>=7&&G.ageMonths%12<10) m.grain=clamp(m.grain+12,55,170); // 青黄不接粮贵
+  if(chance(.06)) m.grain=clamp(m.grain+25,55,170); // 偶发荒信
+  if(chance(.06)) m.grain=clamp(m.grain-25,55,170); // 丰年粮贱
+  G.marketPrev={grain:m.grain,silk:m.silk,salt:m.salt};
+  // 房租（每年一收）
+  const rent=[0,2,6,15][G.houses]||0;
+  if(rent>0){ G.money+=rent; pushLog('宅院收租 '+rent+' 两','n'); }
+  // 贷款催收
+  if(G.bank.loan>0&&G.ageMonths-G.bank.loanAt>6){
+    G.bank.loanAt=G.ageMonths;
+    G.reput=clamp(G.reput-2,-50,100);
+    pushLog('债主上门催讨，名声受损','bad');
+  }
+}
+function questTick(){
+  if(G.quest===3 && chance(0.3)){ G.quest=4; }
+}
+
+/* =====================================================================
+   日志与界面
+   ===================================================================== */
+function pushLog(s,c){ G.log.push({t:yearNow()+'年'+seasonName()+' · ', s:s, c:c||'n'}); if(G.log.length>400) G.log.shift(); }
+const RANK_NAME={baiyi:'布衣', xiucai:'秀才', juren:'举人', jinshi:'进士', xianling:'县令', zhizhou:'知州', zhifu:'知府', shangshu:'尚书', zaixiang:'宰相'};
+const MIL_NAME={0:'',1:'士卒',2:'什长',3:'百夫长',4:'校尉',5:'将军'};
+const RANK_ORDER=['baiyi','xiucai','juren','jinshi','xianling','zhizhou','zhifu','shangshu','zaixiang'];
+const MIL_ORDER=['','shizu','shizhang','baifu','xiaowei','jiangjun'];
+
+function fameTitle(){
+  const f=G.fame;
+  if(f>=75) return '天下闻名';
+  if(f>=50) return '贤达';
+  if(f>=25) return '一方名士';
+  if(f>=10) return '乡绅';
+  return '布衣';
+}
+function titleLine(){
+  let s=G.name+' · '+(G.gender==='f'?'女':'男');
+  s+=' · '+IDENTITIES[G.identity].name;
+  s+=' · '+TRAITS[G.trait].name;
+  const r=RANK_NAME[G.rank];
+  if(G.rank!=='baiyi') s+=' · 官身('+r+')';
+  if(G.military>0) s+=' · '+MIL_NAME[G.military];
+  if(G.shopOwned) s+=' · 东家';
+  s+=' · '+fameTitle();
+  return s;
+}
+function renderUI(){
+  if(!G) return;
+  $('clock').textContent=(REGIONS[G.region]||REGIONS.home).name+' · 太初'+yearNow()+'年 · '+monthName()+'（'+seasonName()+'） · '+Math.floor(G.ageMonths/12)+'岁';
+  $('moneybox').textContent='纹银 '+G.money+' 两'+(G.fields?' · 田'+G.fields+'亩':'');
+  $('roleLine').innerHTML='<b>'+G.name+'</b> · '+TRAITS[G.trait].name+' · '+RANK_NAME[G.rank]+(G.faction==='xie'?'·谢党':G.faction==='wang'?'·王党':G.faction==='neutral'?'·孤臣':'')+(G.military>0?'·'+MIL_NAME[G.military]:'')+(G.shopOwned?'·商号':'')+'<br>'+(G.married&&G.spouse?'妻：'+G.spouse.name+(G.spouse.dead?'（亡故）':'')+'　':'')+((G.concubines&&G.concubines.length)?'侧室'+G.concubines.length+'　':'')+'子女：'+G.kids.filter(k=>!k.dead).length+' 人'+(G.grandkids?'　孙辈'+G.grandkids:'')+((G.friends&&G.friends.length)?'　挚友'+G.friends.length:'')+((G.enemies&&G.enemies.some(e=>e.status==='active'))?'　仇敌'+G.enemies.filter(e=>e.status==='active').length:'');
+  $('estateLine').innerHTML='产业：'+
+    (G.bank.dep>0?'钱庄存'+G.bank.dep+'两　':'')+
+    (G.bank.loan>0?'欠债'+G.bank.loan+'两　':'')+
+    (G.houses>0?['','瓦房','别院','庄园'][G.houses]+'　':'')+
+    (G.hold?'囤'+({grain:'粮',silk:'绸',salt:'盐'})[G.hold.type]+'(等行情出仓)　':'')+
+    (G.shopOwned?'商号Lv'+G.shopLv:'')+
+    (G.fields>=10?'　田租入':'');
+  // 属性条
+  const sg=$('statGrid');
+  const bars=[
+    ['体力',G.stamina,'md'],['健康',G.health,'hp'],['心情',G.mood,'md']
+  ];
+  sg.innerHTML=bars.map(b=>
+    '<div class="stat"><span class="name">'+b[0]+'</span><div class="bar"><div class="fill '+b[2]+'" style="width:'+clamp(b[1],0,100)+'%"></div></div><span class="num">'+Math.round(b[1])+'</span></div>'
+  ).join('');
+  // 数值
+  const g2=$('statGrid2');
+  g2.innerHTML=[
+    ['银两',G.money+' 两'],['声望',G.fame],['名声',G.reput],['道德',G.moral],
+    ['体魄',G.str],['智力',G.int],['魅力',G.cha],['运气',G.luck],
+    ['文才',G.skills.wen],['武艺',G.skills.wu],['农桑',G.skills.nong],['医术',G.skills.med],
+    ['商道',G.skills.shop],['才艺',G.skills.talent],['田产',G.fields+' 亩'],
+    ['政绩',G.merit],['战功',G.battle],['寿数',Math.floor(G.ageMonths/12)+'/'+G.lifespan]
+  ].map(([k,v])=>'<div style="display:flex;justify-content:space-between;"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>').join('');
+  renderActions();
+  renderLog();
+}
+function renderLog(){
+  const el=$('log');
+  const d=document.createElement('div');
+  d.innerHTML=G.log.map(l=>'<div><span class="t">'+l.t+'</span><span class="'+l.c+'">'+l.s+'</span></div>').join('');
+  if(el.dataset.last!==G.log.length){
+    el.innerHTML=d.innerHTML;
+    el.dataset.last=G.log.length;
+    el.scrollTop=el.scrollHeight;
+  }
+}
+
+/* =====================================================================
+   行动系统
+   ===================================================================== */
+function nearLocs(){
+  return curLocs().filter(l=>Math.abs(l.x-G.x)<=1&&Math.abs(l.y-G.y)<=1);
+}
+function renderActions(){
+  const el=$('actionList');
+  if(DEAD){ el.innerHTML='<div style="color:var(--dim);font-size:12px;">此生已了，点击右上角「新一世」。</div>'; return; }
+  const locs=nearLocs();
+  let html='';
+  locs.forEach(l=>{
+    html+='<div class="lochead">▸ '+l.name+'</div>';
+    ACTIONS[l.id].forEach(a=>{
+      const need=a.need? a.need(G):null;   // null=可行
+      const stOk=G.stamina>=a.stam;
+      const reason = !stOk?'体力不足' : need;
+      html+='<button class="actbtn" data-a="'+l.id+':'+a.id+'"'+(reason?' disabled title="'+reason+'"':'')+'>'+a.name+
+        '<span class="meta">耗时'+a.t+'月 · 体力'+(a.stam<0?'+'+(-a.stam):a.stam)+(a.cost>0?' · 银'+a.cost+'两':'')+'</span></button>';
+    });
+  });
+  el.innerHTML=html||'<div style="color:var(--dim);font-size:12px;">走到某个地方去，看看能做些什么。</div>';
+  el.querySelectorAll('.actbtn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const [lid,aid]=b.dataset.a.split(':');
+      const a=ACTIONS[lid].find(x=>x.id===aid);
+      if(a) doAction(lid,a);
+    });
+  });
+}
+function repeatLast(n){
+  if(!G||DEAD||!G.lastAction) return;
+  const A=ACTIONS[G.lastAction.lid], a=A.find(x=>x.id===G.lastAction.aid);
+  if(!a) return;
+  for(let i=0;i<n;i++){
+    if(DEAD||G.modalOpen) break;
+    const need=a.need?a.need(G):null;
+    if(need){ pushLog(a.name+'：'+need+'，重复停止','bad'); renderUI(); break; }
+    if(G.stamina<a.stam){ pushLog('体力不支，重复停止','bad'); renderUI(); break; }
+    doAction(G.lastAction.lid,a);
+  }
+}
+function openInteract(){
+  if(!G||DEAD||G.modalOpen) return;
+  const locs=nearLocs();
+  if(!locs.length){
+    pushLog('此处四下无人，无可互动之处','n');
+    sfx.bad();
+    renderUI();
+    return;
+  }
+  $('interactTitle').textContent = locs.length===1 ? locs[0].name : '附近的去处（按空格互动）';
+  const list=$('interactList'); list.innerHTML='';
+  locs.forEach(l=>{
+    const h=document.createElement('div');
+    h.className='lochead';
+    h.textContent='▸ '+l.name;
+    list.appendChild(h);
+    ACTIONS[l.id].forEach(a=>{
+      const need=a.need? a.need(G):null;
+      const stOk=G.stamina>=a.stam;
+      const reason=!stOk?'体力不足':need;
+      const b=document.createElement('button');
+      b.className='actbtn';
+      b.innerHTML=a.name+'<span class="meta">耗时'+a.t+'月 · 体力'+(a.stam<0?'+'+(-a.stam):a.stam)+(a.cost>0?' · 银'+a.cost+'两':'')+'</span>';
+      if(reason){ b.disabled=true; b.title=reason; }
+      b.addEventListener('click',()=>{
+        $('interactOverlay').classList.add('hidden');
+        doAction(l.id,a);
+      });
+      list.appendChild(b);
+    });
+  });
+  $('interactOverlay').classList.remove('hidden');
+}
+function xpGain(skill,base){
+  let v=base;
+  if(G.trait==='haoshuang'&&(skill==='wu'||skill==='str')) v=Math.round(v*1.15);
+  if(G.trait==='jimmin'&&(skill==='shop'||skill==='int')) v=Math.round(v*1.15);
+  if(G.trait==='houthou'&&(skill==='nong'||skill==='moral')) v=Math.round(v*1.15);
+  if(G.trait==='conghui'&&skill==='wen') v=Math.round(v*1.15);
+  if(G.trait==='danbo'&&(skill==='moral'||skill==='xiu')) v=Math.round(v*1.4);
+  return v;
+}
+function doAction(lid,a){
+  if(DEAD) return;
+  const need=a.need?a.need(G):null;
+  if(need){ pushLog(a.name+'：'+need,'bad'); return; }
+  if(G.stamina<a.stam){ pushLog('体力不支，先歇歇吧。','bad'); return; }
+  G.lastAction={lid:lid,aid:a.id};
+  G.stat.acts++;
+  if(lid==='school') G.stat.reads++;
+  if(lid==='market'&&a.id==='trade') G.stat.trades++;
+  if(lid==='martial') G.stat.battles++;
+  if(lid==='dock'&&a.id==='caravan') G.stat.caravans++;
+  G.stamina=clamp(G.stamina-a.stam,0,100);
+  const r=a.run(G);
+  if(DEAD){ renderUI(); return; }   // 行动中离世（战死/出家/归隐）
+  advanceMonths(a.t);
+  if(r&&r.log) pushLog(r.log, r.c||'n');
+  sfx.act();
+  afterAction();
+}
+function afterAction(){
+  renderUI();
+  // 死亡判定
+  if(checkDeath()) return;
+  // 随机事件
+  if(DEAD) return;
+  if(G.modalOpen){ autoSave(); return; }   // 已有弹窗展示中（如生育）
+  const p=G.mood<25?0.34:0.24;
+  if(chance(p)){
+    const ev=pickEvent();
+    if(ev){ showEvent(ev); return; }
+  }
+  flushEventQueue();
+  autoSave();
+}
+function pickEvent(){
+  const pool=EVENTS.filter(e=>!e.cond||e.cond(G));
+  if(!pool.length) return null;
+  const total=pool.reduce((s,e)=>s+(e.weight||1),0);
+  let r=Math.random()*total;
+  for(const e of pool){ r-=e.weight||1; if(r<=0) return e; }
+  return pool[0];
+}
+
+/* ---------- 死亡与结局 ---------- */
+function checkDeath(){
+  if(DEAD) return true;
+  if(G.health<=0){ die('病故'); return true; }
+  if(Math.floor(G.ageMonths/12)>=G.lifespan){ die('寿终正寝'); return true; }
+  return false;
+}
+function die(cause){
+  if(DEAD) return;
+  DEAD=true; G.died=true; G.deathCause=cause;
+  sfx.death();
+  pushLog(cause=== '寿终正寝'?'寿终正寝，享年'+Math.floor(G.ageMonths/12)+'岁。':'病逝于太初'+yearNow()+'年，享年'+Math.floor(G.ageMonths/12)+'岁。','bad');
+  autoSave();
+  const end=evaluateEnding();
+  unlockedEndings[end.title]=1;
+  try{ localStorage.setItem(STORE_END,JSON.stringify(unlockedEndings)); }catch(e){}
+  showEnding(end);
+}
+
+/* =====================================================================
+   结局判定
+   ===================================================================== */
+function evaluateEnding(){
+  const age=Math.floor(G.ageMonths/12);
+  const rankIdx=RANK_ORDER.indexOf(G.rank);
+  let guan=rankIdx*6+G.fame*0.2;
+  let shang=G.money*0.06+(G.fields*2)+G.shopLv*12;
+  let wu=G.skills.wu*0.5+G.battle*3+(G.military===5?30:0);
+  let wen=G.skills.wen*0.45+(G.rank==='jinshi'||rankIdx>=3?25:0)+(G.books||0)*10;
+  let yi=G.skills.med*0.35+G.heals*3;
+  let yin=G.moral*0.25+G.xiu*3+(G.quest===4?40:0);
+  let feng=G.cha*0.2+G.skills.talent*0.3+G.kids.length*2+(G.zhiji?4:0)+(G.spouse&&G.spouse.fromQinglou?8:0)+(G.concubines?G.concubines.length*3:0)+(G.grandkids||0)*2;
+  const scores={位极人臣:guan,富可敌国:shang,一代名将:wu,文坛宗师:wen,悬壶济世:yi,得道高人:yin,风流名士:feng};
+  let best='庸碌一生', bestV=0;
+  for(const k in scores){ if(scores[k]>bestV){bestV=scores[k];best=k;} }
+  // 覆盖判定
+  if(G.reput<0&&G.moral<25) best='遗臭万年';
+  else if(age<35) best='英年早逝';
+  else if(bestV<25) best= age>=G.lifespan-5?'安然寿终':'庸碌一生';
+  const END_DESC={
+    '位极人臣':'你从一介布衣走到庙堂之巅，垂拱而治，名垂青史。',
+    '富可敌国':'你凭一双巧手与胆识，把铜板滚成金山，富甲一方。',
+    '一代名将':'沙场百战，马革裹尸，你的名字让敌军闻风丧胆。',
+    '文坛宗师':'你笔下的锦绣文章流传天下，莘莘学子皆以你为范。',
+    '悬壶济世':'你的一生救人无数，药庐前挂满感恩的锦旗。',
+    '得道高人':'你勘破红尘，一苇渡江，终成一方高士。',
+    '风流名士':'你风流不羁，才情四溢，天下谁人不识君。',
+    '遗臭万年':'你的名字成了乡里骂人的话，青史留了一个污点。',
+    '英年早逝':'天妒英才，你的人生还没展开便戛然而止。',
+    '庸碌一生':'日出而作，日落而息，一世平凡，也算安稳。',
+    '安然寿终':'你安然老去，儿孙绕膝，此生无憾。'
+  };
+  const end={title:best, desc:END_DESC[best]||'', rank: bestV>=60?'一品':bestV>=40?'三品':bestV>=25?'七品':'末品'};
+  // 成就
+  checkAchievements(end);
+  return end;
+}
+const ACHS=[
+  {id:'jinshi', name:'金榜题名', desc:'中进士', cond:()=>RANK_ORDER.indexOf(G.rank)>=4},
+  {id:'zaixiang', name:'位极人臣', desc:'官至宰相', cond:()=>G.rank==='zaixiang'},
+  {id:'rich', name:'富可敌国', desc:'家财八百两', cond:()=>G.money>=800},
+  {id:'jiangjun', name:'沙场点兵', desc:'官拜将军', cond:()=>G.military===5},
+  {id:'wenzong', name:'文坛宗师', desc:'文才满百', cond:()=>G.skills.wen>=100},
+  {id:'mingyi', name:'妙手回春', desc:'救人三十', cond:()=>G.heals>=30},
+  {id:'daoren', name:'得道高人', desc:'白玉京奇缘', cond:()=>G.quest>=4},
+  {id:'sons', name:'儿女满堂', desc:'膝下四子', cond:()=>G.kids.length>=4},
+  {id:'bai', name:'白手起家', desc:'寒门出身家财五百', cond:()=>G.identity==='han'&&G.money>=500},
+  {id:'shou', name:'寿登期颐', desc:'享年九十', cond:()=>Math.floor(G.ageMonths/12)>=90},
+  {id:'chou', name:'遗臭万年', desc:'身败名裂', cond:()=>G.reput<0&&G.moral<25},
+  {id:'wan', name:'人生赢家', desc:'官、财、名三者兼得', cond:()=>RANK_ORDER.indexOf(G.rank)>=6&&G.money>=500&&G.fame>=50},
+  {id:'qiegie', name:'妻妾成群', desc:'侧室三人', cond:()=>(G.concubines||[]).length>=3},
+  {id:'sishi', name:'含饴弄孙', desc:'孙辈满堂', cond:()=>G.grandkids>=1},
+  {id:'zaokang', name:'糟糠之妻', desc:'发妻白头偕老', cond:()=>G.married&&G.spouse&&!G.spouse.dead&&!G.spouse.fromQinglou&&Math.floor(G.ageMonths/12)>=55},
+  {id:'mooni', name:'莫逆之交', desc:'挚友情深', cond:()=>(G.friends||[]).some(f=>f.intimacy>=90)},
+  {id:'xingwanli', name:'行万里路', desc:'走遍四地', cond:()=>G.visited&&G.visited.home&&G.visited.jingcheng&&G.visited.bianguan&&G.visited.jiangnan},
+  {id:'kuaiyi', name:'快意恩仇', desc:'了断仇人三个', cond:()=>(G.enemies||[]).filter(e=>e.status==='dead').length>=3},
+  {id:'zhushu', name:'著书立说', desc:'著作三部', cond:()=>(G.books||0)>=3}
+];
+function checkAchievements(end){
+  ACHS.forEach(a=>{
+    if(a.cond()){
+      if(!G.achievements.includes(a.id)){ G.achievements.push(a.id); pushLog('成就达成：'+a.name,'good'); }
+      if(!unlockedAchv[a.id]){ unlockedAchv[a.id]=1; G.newAchv=a.id; try{localStorage.setItem(STORE_ACH,JSON.stringify(unlockedAchv));}catch(e){} }
+    }
+  });
+}
+
+/* =====================================================================
+   事件弹窗
+   ===================================================================== */
+let modalCallback=null;
+function showEvent(ev){
+  if(G.modalOpen){ // 已有弹窗展示中，排队稍后显示（如生育+子女训练同年来）
+    (G.eventQueue=G.eventQueue||[]).push(ev);
+    return;
+  }
+  G.modalOpen=true;
+  sfx.event();
+  $('modalTitle').textContent=ev.title;
+  $('modalBody').textContent=(typeof ev.text==='function'? ev.text(G):(ev.text||''));
+  const opts=$('modalOpts'); opts.innerHTML='';
+  ev.opts.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='optbtn';
+    b.textContent=o.label+(o.fx?'<span class="fx"> '+o.fx+'</span>':'');
+    b.innerHTML=b.textContent;
+    if(o.need&&o.need(G)) b.disabled=true;
+    b.addEventListener('click',()=>{
+      G.modalOpen=false;
+      $('modal').classList.add('hidden');
+      if(o.effect) o.effect(G);
+      renderUI();
+      if(checkDeath()) return;
+      autoSave();
+      flushEventQueue();
+    });
+    opts.appendChild(b);
+  });
+  $('modal').classList.remove('hidden');
+}
+function flushEventQueue(){
+  if(DEAD||!G||G.modalOpen) return;
+  if(G.eventQueue&&G.eventQueue.length){
+    showEvent(G.eventQueue.shift());
+  }
+}
+function closeModalIfOpen(){ if(!$('modal').classList.contains('hidden')) $('modal').classList.add('hidden'); }
+
+/* =====================================================================
+   事件池
+   ===================================================================== */
+const EVENTS=[];
+
+function E(id,weight,cond,title,text,opts){ EVENTS.push({id,weight,cond,title,text,opts}); }
+
+/* --- 通用事件 --- */
+E('sick',3,null,'染病在床',g=>{
+  const r=Math.random();
+  if(r<.35) return '一场风寒来得突然，你连日咳嗽不止，浑身乏力。';
+  if(r<.6) return '暑气熏蒸，你染上疟疾，忽冷忽热，浑身打颤。';
+  if(r<.8) return '山岚瘴气入体，你四肢无力，昏昏沉沉。';
+  return '旧疾复发，胸口隐隐作痛，夜不能寐。';
+},[
+ {label:'看大夫（花银10两，健康+20）',fx:'-10两',effect(){G.money=Math.max(0,G.money-10);G.health=clamp(G.health+20,0,100);pushLog('延医服药，病体渐愈','good');}},
+ {label:'硬扛过去（健康-15）',fx:'-15健康',effect(){G.health=clamp(G.health-15,0,100);pushLog('咬牙硬扛，病去如抽丝','bad');if(chance(.3)){G.health=clamp(G.health-12,0,100);pushLog('病情加重，更虚弱了','bad');}}}
+]);
+E('windfall',2,null,'路上拾金','行路时你捡到一个小布包，掂了掂，沉甸甸的——是银子。',
+[{label:'归还失主（道德+3，名声+2）',fx:'',effect(){G.moral=clamp(G.moral+3,0,100);G.reput=clamp(G.reput+2,0,100);pushLog('拾金不昧，乡里称赞','good');}},
+ {label:'悄悄收下（银+15，道德-5，名声-2）',fx:'+15两',effect(){if(chance(G.luck/200)){G.money+=25;pushLog('打开布包竟有二十五两！','good');}else{G.money+=15;G.moral=clamp(G.moral-5,0,100);G.reput=clamp(G.reput-2,-50,100);pushLog('昧下银子，心中不安','bad');}}}]);
+E('scam',2,null,'市井骗子','一个花言巧语的家伙拦着你，说有“南边来的好货”，半价转手。',
+[{label:'信了（押银10两）',fx:'',effect(){if(chance((40+G.skills.shop+G.int*.8)/200)){G.money+=8;G.skills.shop+=1;pushLog('将计就计，反赚了几两','good');}else{G.money=Math.max(0,G.money-10);G.mood=clamp(G.mood-8,0,100);pushLog('被骗了十两银子……','bad');}}},
+ {label:'识破骗局（需机敏/商道）',fx:'',effect(){G.money+=3;G.skills.shop+=2;pushLog('一眼看穿骗局，还顺了骗子三两只当辛苦钱','good');}}]);
+E('help',2,null,'路人求助','路边一位老妪摔倒，无人搀扶。',
+[{label:'上前搀扶（道德+3）',fx:'',effect(){G.moral=clamp(G.moral+3,0,100);G.reput=clamp(G.reput+1,0,100);pushLog('举手之劳，老妪千恩万谢','good');}},
+ {label:'施舍几枚铜钱（-1两，道德+2）',fx:'-1两',effect(){G.money=Math.max(0,G.money-1);G.moral=clamp(G.moral+2,0,100);pushLog('济人一饭，心安理得','good');}},
+ {label:'绕道而行（道德-2）',fx:'',effect(){G.moral=clamp(G.moral-2,0,100);pushLog('假装没看见，快步走开','bad');}}]);
+E('dispute',2,null,'乡邻纠纷','两户人家为田埂争执，吵到你面前，请你说句公道话。',
+[{label:'居中调解',fx:'',effect(){if(chance((50+G.skills.wen*.3+G.cha*.3)/100)){G.fame=clamp(G.fame+3,0,100);G.reput=clamp(G.reput+2,0,100);pushLog('三言两语化解干戈，众人服你','good');}else{G.fame=clamp(G.fame-1,0,100);pushLog('越劝越乱，两头不讨好','bad');}}},
+ {label:'不掺和',fx:'',effect(){G.moral=clamp(G.moral-1,0,100);pushLog('置身事外','n');}}]);
+E('fire',1.5,null,'邻家失火','夜半火光冲天，邻居家着了火，哭喊声一片。',
+[{label:'冲进去救人（体力-15）',fx:'',effect(){if(chance((40+G.str*.8)/100)){G.fame=clamp(G.fame+6,0,100);G.moral=clamp(G.moral+4,0,100);G.health=clamp(G.health-5,0,100);pushLog('你从火场里背出孩子，成了乡里英雄','good');}else{G.health=clamp(G.health-22,0,100);pushLog('浓烟呛倒了你，差点没出来……','bad');}}},
+ {label:'大喊救火、报官',fx:'',effect(){G.fame=clamp(G.fame+2,0,100);pushLog('火势在众人扑救下渐灭','n');}}]);
+E('bandit',1.5,g=>Math.floor(g.ageMonths/12)>=14,'路遇强人','荒僻处跳出两个蒙面汉子，持刀拦路：“留下买路钱！”',
+[{label:'破财消灾（-10两）',fx:'-10两',effect(){G.money=Math.max(0,G.money-10);G.mood=clamp(G.mood-6,0,100);pushLog('破财消灾','bad');}},
+ {label:'拔拳相向（需武艺/体魄）',fx:'',effect(){if(chance((30+G.skills.wu*.7+G.str*.5)/100)){G.fame=clamp(G.fame+4,0,100);G.skills.wu+=2;pushLog('三拳两脚打跑贼人，还缴了刀','good');if(chance(.25)){const nm='黑风寨'+['大当家','二当家','三当家'][rnd(0,2)];G.enemies.push({name:nm,grudge:100,status:'active',reason:'打伤同伙'});pushLog(nm+'记恨在心，扬言报复','bad');}}else{G.health=clamp(G.health-15,0,100);G.money=Math.max(0,G.money-8);pushLog('寡不敌众，挂彩还丢了钱','bad');}}}]);
+E('grudge',1,g=>!(g.enemies||[]).some(e=>e.status==='active')&&Math.floor(g.ageMonths/12)>=14,'江湖结怨','有人当街羞辱你，言辞不堪入耳，围观者众多。',
+[{label:'忍一时风平浪静（道德+2）',fx:'',effect(){G.moral=clamp(G.moral+2,0,100);pushLog('你咽下这口气，转身离开','n');}},
+ {label:'拔剑而起（结仇）',fx:'结仇',effect(){const nm=SURNAMES[rnd(0,SURNAMES.length-1)]+'家二郎';G.enemies.push({name:nm,grudge:100,status:'active',reason:'当街受辱'});G.fame=clamp(G.fame+1,0,100);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'与'+nm+'结仇'});pushLog('你与'+nm+'结下梁子','bad');}}]);
+E('revenge',1.2,g=>(g.enemies||[]).some(e=>e.status==='active'),'仇家寻仇',g=>{const e=(G.enemies||[]).find(x=>x.status==='active');return e?e.name+'寻上门来，要与你了断恩怨！':'仇家寻上门来！';},
+[{label:'应战（武艺）',fx:'',effect(){const e=(G.enemies||[]).find(x=>x.status==='active');if(!e)return;if(chance((40+G.skills.wu*.6+G.str*.3)/100)){e.status='dead';G.fame=clamp(G.fame+5,0,100);G.skills.wu+=3;G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'了断仇怨：'+e.name});pushLog('一战定乾坤，恩怨就此了断','good');}else{G.health=clamp(G.health-15,0,100);G.money=Math.max(0,G.money-10);pushLog('吃了败仗，还破了些财','bad');}}},
+ {label:'花钱化解（-20两）',fx:'-20两',effect(){const e=(G.enemies||[]).find(x=>x.status==='active');if(!e)return;if(G.money>=20){G.money-=20;e.status='forgiven';G.reput=clamp(G.reput+2,0,100);pushLog('破财免灾，恩怨两清','good');}else pushLog('囊中羞涩，化解不了','bad');}},
+ {label:'避而不见',fx:'',effect(){const e=(G.enemies||[]).find(x=>x.status==='active');if(e)e.grudge=clamp(e.grudge+10,0,200);G.mood=clamp(G.mood-4,0,100);pushLog('你避而不见，梁子结得更深了','bad');}}]);
+E('ambush',1,g=>(g.enemies||[]).some(e=>e.status==='active'),'遭人暗算',g=>{const e=(G.enemies||[]).find(x=>x.status==='active');return '行至僻静处，忽有暗器破空而来——是'+(e?e.name:'仇家')+'的报复！';},
+[{label:'闪避反击（武艺）',fx:'',effect(){const e=(G.enemies||[]).find(x=>x.status==='active');if(chance((35+G.skills.wu*.7)/100)){if(e)e.status='dead';G.fame=clamp(G.fame+4,0,100);pushLog('反手一击，了结了这段仇怨','good');}else{G.health=clamp(G.health-18,0,100);G.money=Math.max(0,G.money-8);pushLog('中了暗算，狼狈脱身','bad');}}},
+ {label:'忍气吞声',fx:'',effect(){G.mood=clamp(G.mood-6,0,100);G.moral=clamp(G.moral+1,0,100);pushLog('君子报仇，十年不晚','bad');}}]);
+E('famine',1.4,g=>g.ageMonths%12>=6&&g.ageMonths%12<9,'年成荒歉','今岁大旱，庄稼枯黄，粮价飞涨，乡间已有人卖儿鬻女。',
+[{label:'开棚施粥（-20两，声望+8，道德+6）',fx:'-20两',effect(){G.money=Math.max(0,G.money-20);G.fame=clamp(G.fame+8,0,100);G.moral=clamp(G.moral+6,0,100);pushLog('一棚热粥，救活了许多人，恩名远播','good');}},
+ {label:'囤粮待涨（商道+4，道德-5）',fx:'',effect(){G.money+=15;if(G.market)G.market.grain=clamp(G.market.grain+20,55,170);G.moral=clamp(G.moral-5,0,100);G.reput=clamp(G.reput-3,-50,100);pushLog('粮价翻番，你赚了黑心钱……','bad');}}]);
+E('plague',1.5,null,'时疫来袭','城里闹起时疫，人人自危，药铺门口排起长队。',
+[{label:'帮忙防疫（声望+5）',fx:'',effect(){if(G.skills.med>=30||chance(.5)){G.fame=clamp(G.fame+5,0,100);G.health=clamp(G.health-8,0,100);pushLog('你日夜照料病人，积下善名','good');}else{G.health=clamp(G.health-18,0,100);pushLog('你不幸染上时疫，病了一场','bad');}}},
+ {label:'闭门不出',fx:'',effect(){G.health=clamp(G.health-4,0,100);pushLog('你闭门守身，躲过一劫','n');}}]);
+E('dragon',1.3,g=>g.ageMonths%12===0,'元宵灯会','上元佳节，满城花灯如昼，游人如织。',
+[{label:'出门赏灯',fx:'',effect(){G.mood=clamp(G.mood+9,0,100);if(chance(.25)){G.luck=clamp(G.luck+1,0,99);pushLog('灯会猜谜，你技压群雄，众人喝彩','good');}pushLog('灯火阑珊处，心情大好','good');}},
+ {label:'在家清净',fx:'',effect(){G.mood=clamp(G.mood+3,0,100);pushLog('独坐窗前看万家灯火','n');}}]);
+E('midautumn',1.3,g=>g.ageMonths%12===7,'中秋月圆','桂子飘香，明月当空。',
+[{label:'摆酒赏月',fx:'',effect(){G.mood=clamp(G.mood+(G.married?12:8),0,100);pushLog('与'+(G.married?'家人':'三五好友')+'共赏明月','good');}},
+ {label:'月下独酌',fx:'',effect(){G.mood=clamp(G.mood+4,0,100);G.skills.talent+=1;pushLog('对月吟诗，得了一首好句','good');}}]);
+E('chunjie',1.8,g=>g.ageMonths%12===0,'新春守岁','爆竹声中一岁除，又到年关。家中张灯结彩，年味正浓。',
+[{label:'阖家守岁（-3两压岁钱）',fx:'-3两',effect(){G.money=Math.max(0,G.money-3);G.mood=clamp(G.mood+12,0,100);if(G.spouse&&!G.spouse.dead)G.spouse.affection=clamp((G.spouse.affection||50)+5,0,100);G.moral=clamp(G.moral+1,0,100);pushLog('守岁到天明，一家团圆','good');}},
+ {label:'独自守岁',fx:'',effect(){G.mood=clamp(G.mood+5,0,100);pushLog('独坐守岁，想些心事','n');}}]);
+E('duanwu',1.8,g=>g.ageMonths%12===4,'端午竞渡','五月端午，江上龙舟竞发，鼓声震天。',
+[{label:'下水赛龙舟（体魄）',fx:'',effect(){if(chance((35+G.str*.7)/100)){G.fame=clamp(G.fame+3,0,100);G.mood=clamp(G.mood+8,0,100);pushLog('一桨当先，夺了头筹！','good');}else{G.mood=clamp(G.mood+4,0,100);pushLog('划到一半力竭，笑着认了输','n');}}},
+ {label:'包粽子过节',fx:'',effect(){G.mood=clamp(G.mood+6,0,100);G.skills.talent+=1;pushLog('粽香满室，也分了些给邻里','good');}}]);
+E('chongyang',1.6,g=>g.ageMonths%12===8,'重阳登高','九月九日，秋高气爽，宜登高望远、遍插茱萸。',
+[{label:'登高远眺（健康+3）',fx:'',effect(){G.health=clamp(G.health+3,0,100);G.mood=clamp(G.mood+6,0,100);pushLog('极目远眺，心旷神怡','good');}},
+ {label:'设宴敬老（-3两）',fx:'-3两',effect(){G.money=Math.max(0,G.money-3);G.moral=clamp(G.moral+2,0,100);G.fame=clamp(G.fame+1,0,100);pushLog('敬了族中老人，众人称善','good');}}]);
+
+/* --- 书院 --- */
+E('praised',1.5,g=>nearLoc(g,'school'),'夫子嘉许','夫子当堂点评你的文章，连连点头，赞不绝口。',
+[{label:'谢过夫子',fx:'',effect(){G.skills.wen+=4;G.mood=clamp(G.mood+5,0,100);pushLog('受夫子夸奖，学业更进','good');}}]);
+E('schoolfight',1,g=>nearLoc(g,'school')&&Math.floor(g.ageMonths/12)<16,'同窗争执','同窗顽童抢了你的书册，笑闹着跑开。',
+[{label:'追上去理论（武艺+3）',fx:'',effect(){G.skills.wu+=3;pushLog('小小较量一番，夺回书册','n');}},
+ {label:'不去理会',fx:'',effect(){G.skills.wen+=1;pushLog('你低头背书，不与顽童计较','good');}}]);
+
+/* --- 集市 --- */
+E('shopchance',1.5,g=>nearLoc(g,'market'),'商业良机','有人在集市抛售一批绸缎，据说南方俏货，大有赚头。',
+[{label:'吃进一批（押20两）',fx:'-20两',effect(){const r=chance((45+G.skills.shop*.5+G.luck*.3)/100);if(r){G.money+=rnd(15,45);G.skills.shop+=2;pushLog('绸缎转手净赚一笔！','good');}else{G.money=Math.max(0,G.money-20);pushLog('行情看走眼，亏了二十两','bad');}}},
+ {label:'看看再说',fx:'',effect(){G.skills.shop+=1;pushLog('你留意行情，多长了个心眼','n');}}]);
+E('thief',1.3,g=>nearLoc(g,'market'),'小偷光顾','人流拥挤处，一只手悄悄伸向了你的钱袋。',
+[{label:'一把抓住（体魄）',fx:'',effect(){if(chance((40+G.str*.8+G.luck*.2)/100)){G.money+=5;G.fame=clamp(G.fame+2,0,100);pushLog('当场拿住小偷，众人喝彩','good');}else{G.money=Math.max(0,G.money-rnd(3,8));pushLog('一个不留神，钱袋被划了道口子……','bad');}}},
+ {label:'捂紧钱袋走人',fx:'',effect(){pushLog('小心为上，分毫未失','n');}}]);
+
+/* --- 酒馆 --- */
+E('tale',1.5,g=>nearLoc(g,'tavern')&&g.quest===0,'江湖奇闻','说书先生一拍惊堂木：“话说那白玉京，云中之城，仙人府邸，凡人得入者无不立地飞升……”',
+[{label:'听得入神，追问线索',fx:'开启奇缘',effect(){G.quest=1;G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'听闻白玉京传说'});pushLog('你把白玉京传说记在心上','ev');}},
+ {label:'一笑了之（心情+4）',fx:'',effect(){G.mood=clamp(G.mood+4,0,100);pushLog('说书人的故事，不过下酒而已','n');}}]);
+E('brawl',1.4,g=>nearLoc(g,'tavern')&&Math.floor(g.ageMonths/12)>=16,'醉汉挑衅','一个醉醺醺的汉子摔了酒碗，红着眼瞪你：“瞅啥瞅！”',
+[{label:'起身应战（武艺）',fx:'',effect(){if(chance((35+G.skills.wu*.7+G.str*.4)/100)){G.fame=clamp(G.fame+3,0,100);G.skills.wu+=2;pushLog('三招之内，醉汉服软','good');}else{G.health=clamp(G.health-10,0,100);pushLog('醉汉蛮力不小，你挨了两拳','bad');}}},
+ {label:'拱手赔笑，绕道离开',fx:'',effect(){G.mood=clamp(G.mood-2,0,100);pushLog('好汉不吃眼前亏','n');}}]);
+E('meethero',1.2,g=>nearLoc(g,'tavern')&&Math.floor(g.ageMonths/12)>=18,'结识豪杰','酒馆里一位豪客谈吐不凡，自称游侠四方。',
+[{label:'把酒言欢（魅力）',fx:'',effect(){if(chance((40+G.cha*.7)/100)){G.fame=clamp(G.fame+3,0,100);G.skills.wu+=2;pushLog('结为莫逆之交，豪客传你几手功夫','good');}else{G.mood=clamp(G.mood+3,0,100);pushLog('相談甚欢，尽兴而归','n');}}},
+ {label:'敬而远之',fx:'',effect(){pushLog('江湖事多，少沾为妙','n');}}]);
+
+/* --- 武馆 --- */
+E('arena',1.3,g=>nearLoc(g,'martial')&&G.skills.wu>=30,'擂台挑战','武馆设擂，有人指名挑战你。',
+[{label:'上台应战',fx:'',effect(){if(chance((45+G.skills.wu*.6+G.str*.3)/100)){G.money+=8;G.fame=clamp(G.fame+4,0,100);G.skills.wu+=3;pushLog('技惊四座，擂台夺魁','good');}else{G.health=clamp(G.health-12,0,100);pushLog('棋差一着，摔下擂台','bad');}}},
+ {label:'婉言谢绝',fx:'',effect(){pushLog('你拱手一礼，擂台旁观','n');}}]);
+
+/* --- 医馆 --- */
+E('rescue',1.4,g=>nearLoc(g,'med')&&G.skills.med>=25,'急症求医','一个病人被抬进医馆，气息奄奄，大夫却外出了。',
+[{label:'出手施救（医术）',fx:'',effect(){if(chance((45+G.skills.med*.6)/100)){G.heals++;G.fame=clamp(G.fame+4,0,100);G.money+=6;G.skills.med+=3;pushLog('你施针用药，救人一命，声名鹊起','good');}else{G.health=clamp(G.health-10,0,100);pushLog('回天乏术，病人家属恸哭','bad');}}},
+ {label:'不敢乱动，等大夫回来',fx:'',effect(){G.mood=clamp(G.mood-2,0,100);pushLog('医者父母心，可你医术未精','n');}}]);
+
+/* --- 庙宇 --- */
+E('sagemind',1.4,g=>nearLoc(g,'temple'),'高僧开示','庙中老僧见你心诚，缓缓开口：“施主，何苦来，何苦去……”',
+[{label:'静心聆听',fx:'',effect(){if(chance(.5)){G.moral=clamp(G.moral+4,0,100);}else{G.int+=1;}G.mood=clamp(G.mood+4,0,100);pushLog('一句机锋，似有所悟','good');}},
+ {label:'捐一炷香（-1两）',fx:'-1两',effect(){G.money=Math.max(0,G.money-1);G.moral=clamp(G.moral+2,0,100);pushLog('心诚则灵','n');}}]);
+
+/* --- 山野 --- */
+E('hermit',1.4,g=>nearLoc(g,'wild'),'山中隐士','云雾深处，一位须发皆白的老者正在溪边煮茶，见你走来，微微一笑。',
+[{label:'上前求教',fx:'',effect(){const sk=chance(.5)?'wen':'wu';G.skills[sk]+=8;G.mood=clamp(G.mood+6,0,100);pushLog('老者点拨三言两语，胜读十年书','good');}},
+ {label:'讨一碗茶（健康+6）',fx:'',effect(){G.health=clamp(G.health+6,1,100);pushLog('灵茶入腹，神清气爽','good');}}]);
+E('treasure',1.4,g=>nearLoc(g,'wild'),'山洞遗宝','一处塌了半边的山洞里，隐隐透出异光。',
+[{label:'入洞探宝（运气）',fx:'',effect(){if(chance((30+G.luck*.6)/100)){const r=Math.random();if(r<.5){G.money+=rnd(20,60);}else if(r<.8){G.skills.wen+=8;}else{G.skills.wu+=8;}pushLog('洞中果然有宝！','good');}else{G.health=clamp(G.health-8,0,100);pushLog('山洞坍塌，你狼狈逃出','bad');}}},
+ {label:'绕道而行',fx:'',effect(){pushLog('君子不立危墙之下','n');}}]);
+E('beast',1.3,g=>nearLoc(g,'wild'),'山中遇虎','一只吊睛白额大虫拦在山道正中，眈眈而视。',
+[{label:'提械搏虎（武艺/体魄）',fx:'',effect(){if(chance((25+G.skills.wu*.6+G.str*.6)/100)){G.fame=clamp(G.fame+5,0,100);G.skills.wu+=5;pushLog('你搏杀猛虎，名震一乡！','good');}else{G.health=clamp(G.health-22,0,100);pushLog('虎口余生，浑身是伤','bad');}}},
+ {label:'悄悄退走',fx:'',effect(){G.health=clamp(G.health-4,0,100);pushLog('屏息后退，惊出一身冷汗','n');}}]);
+E('clue',1.2,g=>nearLoc(g,'wild')&&G.quest===1,'白玉京线索','山中采药人告诉你：渡口老艄公年轻时，曾载过一个自称来自白玉京的怪人。',
+[{label:'记下此事',fx:'',effect(){G.quest=2;G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'寻访渡口白玉京线索'});pushLog('线索指向渡口','ev');}}]);
+
+/* --- 渡口 --- */
+E('ferryman',1.3,g=>nearLoc(g,'dock')&&G.quest===2,'老艄公','渡口的老艄公呷了口酒：“那怪人留下句口诀——月圆之夜，江心三声。”',
+[{label:'月圆夜渡江一试（需在冬月前后）',fx:'',effect(){G.quest=3;G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'夜渡江心，寻白玉京'});pushLog('江心果然浮出一座幻城——白玉京！','ev');}},
+ {label:'将信将疑',fx:'',effect(){G.mood=clamp(G.mood-2,0,100);pushLog('江湖传言，多是妄语','n');}}]);
+E('journey',1.2,g=>nearLoc(g,'dock'),'渡江远游','一叶扁舟泊在渡口，船家喊：“客官，上船否？外头山高水长。”',
+[{label:'登舟远游（耗3月）',fx:'',effect(){G.mood=clamp(G.mood+8,0,100);G.skills.talent+=3;G.fame=clamp(G.fame+2,0,100);pushLog('你游历四方，见识大涨','good');}},
+ {label:'不去了',fx:'',effect(){pushLog('此身未定，暂不远行','n');}}]);
+
+/* --- 青楼 --- */
+E('poetryQ',1.2,g=>nearLoc(g,'qinglou')&&G.skills.wen>=25,'青楼斗诗','席间有人以「月」为题斗诗，满座起哄，非要你也来一首。',
+[{label:'即席赋诗（文才）',fx:'',effect(){if(chance((45+G.skills.wen*.5+G.cha*.2)/100)){G.fame=clamp(G.fame+3,0,100);G.skills.wen+=2;G.mood=clamp(G.mood+6,0,100);pushLog('一篇《咏月》惊四座，满楼喝彩','good');}else{G.mood=clamp(G.mood-3,0,100);pushLog('诗句平平，被人打趣','bad');}}},
+ {label:'推说不会，只观热闹',fx:'',effect(){G.mood=clamp(G.mood+2,0,100);pushLog('看别人斗诗，也是乐事','n');}}]);
+E('qingke',1.3,g=>nearLoc(g,'qinglou')&&G.zhiji,'知音相邀','你那位相好的姑娘递来一张花笺，邀你楼头小叙。',
+[{label:'欣然赴约',fx:'',effect(){if(!G.zhiji){pushLog('人去楼空，只得怅然而返','bad');return;}G.zhiji.aff++;G.mood=clamp(G.mood+10,0,100);G.skills.talent+=1;if(G.married&&chance(0.25)){showEvent(affairCaughtEvent());}else{pushLog('与'+G.zhiji.name+'赏月谈心，情意愈笃','good');}}},
+ {label:'婉言谢绝',fx:'',effect(){if(!G.zhiji){pushLog('人去楼空，只得怅然而返','bad');return;}G.zhiji.aff=Math.max(1,G.zhiji.aff-1);G.mood=clamp(G.mood-3,0,100);pushLog('姑娘有些失望','bad');}}]);
+
+/* --- 家庭 --- */
+E('quarrel',1.2,g=>g.married&&g.spouse&&!g.spouse.dead,'夫妻拌嘴',g=>G.spouse?('为了一点琐事，你与'+G.spouse.name+'拌起嘴来，谁也不肯相让。'):'为了一点琐事，你与家人拌起嘴来，谁也不肯相让。',
+[{label:'先低头认错（感情+6）',fx:'',effect(){if(G.spouse)G.spouse.affection=clamp((G.spouse.affection||50)+6,0,100);G.mood=clamp(G.mood+4,0,100);pushLog('一句软话，云开雾散','good');}},
+ {label:'据理力争（感情-8）',fx:'',effect(){if(G.spouse)G.spouse.affection=clamp((G.spouse.affection||50)-8,0,100);G.mood=clamp(G.mood-6,0,100);pushLog('吵到最后，各自生闷气','bad');}}]);
+E('naqie',1,g=>g.married&&g.spouse&&!g.spouse.dead&&Math.floor(g.ageMonths/12)>=25&&Math.floor(g.ageMonths/12)<=55&&G.money>=100&&(G.concubines||[]).length<3&&nearLoc(g,'home'),'媒婆说媒（纳妾）',g=>'王媒婆又登门了：“老爷，城南有户清白人家，愿将'+(G.gender==='m'?'女儿':'公子')+'送来作侧室，只收八十两聘银。”',
+[{label:'纳进门来（-80两）',fx:'-80两',effect(){const nm=(G.gender==='m'?SPOUSE_F:SPOUSE_M)[rnd(0,7)];const c={name:nm,gender:G.gender==='m'?'f':'m',health:rnd(60,90),charm:rnd(55,90),affection:50,dead:false,source:'媒婆'};G.concubines.push(c);G.money=Math.max(0,G.money-80);G.reput=clamp(G.reput-1,-50,100);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'纳'+c.name+'为侧室'});pushLog('侧室'+c.name+'进门，家里热闹了几分','n');}},
+ {label:'谢绝好意',fx:'',effect(){pushLog('妻贤子孝，何必再生枝节','good');}}]);
+E('kidrebel',1.1,g=>g.kids&&g.kids.some(k=>!k.dead&&!k.adult&&k.ageMonths>96),'儿女忤逆','你的孩子与同伴斗气，回家摔了碗筷，顶撞长辈，闹得不可开交。',
+[{label:'严加管教',fx:'',effect(){G.mood=clamp(G.mood-5,0,100);pushLog('一顿家法，孩子哭着认了错','n');}},
+ {label:'耐心讲道理',fx:'',effect(){G.mood=clamp(G.mood+3,0,100);G.moral=clamp(G.moral+1,0,100);pushLog('你循循善诱，孩子似懂非懂地点了头','good');}}]);
+
+/* --- 挚友 --- */
+E('friendhelp',1.2,g=>g.friends&&g.friends.length&&G.money>=10,'挚友求助',g=>G.friends&&G.friends.length?('好友'+G.friends[0].name+'急用钱，登门借十两银子，说三个月内归还。'):'一位故人登门借钱。',
+[{label:'慷慨解囊（-10两）',fx:'-10两',effect(){if(!G.friends||!G.friends.length){pushLog('人去楼空，无处可借','n');return;}G.money=Math.max(0,G.money-10);const f=G.friends[0];f.intimacy=clamp(f.intimacy+10,0,100);f.owed=10;G.moral=clamp(G.moral+1,0,100);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'借贷给好友'});pushLog('患难见真情，好友千恩万谢','good');}},
+ {label:'婉言推辞',fx:'',effect(){if(!G.friends||!G.friends.length){pushLog('无人可辞，作罢','n');return;}const f=G.friends[0];f.intimacy=clamp(f.intimacy-5,0,100);pushLog('好友有些失望，讪讪离去','bad');}}]);
+E('friendrepay',1,g=>g.friends&&g.friends.some(f=>f.owed>0),'好友还银',g=>{const f=(G.friends||[]).find(f=>f.owed>0);return f?('好友'+f.name+'如约上门，归还银子，还捎来一坛好酒。'):'故人如约上门还银。';},
+[{label:'收下',fx:'+10两',effect(){const f=(G.friends||[]).find(x=>x.owed>0);if(!f){pushLog('无处收账','n');return;}G.money+=10;f.owed=0;f.intimacy=clamp(f.intimacy+5,0,100);G.mood=clamp(G.mood+5,0,100);pushLog('银钱两讫，情谊更厚','good');}}]);
+E('friendgift',1,g=>g.friends&&g.friends.some(f=>f.intimacy>=60),'挚友厚赠',g=>{const f=(G.friends||[]).find(f=>f.intimacy>=60);return '挚友'+(f?f.name:'故人')+'远行归来，给你捎来一份厚礼。';},
+[{label:'收下（+20两）',fx:'+20两',effect(){const f=(G.friends||[]).find(x=>x.intimacy>=60);if(f)f.intimacy=clamp(f.intimacy+3,0,100);G.money+=20;pushLog('礼物虽重，情谊更重','good');}}]);
+
+/* --- 官场党争 --- */
+E('faction',1.3,g=>RANK_ORDER.indexOf(g.rank)>=4&&!g.faction&&Math.floor(g.ageMonths/12)>=30,'朝堂站队','朝中谢、王两党相争。谢党掌礼部，王党掌户部，都递来帖子拉拢你。',
+[{label:'投靠谢党',fx:'',effect(){G.faction='xie';G.merit+=10;G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'投靠谢党'});pushLog('谢党收下你的拜帖，引为同党','n');}},
+ {label:'投靠王党',fx:'',effect(){G.faction='wang';G.merit+=10;G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'投靠王党'});pushLog('王党视你为心腹','n');}},
+ {label:'两不相帮',fx:'',effect(){G.faction='neutral';G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'自请孤臣'});pushLog('你谁都不投，做你的孤臣','n');}}]);
+E('clash',1.2,g=>g.faction&&RANK_ORDER.indexOf(g.rank)>=4,'党争风波',g=>'政敌（对方一党）参了你一本，说你'+['办事不力','结党营私','贪墨赈银'][rnd(0,2)]+'。',
+[{label:'据理力争（智力/道德）',fx:'',effect(){if(chance((45+G.int*.5+G.moral*.3)/100)){G.fame=clamp(G.fame+3,0,100);pushLog('你当廷自辩，圣上明察','good');}else{G.reput=clamp(G.reput-3,-50,100);pushLog('辩解无力，被罚俸半年','bad');}}},
+ {label:'求同党斡旋',fx:'',effect(){if(G.faction==='xie'||G.faction==='wang'){if(chance(.55)){G.merit+=5;pushLog('同党替你周旋，化险为夷','good');}else{G.merit=Math.max(0,G.merit-15);G.fame=clamp(G.fame-2,0,100);pushLog('同党自顾不暇，你也挨了板子','bad');}}else pushLog('无党可依，只得自己扛','bad');}}]);
+E('demote',0.9,g=>g.faction&&RANK_ORDER.indexOf(g.rank)>=5,'贬谪','政敌得势，一道圣旨下来：你被贬官外放。',
+[{label:'黯然赴任',fx:'',effect(){const lv=RANK_ORDER.indexOf(G.rank);G.rank=RANK_ORDER[Math.max(4,lv-1)];G.fame=clamp(G.fame-5,0,100);G.mood=clamp(G.mood-10,0,100);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'遭贬谪'});pushLog('宦海浮沉，你被贬官外放','bad');}}]);
+
+/* --- 家 --- */
+E('matchmaker',1.6,g=>nearLoc(g,'home')&&!G.married&&Math.floor(g.ageMonths/12)>=16&&Math.floor(g.ageMonths/12)<=38&&G.ageMonths-G.lastMatchAt>=24,'媒婆登门','王媒婆扭着腰进门：“大官人（小姐），好事来了！城南/城北有户人家，人品端正，托我说亲。”',
+[{label:'应下这门亲事',fx:'',effect(){
+   const g=G.gender==='m'?'f':'m';
+   const spouse={name:(g==='f'?SPOUSE_F:SPOUSE_M)[rnd(0,7)], gender:g, health:rnd(60,95), charm:rnd(40,85), dead:false, affection:60};
+   const success=chance((30+G.cha+G.fame*.3+G.money*.02)/160);
+   if(success){ G.married=true; G.spouse=spouse; G.lastMatchAt=G.ageMonths; G.mood=clamp(G.mood+15,0,100);
+     G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'迎娶'+spouse.name}); pushLog('你与'+spouse.name+'结为连理','good'); sfx.good(); }
+   else{ G.money=Math.max(0,G.money-5); G.lastMatchAt=G.ageMonths; pushLog('下了聘礼，对方却变了卦……婚事黄了','bad'); }
+ }},
+ {label:'婉言谢绝',fx:'',effect(){G.lastMatchAt=G.ageMonths; pushLog('缘分未到，婉拒了媒婆','n');}}]);
+E('parents',1,g=>nearLoc(g,'home')&&G.parentsAlive&&Math.floor(g.ageMonths/12)>=18,'双亲年迈','父母年事已高，鬓发斑白，常念叨你小时候的事。',
+[{label:'侍奉汤药（耗2月）',fx:'',effect(){G.moral=clamp(G.moral+3,0,100);G.mood=clamp(G.mood+4,0,100);pushLog('你日夜侍奉，父母老怀大慰','good');}},
+ {label:'忙于自己的事',fx:'',effect(){G.moral=clamp(G.moral-2,0,100);pushLog('子欲养而亲不待……','bad');}}]);
+E('parentsdie',0.8,g=>nearLoc(g,'home')&&G.parentsAlive&&Math.floor(g.ageMonths/12)>=25,'双亲辞世','双亲先后撒手人寰。出殡那日，你哭倒在灵前。',
+[{label:'守孝三月',fx:'',effect(){G.parentsAlive=false;G.money+=10;G.moral=clamp(G.moral+5,0,100);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'双亲辞世，守孝'});pushLog('送走双亲，继承薄产十两','bad');}}]);
+
+/* --- 官场 --- */
+E('official',1.3,g=>g.rank!=='baiyi'&&RANK_ORDER.indexOf(g.rank)>=4,'官场风波','朝中有人参了你一本，说你治理不力。',
+[{label:'清廉自守，上书自辩（道德+3）',fx:'',effect(){if(chance((50+G.moral*.4)/100)){G.fame=clamp(G.fame+3,0,100);pushLog('圣上明察，你平安无事','good');}else{G.reput=clamp(G.reput-3,-50,100);pushLog('被罚俸三月','bad');}}},
+ {label:'送重礼打点（-50两，政绩+15，道德-4）',fx:'-50两',effect(){G.money=Math.max(0,G.money-50);G.merit+=15;G.moral=clamp(G.moral-4,0,100);pushLog('银子花出去，事情压下来了','n');}}]);
+E('charity',1.3,null,'修桥铺路','村里要修一座石桥，里正挨家挨户募捐。',
+[{label:'捐资三十两（声望+8）',fx:'-30两',effect(){if(G.money>=30){G.money-=30;G.fame=clamp(G.fame+8,0,100);pushLog('桥成之日，刻了你的名字','good');}else{pushLog('囊中羞涩','bad');}}},
+ {label:'出工出力（体力-15）',fx:'',effect(){G.fame=clamp(G.fame+4,0,100);G.str+=1;pushLog('你扛石挑土半月，乡人感激','good');}}]);
+
+/* --- 征兵 --- */
+E('conscript',1.2,g=>Math.floor(g.ageMonths/12)>=16&&Math.floor(g.ageMonths/12)<=40&&g.rank==='baiyi','朝廷征兵','边境告急，官府贴出榜文征兵。',
+[{label:'报名从军',fx:'',effect(){G.skills.wu+=5;G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'投军'});pushLog('你束甲提刀，踏入行伍','ev');}},
+ {label:'捐银免役（-30两）',fx:'-30两',effect(){G.money=Math.max(0,G.money-30);G.reput=clamp(G.reput-2,-50,100);pushLog('花钱免了兵役，被乡人议论','bad');}},
+ {label:'躲起来',fx:'',effect(){G.reput=clamp(G.reput-4,-50,100);pushLog('风声紧，你躲了半月才敢出门','bad');}}]);
+
+function nearLoc(g,id){const l=curLocs().find(x=>x.id===id);return l?Math.abs(l.x-g.x)<=1&&Math.abs(l.y-g.y)<=1:false;}
+
+function kidTrainingEvent(child){
+  return {
+    title:'儿女教育',
+    text:child.name+'已满十二岁，该考虑前程了。',
+    opts:[
+      {label:'送进书院读书（-10两/年）',fx:'文才',effect(){child.trained=true;child.path='study';G.money=Math.max(0,G.money-10);G.fame=clamp(G.fame+1,0,100);pushLog(child.name+'入书院读书','good');}},
+      {label:'送去武馆学艺（-10两/年）',fx:'武艺',effect(){child.trained=true;child.path='wu';G.money=Math.max(0,G.money-10);pushLog(child.name+'入武馆习武','good');}},
+      {label:'留在家中务农',fx:'',effect(){child.trained=true;child.path='farm';pushLog(child.name+'留家帮农','n');}}
+    ]
+  };
+}
+
+/* =====================================================================
+   各地行动
+   ===================================================================== */
+const ACTIONS={
+home:[
+  {id:'rest',name:'歇息养神',t:1,stam:-35,cost:0,need:null,
+   run(){G.stamina=clamp(G.stamina+45,0,100);G.mood=clamp(G.mood+(G.married?9:6),0,100);return {log:'在家歇息，精神渐复',c:'n'};}},
+  {id:'meal',name:'生火做饭',t:1,stam:8,cost:1,need:null,
+   run(){G.money=Math.max(0,G.money-1);G.health=clamp(G.health+3,1,100);G.stamina=clamp(G.stamina+10,0,100);return {log:'粗茶淡饭，吃得踏实',c:'good'};}},
+  {id:'readHome',name:'挑灯夜读',t:2,stam:12,cost:0,need:g=>g.ageMonths<8*12?null:(g.skills.wen>=80?'文才已高，去书院精进吧':''),
+   run(){const x=xpGain('wen',rnd(3,5));G.skills.wen+=x;G.mood=clamp(G.mood-3,0,100);return {log:'灯下苦读，文才+'+x,c:'n'};}},
+  {id:'weave',name:'织布换钱',t:2,stam:14,cost:0,need:null,
+   run(){const m=rnd(3,5);G.money+=m;G.skills.shop+=1;return {log:'织布数匹，换得'+m+'两',c:'n'};}},
+  {id:'cultivate',name:'照料田亩',t:2,stam:15,cost:0,need:g=>g.fields>0?null:'家中无田，去田庄看看',
+   run(){const x=xpGain('nong',3);G.skills.nong+=x;const y=(G.fields||0)>0?Math.floor(G.fields*(4+G.skills.nong/25)):0;if(y>0){G.money+=y;return {log:'一季辛劳，收成约'+y+'两',c:'good'};}return {log:'田间打理，农桑+'+x,c:'n'};}},
+  {id:'companion',name:'与妻儿话家常',t:1,stam:0,cost:0,need:g=>g.married?null:'尚未成家',
+   run(){G.mood=clamp(G.mood+10,0,100);if(G.spouse&&!G.spouse.dead)G.spouse.affection=clamp((G.spouse.affection||50)+5,0,100);G.kids.forEach(k=>{if(k.ageMonths<180)G.mood=clamp(G.mood+2,0,100);});return {log:'灯火可亲，天伦之乐',c:'good'};}},
+  {id:'craft',name:'木工铁艺',t:2,stam:14,cost:0,need:g=>G.str>=35?null:'身板太弱，抡不动家伙',
+   run(){const m=rnd(5,9);G.money+=m;G.str+=1;return {log:'打了几件家什卖钱，得'+m+'两',c:'n'};}},
+  {id:'diet',name:'食补养生',t:1,stam:4,cost:2,need:g=>Math.floor(g.ageMonths/12)>=30?null:'年岁未到，不必大补',
+   run(){G.money=Math.max(0,G.money-2);G.health=clamp(G.health+3,0,100);G.mood=clamp(G.mood+2,0,100);return {log:'药膳进补，气血渐旺',c:'good'};}},
+  {id:'wuxi',name:'练五禽戏',t:1,stam:12,cost:0,need:g=>Math.floor(g.ageMonths/12)>=30?null:'年岁未到',
+   run(){G.health=clamp(G.health+2,0,100);G.str+=1;G.mood=clamp(G.mood+2,0,100);return {log:'虎鹿熊猿鸟，一套练完筋骨舒泰',c:'good'};}}
+],
+school:[
+  {id:'read',name:'书院读书',t:2,stam:12,cost:0,need:g=>g.ageMonths>=6*12?null:'还太小',
+   run(){const x=xpGain('wen',rnd(4,8)+Math.floor(G.int/20));G.skills.wen+=x;G.mood=clamp(G.mood-4,0,100);return {log:'书声琅琅，文才+'+x,c:'n'};}},
+  {id:'art',name:'学琴棋书画',t:2,stam:8,cost:0,need:null,
+   run(){const x=xpGain('talent',rnd(3,6));G.skills.talent+=x;G.mood=clamp(G.mood+2,0,100);return {log:'才艺见长，才艺+'+x,c:'n'};}},
+  {id:'debate',name:'同窗辩难',t:1,stam:6,cost:0,need:g=>g.skills.wen>=20?null:'学识尚浅',
+   run(){G.int+=1;G.skills.wen+=2;G.mood=clamp(G.mood-2,0,100);return {log:'激辩半日，智力+1',c:'good'};}}
+],
+market:[
+  {id:'labor',name:'集市打零工',t:1,stam:14,cost:0,need:g=>g.ageMonths>=12*12?null:'年纪太小',
+   run(){const m=rnd(3,6);G.money+=m;G.str+=1;return {log:'搬货扛米一日，得'+m+'两',c:'n'};}},
+  {id:'trade',name:'低买高卖',t:1,stam:10,cost:20,need:g=>g.ageMonths>=14*12&&G.money>=20?null:(G.money<20?'本钱不足':'尚未成年'),
+   run(){G.money-=20;const prof=rnd(-15,15)+Math.floor(G.skills.shop/4)+Math.floor((G.luck-50)/10);G.money+=Math.max(0,prof+20);G.skills.shop+=xpGain('shop',2);const net=Math.max(0,prof+20)-20;
+     return {log:net>=0?'倒卖一番，净赚'+net+'两，商道+2':'这趟买卖赔了'+(-net)+'两',c:'n'};}},
+  {id:'buyfield',name:'购置田产（10两/亩）',t:2,stam:6,cost:10,need:g=>g.money>=10&&g.fields<30&&g.ageMonths>=14*12?null:(g.ageMonths<14*12?'尚未成年':(g.fields>=30?'田产已足':(g.money<10?'银两不足':null))),
+   run(){G.money-=10;G.fields++;return {log:'买下沃田一亩',c:'good'};}},
+  {id:'openshop',name:'开一间商号（需100两、商道40）',t:6,stam:20,cost:100,need:g=>!g.shopOwned&&g.money>=100&&g.skills.shop>=40?null:(g.shopOwned?'已有商号':(g.money<100?'银两不足':(g.skills.shop<40?'商道不足':'未满足条件'))),
+   run(){G.money-=100;G.shopOwned=true;G.shopLv=1;G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'开设商号'});return {log:'「'+G.name+'记」商号开张，鞭炮齐鸣',c:'good'};}},
+  {id:'expand',name:'扩充商号（需50两）',t:3,stam:10,cost:50,need:g=>g.shopOwned&&g.money>=50?null:'需要商号且银两充足',
+   run(){G.money-=50;G.shopLv++;G.fame=clamp(G.fame+2,0,100);return {log:'商号添了分号，生意更兴隆',c:'good'};}},
+  {id:'marketInfo',name:'查看行情',t:0,stam:0,cost:0,need:null,
+   run(){const m=G.market,p=G.marketPrev||{};const s=k=>m[k]>p[k]?'涨':(m[k]<p[k]?'跌':'平');
+     return {log:'今日行情：粮'+m.grain+'（'+s('grain')+'）· 绸'+m.silk+'（'+s('silk')+'）· 盐'+m.salt+'（'+s('salt')+'）。价贱处进货、价昂处出货',c:'n'};}},
+  {id:'stock',name:'囤货收市（20两/仓）',t:1,stam:4,cost:20,need:g=>!g.hold&&g.money>=20?null:(g.hold?'仓中已有囤货':'银两不足'),
+   run(){stockMenu();return {log:'',c:''};}},
+  {id:'sellHold',name:'出仓结算',t:1,stam:2,cost:0,need:g=>g.hold?null:'仓中无货',
+   run(){const h=G.hold,cur=G.market[h.type];const prof=Math.round((cur-h.buyP)*0.35);G.money+=Math.max(0,20+prof);const nm={grain:'粮',silk:'绸',salt:'盐'}[h.type];G.hold=null;G.skills.shop+=1;
+     return {log:prof>=0?'囤'+nm+'出仓，净赚'+prof+'两':'囤'+nm+'出仓，亏了'+(-prof)+'两',c:prof>=0?'good':'bad'};}},
+  {id:'bank',name:'钱庄往来',t:0,stam:2,cost:0,need:null,
+   run(){bankMenu();return {log:'',c:''};}},
+  {id:'buyHouse',name:'购置房产',t:3,stam:6,cost:0,need:null,
+   run(){houseMenu();return {log:'',c:''};}}
+],
+gov:[
+  {id:'exam',name:'参加科举（童生→秀才→举人→进士）',t:3,stam:15,cost:2,need:g=>{
+     if(g.ageMonths<16*12) return '尚未成年';
+     if(g.ageMonths-g.lastExamAt<36) return '科场三年一开，时机未到';
+     const lv=RANK_ORDER.indexOf(g.rank);
+     if(lv>=3) return '已是进士，无须再考';
+     const need=[10,30,55][lv];
+     if(g.skills.wen<need) return '文才不足（需'+need+'）';
+     return null;
+   },run(){return examRun();}},
+  {id:'appoint',name:'金殿授官（入仕为官）',t:2,stam:5,cost:0,need:g=>g.rank==='jinshi'&&g.fame>=15?null:(g.rank==='jinshi'?'声望不足':'须中进士方可授官'),
+   run(){G.rank='xianling';G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'授官县令'});return {log:'圣旨到：授你七品县令之职！',c:'good'};}},
+  {id:'govern',name:'升堂理政',t:3,stam:16,cost:0,need:g=>RANK_ORDER.indexOf(g.rank)>=4?null:'须入仕方可理政',
+   run(){const pay=[0,0,0,0,8,18,40,90,150][RANK_ORDER.indexOf(G.rank)];G.money+=pay;const mg=Math.max(2,Math.min(16,8+Math.floor(G.int/10)));G.merit+=mg;G.fame=clamp(G.fame+1,0,100);return {log:'日理万机，政绩+'+mg+'，俸禄'+pay+'两',c:'n'};}},
+  {id:'audit',name:'述职考绩（求升迁）',t:1,stam:5,cost:0,need:g=>{
+     if(RANK_ORDER.indexOf(g.rank)<4) return '须入仕方可考绩';
+     if(RANK_ORDER.indexOf(g.rank)>=8) return '位极人臣，无须再升';
+     if(g.ageMonths-g.lastAuditAt<36) return '考绩三年一举';
+     if(g.merit<40) return '政绩不足（需40）';
+     if(g.fame<25) return '声望不足（需25）';
+     return null;
+   },run(){G.lastAuditAt=G.ageMonths;const lv=RANK_ORDER.indexOf(G.rank);G.rank=RANK_ORDER[lv+1];G.merit=0;G.fame=clamp(G.fame+10,0,100);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'升任'+RANK_NAME[G.rank]});return {log:'考绩优等，擢升为'+RANK_NAME[G.rank]+'！',c:'good'};}}
+],
+martial:[
+  {id:'train',name:'馆中习武',t:2,stam:16,cost:0,need:g=>g.ageMonths>=10*12?null:'年纪太小',
+   run(){const x=xpGain('wu',rnd(3,7));G.skills.wu+=x;G.str+=1;return {log:'练拳到力竭，武艺+'+x,c:'n'};}},
+  {id:'escort',name:'押镖走货',t:2,stam:20,cost:0,need:g=>g.ageMonths>=16*12&&G.skills.wu>=30&&G.str>=45?null:(g.ageMonths<16*12?'尚未成年':(G.skills.wu<30?'武艺不足（需30）':'体魄不足（需45）')),
+   run(){const r=Math.random();if(r<.4){const m=rnd(20,40);G.money+=m;return {log:'一路平安，镖银到手'+m+'两',c:'good'};}else if(r<.7){G.money+=rnd(14,24);return {log:'小有波折，赚得辛苦钱',c:'n'};}else if(r<.9){if(chance((40+G.skills.wu*.6)/100)){const m=rnd(30,55);G.money+=m;G.fame=clamp(G.fame+3,0,100);return {log:'遇劫匪力战而胜，威名大振，得'+m+'两',c:'good'};}else{G.health=clamp(G.health-12,0,100);G.money+=10;return {log:'被劫匪围住，挂彩突围',c:'bad'};}}else{G.money+=rnd(40,70);G.fame=clamp(G.fame+4,0,100);return {log:'接了趟官府大镖，重赏之下',c:'good'};}},
+   },
+  {id:'enlist',name:'投军吃粮',t:6,stam:25,cost:0,need:g=>g.military===0&&g.ageMonths>=16*12&&G.skills.wu>=40&&G.str>=55?null:(g.military>0?'已在军中':(g.ageMonths<16*12?'尚未成年':(G.skills.wu<40?'武艺不足（需40）':'体魄不足（需55）'))),
+   run(){G.military=1;G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'投军'});return {log:'披甲执锐，成为一名士卒',c:'ev'};}},
+  {id:'settle',name:'了结恩怨（寻仇）',t:2,stam:14,cost:0,need:g=>g.enemies&&g.enemies.some(e=>e.status==='active')?null:'无未了恩怨',
+   run(){const e=G.enemies.find(x=>x.status==='active');if(!e)return {log:'恩怨已清',c:'n'};if(chance((40+G.skills.wu*.6+G.str*.3)/100)){e.status='dead';G.fame=clamp(G.fame+5,0,100);G.skills.wu+=3;G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'寻仇了断'+e.name});return {log:'你寻到'+e.name+'，一战了断恩怨',c:'good'};}G.health=clamp(G.health-12,0,100);return {log:'棋差一着，没能了断，还挂了彩',c:'bad'};}},
+  {id:'garrison',name:'戍边作战',t:6,stam:30,cost:0,need:g=>g.military>0?null:'须先投军',
+   run(){G.money+=4;const r=Math.random();let res;
+     if(r<.45){G.battle+=3;G.skills.wu+=2;res={log:'屯田戍边，小有操练，战功+3',c:'n'};}
+     else if(r<.75){G.battle+=6;G.fame=clamp(G.fame+2,0,100);G.money+=8;res={log:'小捷！斩首数级，战功+6',c:'good'};}
+     else if(r<.9){G.battle+=8;G.health=clamp(G.health-10,0,100);G.skills.wu+=4;res={log:'血战一场，身负轻伤，战功+8',c:'bad'};}
+     else if(r<.97){G.health=clamp(G.health-25,0,100);res={log:'重伤！被抬下战场',c:'bad'};}
+     else { die('战死沙场'); return null; }
+     promoteMilitary();
+     return res;
+   }}
+],
+med:[
+  {id:'learnMed',name:'学医',t:2,stam:8,cost:0,need:null,
+   run(){const x=xpGain('med',rnd(3,6));G.skills.med+=x;return {log:'研读医书，医术+'+x,c:'n'};}},
+  {id:'heal',name:'坐堂行医',t:1,stam:12,cost:0,need:g=>G.skills.med>=30?null:'医术不足（需30）',
+   run(){const m=rnd(8,15)+(G.skills.med>=60?8:0);G.money+=m;G.heals++;G.fame=clamp(G.fame+1,0,100);return {log:'坐堂一日，施诊救人，得诊金'+m+'两',c:'good'};}}
+],
+temple:[
+  {id:'pray',name:'进香祈福',t:1,stam:5,cost:1,need:null,
+   run(){G.money=Math.max(0,G.money-1);G.mood=clamp(G.mood+8,0,100);if(chance(.15))G.luck=clamp(G.luck+1,0,99);return {log:'三炷清香，心头清净',c:'n'};}},
+  {id:'listen',name:'听经修行',t:2,stam:5,cost:0,need:null,
+   run(){const x=xpGain('moral',3);G.moral=clamp(G.moral+x,0,100);G.xiu+=1;G.mood=clamp(G.mood+4,0,100);return {log:'听老僧讲经，道德+'+x,c:'good'};}},
+  {id:'daoyin',name:'打坐导引',t:1,stam:6,cost:0,need:g=>Math.floor(g.ageMonths/12)>=30?null:'年岁未到',
+   run(){G.health=clamp(G.health+2,0,100);G.xiu+=1;G.mood=clamp(G.mood+3,0,100);return {log:'吐纳周天，浊气尽出',c:'good'};}},
+  {id:'alms',name:'布施行善（-10两）',t:1,stam:3,cost:10,need:g=>G.money>=10?null:'银两不足',
+   run(){G.money-=10;G.fame=clamp(G.fame+3,0,100);G.moral=clamp(G.moral+xpGain('moral',4),0,100);G.reput=clamp(G.reput+2,0,100);return {log:'布施十两，积善之家',c:'good'};}},
+  {id:'monk',name:'遁入空门（需道德60、年40）',t:0,stam:0,cost:0,need:g=>G.moral>=60&&Math.floor(G.ageMonths/12)>=40?null:'心性未定，机缘未至',
+   run(){G.xiu+=10;G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'剃度出家'});die('皈依佛门');return null;}}
+],
+tavern:[
+  {id:'drink',name:'沽酒独酌',t:1,stam:5,cost:1,need:null,
+   run(){G.money=Math.max(0,G.money-1);G.mood=clamp(G.mood+12,0,100);G.health=clamp(G.health-4,0,100);if(G.trait==='haoshuang')G.mood=clamp(G.mood+6,0,100);return {log:'一壶浊酒喜相逢',c:'n'};}},
+  {id:'gossip',name:'听江湖消息',t:1,stam:3,cost:1,need:null,
+   run(){G.money=Math.max(0,G.money-1);G.skills.wen+=1;return {log:'听了满耳朵新鲜事',c:'n'};}},
+  {id:'play',name:'抚琴弹唱（需才艺30）',t:2,stam:10,cost:0,need:g=>G.skills.talent>=30?null:'才艺不足',
+   run(){const m=rnd(6,12);G.money+=m;G.fame=clamp(G.fame+1,0,100);G.mood=clamp(G.mood+5,0,100);return {log:'一曲动四座，赏钱'+m+'两',c:'good'};}},
+  {id:'story',name:'说书卖艺',t:2,stam:8,cost:0,need:g=>G.skills.talent>=25?null:'才艺不足（需25）',
+   run(){const m=rnd(5,12);G.money+=m;G.skills.talent+=1;G.fame=clamp(G.fame+1,0,100);return {log:'一拍惊堂木，说得满堂彩，赏钱'+m+'两',c:'good'};}},
+  {id:'meetFriend',name:'会友交游（结识/叙旧）',t:2,stam:8,cost:2,need:g=>Math.floor(g.ageMonths/12)>=16?null:'尚未成年',
+   run(){G.money=Math.max(0,G.money-2);
+     if(G.friends.length<4){
+       if(chance((35+G.cha*.6)/100)){
+         const f={name:SURNAMES[rnd(0,SURNAMES.length-1)]+((G.gender==='m')?MALE_NAMES:FEM_NAMES)[rnd(0,9)], gender:G.gender, intimacy:30, gifted:0, owed:0};
+         G.friends.push(f); G.stat.friends++;
+         G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'结识好友'+f.name});
+         return {log:'与'+f.name+'一见如故，结为好友',c:'good'};
+       }
+       return {log:'话不投机，只当寻常酒客',c:'bad'};
+     }else{
+       const f=G.friends[0]; f.intimacy=clamp(f.intimacy+8,0,100);
+       G.mood=clamp(G.mood+5,0,100);
+       return {log:'与故友'+f.name+'叙旧，情谊更厚',c:'good'};
+     }
+   }},
+  {id:'giftFriend',name:'给挚友赠礼（-5两）',t:1,stam:4,cost:5,need:g=>G.friends&&G.friends.length?null:'尚无好友',
+   run(){G.money=Math.max(0,G.money-5);const f=G.friends[0];f.intimacy=clamp(f.intimacy+10,0,100);f.gifted=(f.gifted||0)+1;return {log:'赠礼给'+f.name+'，对方十分欢喜',c:'good'};}}
+],
+wild:[
+  {id:'adventure',name:'入山探险',t:2,stam:20,cost:0,need:g=>G.str>=30||G.ageMonths>=14*12?null:'体弱年幼，莫入深山',
+   run(){const r=Math.random();if(r<.35){const m=rnd(5,15);G.money+=m;G.skills.nong+=2;return {log:'采到山货药材，卖得'+m+'两',c:'good'};}else if(r<.6){G.skills.nong+=4;G.mood=clamp(G.mood+4,0,100);return {log:'山中云气变化万千，心旷神怡',c:'good'};}else if(r<.75){if(chance((30+G.skills.wu*.5+G.str*.4)/100)){const m=rnd(20,50);G.money+=m;return {log:'山涧发现前人藏银，得'+m+'两！',c:'good'};}else{G.health=clamp(G.health-10,0,100);return {log:'失足滚落山崖，摔得不轻',c:'bad'};}}else if(r<.9){if(chance(G.luck/100)){G.skills.talent+=6;return {log:'拾得古人遗刻，颇有领悟',c:'good'};}return {log:'转了大半天，一无所获',c:'n'};}else{return {log:'山中遇雨，淋成落汤鸡',c:'bad'};}},
+   risk:true},
+  {id:'hunt',name:'林间打猎',t:1,stam:14,cost:0,need:g=>G.skills.wu>=15?null:'不会弓马，先习武',
+   run(){if(chance((35+G.skills.wu*.5)/100)){const m=rnd(4,10);G.money+=m;G.skills.wu+=2;return {log:'猎得野味，卖得'+m+'两',c:'good'};}G.skills.wu+=1;return {log:'空手而归，只当练手',c:'n'};}},
+  {id:'meditate',name:'结庐静修（归隐，需年45）',t:0,stam:0,cost:0,need:g=>Math.floor(G.ageMonths/12)>=45?null:'尘缘未了，心未定',
+   run(){G.xiu+=15;G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'结庐山中，归隐'});die('隐逸终老');return null;}}
+],
+dock:[
+  {id:'sail',name:'登船远游',t:3,stam:12,cost:2,need:null,
+   run(){G.money=Math.max(0,G.money-2);G.mood=clamp(G.mood+10,0,100);G.skills.talent+=2;G.fame=clamp(G.fame+1,0,100);return {log:'顺流而下，看尽两岸风光',c:'good'};}},
+  {id:'fish',name:'江边垂钓',t:1,stam:6,cost:0,need:null,
+   run(){G.mood=clamp(G.mood+6,0,100);if(chance(.5)){G.money+=2;return {log:'钓得几尾鲜鱼',c:'n'};}return {log:'独钓一江秋',c:'n'};}},
+  {id:'caravan',name:'商队跑长途（需100两、商道40）',t:6,stam:25,cost:100,need:g=>g.ageMonths>=18*12&&G.skills.shop>=40&&G.money>=100?null:(g.ageMonths<18*12?'尚未成年':(G.skills.shop<40?'商道不足（需40）':'本钱不足（需100两）')),
+   run(){G.money-=100;const r=Math.random();let res;
+     if(r<.30){const m=rnd(70,110);G.money+=m;res={log:'商队往返千里，满载而归，净赚'+m+'两',c:'good'};}
+     else if(r<.55){const m=rnd(40,70);G.money+=m;res={log:'一路顺遂，小赚'+m+'两',c:'n'};}
+     else if(r<.75){G.money+=20;res={log:'平安归来，只赚了个辛苦钱',c:'n'};}
+     else if(r<.90){if(chance((40+G.skills.wu*.5+G.str*.3)/100)){const m=rnd(40,80);G.money+=m;G.skills.wu+=2;res={log:'遇上山贼，幸而你武艺了得，保住货还赚'+m+'两',c:'good'};}else{G.money-=60;res={log:'货被山贼劫去一半，血亏',c:'bad'};}}
+     else if(r<.98){const m=rnd(120,180);G.money+=m;G.fame=clamp(G.fame+2,0,100);res={log:'赶上南边好行情，暴利'+m+'两！',c:'good'};}
+     else {G.money-=100;res={log:'商队遇上水匪，血本无归',c:'bad'};}
+     G.skills.shop+=2;
+     return res;}},
+  {id:'travel',name:'出远门（京城/边关/江南）',t:2,stam:8,cost:5,need:g=>Math.floor(g.ageMonths/12)>=16?null:'尚未成年',
+   run(){travelMenu();return {log:'',c:''};}}
+],
+qinglou:[
+  {id:'listenQ',name:'听曲赏舞',t:2,stam:8,cost:1,need:null,
+   run(){G.money=Math.max(0,G.money-1);G.mood=clamp(G.mood+6,0,100);const x=xpGain('talent',rnd(2,4));G.skills.talent+=x;return {log:'丝竹盈耳，舞袖翩跹，才艺+'+x,c:'good'};}},
+  {id:'feastQ',name:'宴饮小酌',t:1,stam:6,cost:2,need:null,
+   run(){G.money=Math.max(0,G.money-2);G.mood=clamp(G.mood+10,0,100);G.health=clamp(G.health-3,0,100);if(G.married)G.reput=clamp(G.reput-1,-50,100);return {log:'推杯换盏，好不快活',c:'n'};}},
+  {id:'gossipQ',name:'打探消息',t:1,stam:4,cost:1,need:null,
+   run(){G.money=Math.max(0,G.money-1);G.skills.wen+=1;G.fame=clamp(G.fame+1,0,100);
+     if(chance(.35)){ const ev=pickEvent(); if(ev) showEvent(ev); return {log:'',c:''}; }
+     return {log:'席间闲谈，听来不少新鲜事',c:'n'};}},
+  {id:'meet',name:'会知音（结识/私会）',t:2,stam:10,cost:5,need:g=>Math.floor(g.ageMonths/12)>=16?null:'尚未成年',
+   run(){
+     G.money=Math.max(0,G.money-5);
+     if(!G.zhiji){
+       let p=(30+G.cha*.6+G.money*.01)/100;
+       if(G.married) p*=0.55;   // 家有妻室，结识更难
+       if(chance(p)){
+         G.zhiji={name:(G.gender==='m'?QLOU_F:QLOU_M)[rnd(0,7)], aff:1};
+         G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'结识'+G.zhiji.name});
+         G.mood=clamp(G.mood+8,0,100);
+         return {log:'你与'+G.zhiji.name+'相识，TA为你抚琴一曲',c:'good'};
+       }
+       return {log:G.married?'家有妻室，知音难觅':'知音难觅，银子打了水漂',c:'bad'};
+     }
+     G.zhiji.aff++;
+     G.mood=clamp(G.mood+9,0,100);
+     G.skills.talent+=1;
+     if(G.married&&chance(0.28)){   // 已婚私会，有败露之险
+       showEvent(affairCaughtEvent());
+       return {log:'',c:''};
+     }
+     return {log:'与'+G.zhiji.name+'品茶闲谈，情意更笃',c:'good'};
+   }},
+  {id:'redeem',name:'赎身共结连理/纳为侧室（需80两）',t:3,stam:8,cost:80,need:g=>{
+     if(!g.zhiji) return '尚无相好的知音（先去「会知音」）';
+     if(g.zhiji.aff<2) return '情意未深（需会知音2次以上）';
+     if(g.money<80) return '需赎身银八十两';
+     return null;
+   },run(){
+     const nm=G.zhiji.name;
+     G.money-=80;
+     if(!G.married){
+       G.spouse=G.zhiji;
+       G.spouse.fromQinglou=true;
+       G.spouse.affection=60;
+       G.spouse.health=rnd(65,95); G.spouse.charm=rnd(60,95); G.spouse.dead=false;
+       G.married=true;
+       G.zhiji=null;
+       G.fame=clamp(G.fame+3,0,100);
+       G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'为'+nm+'赎身，共结连理'});
+       return {log:'你为'+nm+'赎身，明媒正娶，一时传为佳话',c:'good'};
+     }else{
+       const c=G.zhiji;
+       c.affection=50; c.health=rnd(60,90); c.charm=rnd(60,95); c.dead=false; c.source='青楼';
+       G.concubines.push(c);
+       G.zhiji=null;
+       G.reput=clamp(G.reput-1,-50,100);
+       G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'纳'+nm+'为侧室'});
+       return {log:'你为'+nm+'赎身，收为侧室，后院添了位佳人',c:'n'};
+     }
+   }}
+],
+field:[
+  {id:'plow',name:'躬耕田亩',t:3,stam:18,cost:0,need:g=>G.fields>0?null:'还无田产，先去集市购置',
+   run(){const x=xpGain('nong',4);G.skills.nong+=x;const y=Math.max(1,Math.floor(G.fields*(5+G.skills.nong/20)));G.money+=y;return {log:'春耕秋收，一岁入'+y+'两，农桑+'+x,c:'good'};}},
+  {id:'hire',name:'给人帮工',t:2,stam:16,cost:0,need:g=>G.ageMonths>=12*12?null:'年纪太小',
+   run(){const m=rnd(5,8);G.money+=m;G.skills.nong+=2;return {log:'帮人收割，得'+m+'两',c:'n'};}}
+],
+palace:[
+  {id:'court',name:'上朝面圣',t:1,stam:10,cost:0,need:g=>RANK_ORDER.indexOf(g.rank)>=4?null:'须有官身方能上朝',
+   run(){G.fame=clamp(G.fame+2,0,100);G.merit+=rnd(5,10);G.mood=clamp(G.mood-3,0,100);return {log:'金殿之上伴君如虎，幸无过失，政绩+',c:'n'};}}
+],
+liubu:[
+  {id:'office',name:'六部办差',t:2,stam:14,cost:0,need:g=>RANK_ORDER.indexOf(g.rank)>=4?null:'须有官身方能办差',
+   run(){const m=rnd(10,25);G.money+=m;G.merit+=6;return {log:'勤勤恳恳办差，得赏银'+m+'两，政绩+6',c:'n'};}}
+],
+guozijian:[
+  {id:'jiang',name:'国子监听讲',t:2,stam:10,cost:0,need:null,
+   run(){const x=xpGain('wen',rnd(4,7));G.skills.wen+=x;return {log:'听大儒讲经，文才+'+x,c:'good'};}},
+  {id:'writeBook',name:'闭门著书（需文才80）',t:6,stam:20,cost:0,need:g=>G.skills.wen>=80?null:'文才不足（需80）',
+   run(){const p=clamp((G.skills.wen-70)/40+G.int/100,0.3,0.9);if(chance(p)){G.books=(G.books||0)+1;const master=G.skills.wen>=95&&chance(.5);if(master){G.fame=clamp(G.fame+20,0,100);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'著成传世之作'});return {log:'你著成一部传世之作，洛阳纸贵！',c:'good'};}G.fame=clamp(G.fame+10,0,100);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'著书一部'});return {log:'书成付梓，天下传阅，声望+10',c:'good'};}G.mood=clamp(G.mood-6,0,100);return {log:'文稿被束之高阁，乏人问津',c:'bad'};}}
+],
+dongshi:[
+  {id:'silkBiz',name:'京缎生意',t:1,stam:8,cost:20,need:g=>g.money>=20?null:'本钱不足',
+   run(){G.money-=20;const prof=rnd(-10,20)+Math.floor(G.skills.shop/4);G.money+=Math.max(0,20+prof);G.skills.shop+=2;const net=Math.max(0,20+prof)-20;return {log:net>=0?'京缎转手净赚'+net+'两':'京缎滞销，赔了'+(-net)+'两',c:net>=0?'good':'bad'};}}
+],
+kezhan:[
+  {id:'restK',name:'客栈歇脚',t:1,stam:-35,cost:1,need:null,
+   run(){G.money=Math.max(0,G.money-1);G.stamina=clamp(G.stamina+45,0,100);G.mood=clamp(G.mood+4,0,100);return {log:'客房干净，一夜好眠',c:'good'};}},
+  {id:'courtNews',name:'打听朝局',t:1,stam:4,cost:1,need:null,
+   run(){G.money=Math.max(0,G.money-1);if(chance(.5)){const ev=pickEvent();if(ev)showEvent(ev);return {log:'',c:''};}return {log:'茶楼酒肆，尽是朝中秘闻',c:'n'};}},
+  {id:'backHome',name:'乘驿车回临安',t:2,stam:6,cost:2,need:null,
+   run(){G.money=Math.max(0,G.money-2);travelTo('home');return {log:'',c:''};}}
+],
+xishi:[
+  {id:'curio',name:'西市淘奇货',t:1,stam:6,cost:10,need:g=>g.money>=10?null:'银两不足',
+   run(){G.money-=10;const r=Math.random();if(r<.5){const m=rnd(5,18);G.money+=m;return {log:'淘到件值钱旧物，转手赚了'+m+'两',c:'good'};}else if(r<.8){G.skills.talent+=3;return {log:'收到一卷前人字帖，颇有裨益',c:'good'};}return {log:'看走了眼，买了个赝品',c:'bad'};}}
+],
+jiaofang:[
+  {id:'songDance',name:'教坊观舞',t:2,stam:8,cost:2,need:null,
+   run(){G.money=Math.max(0,G.money-2);const x=xpGain('talent',rnd(3,5));G.skills.talent+=x;G.mood=clamp(G.mood+6,0,100);return {log:'霓裳羽衣，观之忘倦，才艺+'+x,c:'good'};}},
+  {id:'meetNoble',name:'结识权贵',t:2,stam:8,cost:5,need:g=>g.money>=5?null:'银两不足',
+   run(){G.money=Math.max(0,G.money-5);if(chance((30+G.cha*.6)/100)){G.fame=clamp(G.fame+4,0,100);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'结识朝中权贵'});return {log:'与贵人把酒言欢，前程添了几分照应',c:'good'};}return {log:'贵人只是寒暄几句便走了',c:'bad'};}}
+],
+shuaizhang:[
+  {id:'council',name:'帅帐议事',t:1,stam:8,cost:0,need:g=>g.military>0?null:'须从军方可入帅帐',
+   run(){G.battle+=4;G.fame=clamp(G.fame+1,0,100);return {log:'帐中献计，得主帅赏识，战功+4',c:'good'};}}
+],
+xiaochang:[
+  {id:'drill',name:'校场操练',t:2,stam:16,cost:0,need:null,
+   run(){const x=xpGain('wu',rnd(3,6));G.skills.wu+=x;G.str+=1;return {log:'烈日下操练半日，武艺+'+x,c:'n'};}}
+],
+chengqiang:[
+  {id:'patrol',name:'巡守城墙',t:2,stam:14,cost:0,need:g=>g.military>0?null:'须从军方可巡城',
+   run(){G.battle+=3;if(chance(.3)){if(chance((40+G.skills.wu*.6)/100)){G.battle+=4;G.skills.wu+=2;return {log:'撞破敌骑夜袭，力战击退，战功+7',c:'good'};}G.health=clamp(G.health-12,0,100);return {log:'与敌骑短兵相接，挂彩退下',c:'bad'};}return {log:'一夜无事，战功+3',c:'n'};}}
+],
+bianshi:[
+  {id:'tradeB',name:'边市互市',t:1,stam:8,cost:20,need:g=>g.money>=20?null:'本钱不足',
+   run(){G.money-=20;const prof=rnd(-8,18)+Math.floor(G.skills.shop/5);G.money+=Math.max(0,20+prof);G.skills.shop+=2;const net=Math.max(0,20+prof)-20;return {log:net>=0?'胡商好打交道，净赚'+net+'两':'货没卖上价，赔了'+(-net)+'两',c:net>=0?'good':'bad'};}},
+  {id:'backHome',name:'随商队回临安',t:2,stam:6,cost:2,need:null,
+   run(){G.money=Math.max(0,G.money-2);travelTo('home');return {log:'',c:''};}}
+],
+junyi:[
+  {id:'healW',name:'军医疗伤',t:1,stam:6,cost:3,need:g=>g.money>=3?null:'银两不足',
+   run(){G.money=Math.max(0,G.money-3);G.health=clamp(G.health+8,0,100);G.skills.med+=1;return {log:'军医给你上了金疮药，好多了',c:'good'};}}
+],
+fenghuo:[
+  {id:'watch',name:'烽火警戒',t:1,stam:6,cost:0,need:null,
+   run(){G.fame=clamp(G.fame+1,0,100);if(chance(.2)){G.battle+=3;return {log:'发现敌情，及时举烽，记一功',c:'good'};}return {log:'天高云淡，边关无事',c:'n'};}}
+],
+chouzhuang:[
+  {id:'silkJ',name:'丝绸买卖',t:1,stam:8,cost:20,need:g=>g.money>=20?null:'本钱不足',
+   run(){G.money-=20;const p=G.market.silk||100;const prof=Math.round((100-p)*0.4)+rnd(-6,10)+Math.floor(G.skills.shop/5);G.money+=Math.max(0,20+prof);G.skills.shop+=2;const net=Math.max(0,20+prof)-20;return {log:net>=0?'江南绸贱，转手净赚'+net+'两':'绸市清淡，赔了'+(-net)+'两',c:net>=0?'good':'bad'};}}
+],
+chayuan:[
+  {id:'tea',name:'采茶制茶',t:1,stam:10,cost:0,need:null,
+   run(){const m=rnd(6,12);G.money+=m;G.health=clamp(G.health+2,0,100);G.skills.nong+=1;return {log:'新茶上市，卖了'+m+'两',c:'good'};}}
+],
+xilou:[
+  {id:'opera',name:'听戏会友',t:2,stam:8,cost:1,need:null,
+   run(){G.money=Math.max(0,G.money-1);G.skills.talent+=2;G.mood=clamp(G.mood+6,0,100);if(chance((25+G.cha*.5)/100)){G.fame=clamp(G.fame+2,0,100);pushLog('戏楼里结识了几位名流','good');}return {log:'水磨腔起，满座叫好',c:'n'};}}
+],
+qianzhuang:[
+  {id:'bankJ',name:'总号往来',t:0,stam:2,cost:0,need:null,
+   run(){bankMenu();return {log:'',c:''};}}
+],
+yuanlin:[
+  {id:'garden',name:'园林冶游',t:1,stam:4,cost:1,need:null,
+   run(){G.money=Math.max(0,G.money-1);G.mood=clamp(G.mood+8,0,100);G.skills.talent+=1;return {log:'亭台水榭，移步换景，心旷神怡',c:'good'};}}
+],
+dukou2:[
+  {id:'backHome',name:'乘船回临安',t:2,stam:6,cost:2,need:null,
+   run(){G.money=Math.max(0,G.money-2);travelTo('home');return {log:'',c:''};}}
+]
+};
+/* ---------- 远行 ---------- */
+function travelMenu(){
+  showEvent({
+    title:'出远门',
+    text:'渡口有船下江南，也有商队上京、投军赴边关。出门在外，见见世面。（每趟耗二月、银五两）',
+    opts:[
+      {label:'上京（京城）',fx:'-5两',effect(){G.money=Math.max(0,G.money-5);travelTo('jingcheng');}},
+      {label:'赴边关（雁门关）',fx:'-5两',effect(){G.money=Math.max(0,G.money-5);travelTo('bianguan');}},
+      {label:'下江南',fx:'-5两',effect(){G.money=Math.max(0,G.money-5);travelTo('jiangnan');}},
+      {label:'罢了，留在本城',fx:'',effect(){}}
+    ]
+  });
+}
+function travelTo(r){
+  if(!REGIONS[r]||!G) return;
+  G.stat.travels++;
+  G.visited=G.visited||{}; G.visited[r]=1;
+  G.region=r;
+  buildMap();
+  const e=REGIONS[r].entry;
+  G.x=e.x; G.y=e.y;
+  animX=G.x*TILE+16; animY=G.y*TILE+16;
+  path=[]; walking=false;
+  renderLabels(); renderUI();
+  pushLog('你来到'+REGIONS[r].name,'ev');
+  G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'远赴'+REGIONS[r].name});
+  sfx.good();
+}
+function promoteMilitary(){
+  const need=[20,50,90,150]; const lv=G.military;
+  if(lv>=1&&lv<5&&G.battle>=need[lv-1]){
+    G.military++;
+    G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'因功升为'+MIL_NAME[G.military]});
+    pushLog('因功升为'+MIL_NAME[G.military]+'！','good');
+    sfx.good();
+  }
+}
+/* ---------- 经济菜单（囤货/钱庄/置业） ---------- */
+function stockMenu(){
+  const m=G.market;
+  showEvent({
+    title:'囤货收市',
+    text:'今日行情：粮 '+m.grain+' · 绸 '+m.silk+' · 盐 '+m.salt+'。\n二十两买入一仓，待价而沽。',
+    opts:[
+      {label:'囤粮（价'+m.grain+'）',fx:'-20两',effect(){G.money=Math.max(0,G.money-20);G.hold={type:'grain',buyP:m.grain};pushLog('囤下一仓粮食','n');}},
+      {label:'囤绸（价'+m.silk+'）',fx:'-20两',effect(){G.money=Math.max(0,G.money-20);G.hold={type:'silk',buyP:m.silk};pushLog('囤下一仓绸缎','n');}},
+      {label:'囤盐（价'+m.salt+'）',fx:'-20两',effect(){G.money=Math.max(0,G.money-20);G.hold={type:'salt',buyP:m.salt};pushLog('囤下一仓盐货','n');}},
+      {label:'算了',fx:'',effect(){pushLog('再观望观望','n');}}
+    ]
+  });
+}
+function bankMenu(){
+  showEvent({
+    title:'钱庄 · 同兴号',
+    text:'存款 '+G.bank.dep+' 两，年息五分；欠债 '+(G.bank.loan>0?G.bank.loan+' 两':'无')+'。',
+    opts:[
+      {label:'存入五十两',fx:'',effect(){if(G.money>=50){G.money-=50;G.bank.dep+=50;pushLog('存入五十两','good');}else pushLog('囊中羞涩','bad');}},
+      {label:'取出五十两',fx:'',effect(){if(G.bank.dep>=50){G.bank.dep-=50;G.money+=50;pushLog('取出五十两','n');}else pushLog('存款不足','bad');}},
+      {label:'借贷五十两（六个月还五十五）',fx:'',effect(){if(G.bank.loan===0){G.money+=50;G.bank.loan=55;G.bank.loanAt=G.ageMonths;pushLog('借到五十两，字据为凭','n');}else pushLog('旧债未清，钱庄不肯再借','bad');}},
+      {label:'还清借贷（五十五两）',fx:'',effect(){if(G.bank.loan>0&&G.money>=55){G.money-=55;G.bank.loan=0;pushLog('还清借贷，如释重负','good');}else pushLog('银两不够','bad');}},
+      {label:'离去',fx:'',effect(){pushLog('出了钱庄','n');}}
+    ]
+  });
+}
+function houseMenu(){
+  const H=['','瓦房','别院','庄园'];
+  showEvent({
+    title:'置业 · 牙行',
+    text:'现有：'+(G.houses>0?H[G.houses]:'无房产')+'。\n瓦房一百两（声望+5）→ 别院三百两（声望+10）→ 庄园八百两（声望+20）。逐级购置，可收租。',
+    opts:[
+      {label:'购瓦房（100两）',fx:'声望+5',effect(){if(G.houses<1&&G.money>=100){G.money-=100;G.houses=1;G.fame=clamp(G.fame+5,0,100);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'购置瓦房'});pushLog('置下县城瓦房一进','good');}else pushLog(G.houses>=1?'已有更高级宅院':'银两不足','bad');}},
+      {label:'购别院（300两）',fx:'声望+10',effect(){if(G.houses<2&&G.houses>=1&&G.money>=300){G.money-=300;G.houses=2;G.fame=clamp(G.fame+10,0,100);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'购置别院'});pushLog('别院落成，亭台楼阁','good');}else pushLog(G.houses<1?'需先购瓦房':(G.money<300?'银两不足':'已有更高级宅院'),'bad');}},
+      {label:'购庄园（800两）',fx:'声望+20',effect(){if(G.houses<3&&G.houses>=2&&G.money>=800){G.money-=800;G.houses=3;G.fame=clamp(G.fame+20,0,100);G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'购置庄园'});pushLog('庄园广厦，僮仆成群','good');}else pushLog(G.houses<2?'需先购别院':(G.money<800?'银两不足':'已有庄园'),'bad');}},
+      {label:'离去',fx:'',effect(){}}
+    ]
+  });
+}
+function examRun(){
+  const lv=RANK_ORDER.indexOf(G.rank); // 0布衣→童生试,1秀才→乡试,2举人→会试
+  const need=[10,30,55][lv];
+  const chanceP=clamp((G.skills.wen-need*.9)/25 + G.int/80 + (G.luck-50)/200 + (G.trait==='conghui'?.08:0), .12,.93);
+  G.lastExamAt=G.ageMonths;
+  if(Math.random()<chanceP){
+    const names=['童生试','乡试','会试'];
+    G.rank=RANK_ORDER[lv+1];
+    G.fame=clamp(G.fame+[8,15,25][lv],0,100);
+    G.chronicle.push({y:Math.floor(G.ageMonths/12),s:'高中'+RANK_NAME[G.rank]});
+    pushLog('金榜题名！你通过了'+names[lv]+'，成为'+RANK_NAME[G.rank]+'','good');
+    sfx.good();
+    return {log:'',c:''};
+  }else{
+    G.mood=clamp(G.mood-8,0,100);
+    return {log:'名落孙山，三年后再来',c:'bad'};
+  }
+}
+
+/* =====================================================================
+   存档 / 读档
+   ===================================================================== */
+function autoSave(){ saveGame(); }
+function saveGame(){
+  if(!G) return;
+  try{
+    const d={G:G, animX:animX, animY:animY, DEAD:DEAD};
+    localStorage.setItem(STORE_SAVE, JSON.stringify(d));
+  }catch(e){}
+}
+function loadGame(){
+  try{
+    const raw=localStorage.getItem(STORE_SAVE);
+    if(!raw){ if(G) pushLog('没有找到存档','bad'); else beep(180,.1); return; }
+    const d=JSON.parse(raw);
+    G=d.G; DEAD=d.DEAD;
+    if(!G) return;
+    G.modalOpen=false;
+    // 旧档兼容：补经济系统字段
+    G.bank=G.bank||{dep:0,loan:0,loanAt:-999};
+    G.houses=G.houses||0;
+    G.hold=G.hold||null;
+    G.market=G.market||{grain:100,silk:100,salt:100};
+    G.marketPrev=G.marketPrev||{grain:100,silk:100,salt:100};
+    // 旧档兼容：补感情系统字段
+    G.concubines=G.concubines||[];
+    G.grandkids=G.grandkids||0;
+    if(G.spouse&&G.spouse.affection===undefined) G.spouse.affection=50;
+    G.stat=G.stat||{acts:0,reads:0,trades:0,battles:0,caravans:0,travels:0,friends:0};
+    G.lastAction=G.lastAction||null;
+    G.friends=G.friends||[];
+    G.region=G.region||'home';
+    G.visited=G.visited||{home:1};
+    G.enemies=G.enemies||[];
+    G.books=G.books||0;
+    animX=G.x*TILE+16; animY=G.y*TILE+16;
+    path=[]; walking=false;
+    if(DEAD){ const end=evaluateEnding(); showEnding(end); return; }
+    $('startOverlay').classList.add('hidden');
+    buildMapFromSave();
+    renderLabels(); renderUI();
+    pushLog('读档成功','good');
+  }catch(e){ if(G) pushLog('存档损坏','bad'); }
+}
+function buildMapFromSave(){
+  // 重建地图（装饰由存档种子生成）
+  const seed=G.mapSeed||Math.floor(Math.random()*1e9)|0;
+  G.rng=mulberry32(seed);
+  mapTiles=[]; decor=[];
+  buildMap();
+}
+$('btnSave').addEventListener('click',()=>{ saveGame(); pushLog('已存档','good'); renderUI(); });
+$('btnLoad').addEventListener('click',()=>{ loadGame(); });
+$('btnNew').addEventListener('click',()=>{ DEAD=false; $('startOverlay').classList.remove('hidden'); $('endOverlay').classList.add('hidden'); closeModalIfOpen(); });
+$('btnHelp').addEventListener('click',()=>{
+  $('helpBody').innerHTML=
+  '【怎么玩】'+
+  '\n· 点击地图地面或按方向键（WASD）让角色走动，走到建筑旁按「空格」弹出互动菜单，选择要做的事。'+
+  '\n· 每个行动消耗体力与时间（月）。体力不足就回家“歇息养神”。'+
+  '\n· 市井间青楼灯红酒绿：可听曲、打探消息、会知音，情投意合还能赎身共结连理。'+
+  '\n· 一生从七岁到寿终，途中会遇到随机事件、婚配生子、科举仕途、奇遇机缘。'+
+  '\n· 想主动结束一世：年45后可在山野“结庐静修”归隐，年40且道德60可在庙宇遁入空门。'+
+  '\n【属性】'+
+  '\n· 体力：行动消耗，休息恢复；健康：归零则亡；心情：影响学习效率与遇事。'+
+  '\n· 智力/魅力/运气/体魄影响学习、婚配与成败；道德与名声影响事件走向与结局。'+
+  '\n【经济】'+
+  '\n· 集市看行情、囤货出仓（低买高卖）；钱庄存取吃息、应急借贷；牙行置业（瓦房→别院→庄园）收租。'+
+  '\n· 码头可组商队跑长途博大利；商号、田产、俸禄各有所出；每年还要交田赋商税，记得留够银子。'+
+  '\n【家室】'+
+  '\n· 夫妻有感情值：常回家“与妻儿话家常”增进感情，冷落会生分；感情越笃，添丁越易。'+
+  '\n· 青楼赎身：未婚可娶为正妻，已婚可收为侧室；媒婆也会上门说媒纳妾（至多三位）。侧室要花用度，妻妾争宠需安抚。'+
+  '\n· 已有家室仍可去青楼「会知音」——但私会随时可能败露：伤感情、损名声，甚至闹到和离。'+
+  '\n· 子女十二岁拜师学艺，十八岁成年择业（读书/从军/经商/务农/行医），日后成家生子，光耀门楣。'+
+  '\n【人情】'+
+  '\n· 酒馆可会友交游、赠礼厚待挚友——好友会求助、还银、厚赠。'+
+  '\n· 入仕后朝中谢王两党相争，投靠哪边由你定夺：同党帮衬，政敌攻讦，站错队还可能被贬。'+
+  '\n【远行】'+
+  '\n· 渡口可「出远门」：京城（上朝办差、国子监、东市西市、教坊司）、边关（帅帐校场、巡城戍守、边市互市）、江南（绸庄茶园、戏楼园林、钱庄总号），处处都有独特营生。'+
+  '\n· 年满十六方可远行，每趟耗时二月、银五两；外埠渡口可乘船回临安。'+
+  '\n【养生】'+
+  '\n· 年三十后可在家里食补、练五禽戏，庙宇打坐导引，调养身心；染病有风寒、疟疾等不同症候。'+
+  '\n【其他】'+
+  '\n· 声望带来头衔（乡绅→名士→贤达→天下闻名）；按 R 或点「重复上次」可连续行动；死亡页有结局图鉴与一生行迹统计。'+
+  '\n· 江湖恩怨：与人结仇后仇家会寻仇暗算，可在武馆「了结恩怨」，也可破财化解。'+
+  '\n· 文才八十可在京城国子监闭门著书，传世之作名动天下；结局页可一键生成文言墓志铭并复制分享。'+
+  '\n【成就】成就跨世保留，一局约10~20分钟，多结局多周目。'+
+  '\n【存档】每次行动后自动存档，也可手动。浏览器关掉下次继续。';
+  $('helpOverlay').classList.remove('hidden');
+});
+$('interactClose').addEventListener('click',()=>$('interactOverlay').classList.add('hidden'));
+$('btnHelpClose').addEventListener('click',()=>$('helpOverlay').classList.add('hidden'));
+$('btnRepeat').addEventListener('click',()=>repeatLast(10));
+$('btnCatalog').addEventListener('click',showCatalog);
+$('btnCatalogClose').addEventListener('click',()=>$('catalogOverlay').classList.add('hidden'));
+
+/* =====================================================================
+   开局界面
+   ===================================================================== */
+let selIdentity='shu', selTrait='conghui', selGender='m', selRobe='#d35400';
+function buildStartUI(){
+  const ri=$('pickIdentity'); ri.innerHTML='';
+  Object.keys(IDENTITIES).forEach(k=>{
+    const b=document.createElement('button');
+    b.className='pick'+(k===selIdentity?' sel':'');
+    b.innerHTML='<b>'+IDENTITIES[k].name+'</b><small>'+IDENTITIES[k].note+'</small>';
+    b.onclick=()=>{selIdentity=k;buildStartUI();};
+    ri.appendChild(b);
+  });
+  const rt=$('pickTrait'); rt.innerHTML='';
+  Object.keys(TRAITS).forEach(k=>{
+    const b=document.createElement('button');
+    b.className='pick'+(k===selTrait?' sel':'');
+    b.innerHTML='<b>'+TRAITS[k].name+'</b><small>'+TRAITS[k].desc+'</small>';
+    b.onclick=()=>{selTrait=k;buildStartUI();};
+    rt.appendChild(b);
+  });
+  const robes=['#d35400','#c0392b','#5b7bd5','#27ae60','#8e44ad'];
+  const rr=$('robeRow'); rr.innerHTML='';
+  robes.forEach(c=>{
+    const s=document.createElement('span');
+    s.className='swatch'+(c===selRobe?' sel':'');
+    s.style.background=c;
+    s.onclick=()=>{selRobe=c;buildStartUI();};
+    rr.appendChild(s);
+  });
+}
+$('btnStart').addEventListener('click',()=>{
+  const nm=$('inpName').value.trim();
+  selGender=$('selGender').value;
+  $('startOverlay').classList.add('hidden');
+  newGame(selIdentity, selTrait, selGender, nm, selRobe);
+});
+$('btnRandom').addEventListener('click',()=>{
+  const ids=Object.keys(IDENTITIES), trs=Object.keys(TRAITS);
+  selIdentity=ids[rnd(0,ids.length-1)]; selTrait=trs[rnd(0,trs.length-1)];
+  selGender=chance(.5)?'m':'f';
+  const robes=['#d35400','#c0392b','#5b7bd5','#27ae60','#8e44ad'];
+  selRobe=robes[rnd(0,robes.length-1)];
+  buildStartUI();
+  const nm=$('inpName'); nm.value=randName(selGender);
+});
+
+/* =====================================================================
+   结局界面
+   ===================================================================== */
+function showEnding(end){
+  lastEnding=end;
+  $('endTitle').textContent=end.title;
+  $('endRank').textContent='品级 · '+end.rank+'　·　'+end.desc;
+  const age=Math.floor(G.ageMonths/12);
+  $('endStats').innerHTML=[
+    ['享年',age+' 岁'],['银两',G.money+' 两'],['声望',G.fame],
+    ['最高官阶',RANK_NAME[G.rank]],['子女',G.kids.length+' 人'],['成就',G.achievements.length+' 项'],
+    ['道德',G.moral],['文才',G.skills.wen],['武艺',G.skills.wu]
+  ].map(([k,v])=>'<div class="cell"><b>'+v+'</b><span>'+k+'</span></div>').join('');
+  const s=G.stat||{};
+  $('endData').innerHTML=[
+    ['行动总数',s.acts||0],['读书次数',s.reads||0],['买卖次数',s.trades||0],
+    ['征战次数',s.battles||0],['行医救人',G.heals||0],['跑商次数',s.caravans||0],
+    ['远行次数',s.travels||0],['挚友',(G.friends||[]).length],['修行次数',G.xiu||0]
+  ].map(([k,v])=>'<div class="cell"><b>'+v+'</b><span>'+k+'</span></div>').join('');
+  $('endChronicle').innerHTML=G.chronicle.map(c=>'<div>太初'+c.y+'年 · '+c.s+'</div>').join('');
+  const ael=$('endAchv'); ael.innerHTML='';
+  ACHS.forEach(a=>{
+    const got=!!unlockedAchv[a.id];
+    const d=document.createElement('span');
+    d.className='achv'+(got?' got':'')+(G.newAchv===a.id?' new':'');
+    d.textContent=(got?'◆ ':'◇ ')+a.name;
+    ael.appendChild(d);
+  });
+  $('endOverlay').classList.remove('hidden');
+}
+function showCatalog(){
+  const el=$('catalogList'); el.innerHTML='';
+  END_CATALOG.forEach(c=>{
+    const got=!!unlockedEndings[c.title];
+    const d=document.createElement('div');
+    d.className='cat'+(got?' got':'');
+    d.innerHTML='<b>'+(got?'◆ ':'◇ ')+c.title+'</b><small>'+(got?'已达成':'未达成 · '+c.hint)+'</small>';
+    el.appendChild(d);
+  });
+  $('catalogOverlay').classList.remove('hidden');
+}
+const EPI_MOTTO={
+  '位极人臣':'朝为田舍郎，暮登天子堂。',
+  '富可敌国':'金玉满堂，何足道哉。',
+  '一代名将':'醉卧沙场君莫笑，古来征战几人回。',
+  '文坛宗师':'文章千古事，得失寸心知。',
+  '悬壶济世':'但愿世间人无病，何妨架上药生尘。',
+  '得道高人':'一花一世界，一叶一菩提。',
+  '风流名士':'江山风月，本无常主，闲者便是主人。',
+  '遗臭万年':'身后是非谁管得，满村听说蔡中郎。',
+  '英年早逝':'天不假年，魂归太虚。',
+  '安然寿终':'生如夏花之绚烂，死如秋叶之静美。',
+  '庸碌一生':'平平淡淡才是真。'
+};
+function makeEpitaph(){
+  if(!G) return '';
+  const age=Math.floor(G.ageMonths/12);
+  const end=lastEnding||evaluateEnding();
+  const deeds=[];
+  if(RANK_ORDER.indexOf(G.rank)>=4) deeds.push('官至'+RANK_NAME[G.rank]);
+  if(G.rank==='zaixiang') deeds.push('位极人臣');
+  if(G.military===5) deeds.push('官拜将军');
+  if((G.books||0)>0) deeds.push('著书'+(G.books||0)+'部');
+  if(G.shopOwned) deeds.push('置有商号');
+  if(G.houses===3) deeds.push('拥庄园广厦');
+  if(G.money>=500) deeds.push('家财颇丰');
+  const liveKids=G.kids.filter(k=>!k.dead).length;
+  if(liveKids) deeds.push('育有子女'+liveKids+'人');
+  if(G.grandkids) deeds.push('孙辈绕膝');
+  if(G.heals>=10) deeds.push('活人无数');
+  if(G.battle>=50) deeds.push('身经百战');
+  if(!deeds.length) deeds.push('平淡度日');
+  const c=END_CATALOG.find(x=>x.title===end.title);
+  return [
+    '【墓志铭】',
+    '公讳'+G.name+'，'+IDENTITIES[G.identity].name+'出身，性'+TRAITS[G.trait].name+'。',
+    '生于太初七年，卒于太初'+yearNow()+'年，享年'+age+'岁。',
+    '一生'+(G.gender==='m'?'公':'氏')+'历尽浮沉：'+deeds.slice(0,4).join('，')+'。',
+    '盖棺论之，'+(c?c.hint:end.title)+'。',
+    '铭曰：'+(EPI_MOTTO[end.title]||'浮生若梦，为欢几何。')
+  ].join('\n');
+}
+function showEpitaph(){
+  $('epitaphText').value=makeEpitaph();
+  $('epitaphOverlay').classList.remove('hidden');
+}
+function copyEpitaph(){
+  const t=$('epitaphText').value;
+  if(!t) return;
+  const done=()=>{ if(G) pushLog('墓志铭已复制，可粘贴分享','good'); beep(660,.08); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done).catch(()=>{ legacyCopy(t); done(); });
+  }else legacyCopy(t);
+}
+function legacyCopy(t){
+  try{
+    const ta=$('epitaphText'); ta.removeAttribute('readonly'); ta.select(); ta.setSelectionRange(0,t.length);
+    document.execCommand('copy'); ta.setAttribute('readonly','');
+  }catch(e){}
+}
+$('btnEpitaph').addEventListener('click',showEpitaph);
+$('btnEpitaphCopy').addEventListener('click',copyEpitaph);
+$('btnEpitaphClose').addEventListener('click',()=>$('epitaphOverlay').classList.add('hidden'));
+$('btnAgain').addEventListener('click',()=>{
+  $('endOverlay').classList.add('hidden');
+  $('startOverlay').classList.remove('hidden');
+  buildStartUI();
+});
+$('btnLook').addEventListener('click',()=>{
+  $('endOverlay').classList.add('hidden');
+});
+
+/* =====================================================================
+   启动
+   ===================================================================== */
+buildStartUI();
+renderLabels();
+requestAnimationFrame(drawLoop);
+$('startOverlay').classList.remove('hidden');
+// 首次提示
+$('helpBody').textContent='欢迎来到《古尘录》！先选出身、性情，然后开始你的一生。\n（也可点右上角“帮助”随时查看玩法）';
+$('helpOverlay').classList.remove('hidden');
+</script>
+</body>
+</html>
