@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>更多小游戏 · SYM12356</title>
+<!-- 数据来自站点根目录的 other_games/games.json：名称 / 简介 / 跳转链接 -->
+<style>
+  :root {
+    --bg:#05070f; --panel:rgba(255,255,255,.03); --border:rgba(255,255,255,.12); --border2:rgba(255,255,255,.22);
+    --text:#e9edf9; --muted:#8b93ab; --cyan:#22d3ee; --violet:#a78bfa; --gold:#e8b84b; --pink:#f472b6;
+    --green:#34d399; --red:#f87171;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    background:var(--bg); color:var(--text); min-height:100vh;
+    font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+    background-image:
+      radial-gradient(45% 35% at 15% 0%, rgba(34,120,210,.14), transparent 70%),
+      radial-gradient(40% 35% at 90% 10%, rgba(120,80,220,.10), transparent 70%),
+      radial-gradient(50% 40% at 60% 100%, rgba(10,60,130,.10), transparent 70%);
+    background-attachment:fixed;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 34px 20px 60px; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom: 26px; }
+  .topbar a, .topbar button {
+    background:transparent; border:1px solid var(--border); border-radius:999px; color:var(--muted);
+    font-size:12px; letter-spacing:2px; padding:7px 18px; cursor:pointer; transition:.25s;
+    font-family:var(--mono); text-decoration:none;
+  }
+  .topbar a:hover, .topbar button:hover { color:var(--cyan); border-color:rgba(34,211,238,.5); background:rgba(34,211,238,.06); }
+  h1 {
+    font-size: 27px; letter-spacing: 4px; text-align:center; margin-bottom: 8px;
+    background: linear-gradient(120deg, #22d3ee, #a78bfa 60%, #e8b84b);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .sub { text-align:center; color:var(--muted); font-size:12px; letter-spacing:2px; margin-bottom: 6px; font-family:var(--mono); }
+  .count { text-align:center; color:var(--muted); font-size:12.5px; margin-bottom: 26px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .card {
+    display:flex; flex-direction:column; gap:10px; position:relative;
+    padding: 20px 20px 18px; border:1px solid var(--border); border-radius:16px;
+    background: rgba(255,255,255,.03); text-decoration:none; transition:.25s;
+  }
+  .card:hover {
+    border-color: var(--border2); background: rgba(255,255,255,.055);
+    transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,.3);
+  }
+  .filters { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin: 0 0 22px; }
+  .chip {
+    background: transparent; border:1px solid var(--border); border-radius:999px;
+    color: var(--muted); font-size:12px; letter-spacing:1px; padding:6px 15px; cursor:pointer;
+    transition:.25s; font-family: var(--mono);
+  }
+  .chip:hover { color: var(--cyan); border-color: rgba(34,211,238,.45); }
+  .chip.on { color:#06121a; background: linear-gradient(135deg,#67e8f9,#22d3ee); border-color:transparent; font-weight:600; }
+  .card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .card-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .by { font-size:11.5px; color: var(--muted); font-family: var(--mono); letter-spacing:.5px; }
+  .name { font-size:17px; font-weight:600; letter-spacing:.5px; color:var(--text); }
+  .tag {
+    flex-shrink:0; font-size:11px; letter-spacing:1px; padding:2px 9px; border-radius:999px;
+    color: var(--cyan); border:1px solid rgba(34,211,238,.35); background: rgba(34,211,238,.08);
+    font-family: var(--mono);
+  }
+  .desc { font-size:13px; color:var(--muted); line-height:1.8; flex:1; }
+  .go { font-size:12px; color:var(--cyan); font-family:var(--mono); letter-spacing:2px; }
+  .state {
+    grid-column: 1 / -1; text-align:center; color:var(--muted);
+    font-size:13px; line-height:2; padding: 40px 16px;
+    border:1px dashed var(--border2); border-radius:16px;
+  }
+  .state b { color: var(--pink); font-family: var(--mono); font-size:12px; }
+  .foot { text-align:center; margin-top:34px; font-size:12px; color:var(--muted); font-family:var(--mono); letter-spacing:1px; }
+  .foot a { color:var(--cyan); text-decoration:none; margin:0 8px; }
+  .foot a:hover { text-decoration:underline; }
+  @media (max-width:720px) {
+    .wrap { padding: 26px 16px 48px; }
+    h1 { font-size:22px; letter-spacing:2px; }
+    .grid { grid-template-columns: 1fr; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="index.html" data-i18n="back_home">← 返回主页</a>
+    <button id="langBtn" type="button" aria-label="切换语言">EN</button>
+  </div>
+
+  <h1 data-i18n="d_title">更多小游戏</h1>
+  <div class="sub">SYM12356 · MORE GAMES</div>
+  <div class="count" id="count"></div>
+  <div class="filters" id="filters"></div>
+
+  <div class="grid" id="grid">
+    <div class="state" data-i18n="loading">读取清单…</div>
+  </div>
+
+  <div class="foot">
+    <a href="index.html" data-i18n="link_home">主页</a>
+  </div>
+</div>
+
+<script>
+(function () {
+  var EN = {
+    back_home: '← Back to home',
+    d_title: 'More Games',
+    loading: 'Loading…',
+    empty: 'No extra games yet.',
+    fail: 'Could not read the game list. Make sure other_games/games.json is reachable.',
+    count: '{n} games',
+    all: 'All',
+    by: 'by',
+    link_home: 'Home'
+  };
+  var LANG = (function () {
+    try { return localStorage.getItem('lang') === 'en' ? 'en' : 'zh'; } catch (e) { return 'zh'; }
+  })();
+  var ITEMS = [];
+  var CURRENT = 'all';
+  var grid = document.getElementById('grid');
+  var btn = document.getElementById('langBtn');
+  var countEl = document.getElementById('count');
+  var zhCache = new WeakMap();
+
+  function t(key, n) {
+    var zh = {
+      back_home: '← 返回主页', d_title: '更多小游戏', loading: '读取清单…',
+      empty: '还没有更多游戏。', fail: '读不到游戏清单，检查 other_games/games.json 是否已上传。',
+      count: '共 {n} 个游戏', all: '全部', by: '开发者', link_home: '主页'
+    };
+    var s = (LANG === 'en' ? EN[key] : zh[key]) || key;
+    return n == null ? s : s.replace('{n}', n);
+  }
+
+  function applyStatic() {
+    document.documentElement.lang = LANG === 'en' ? 'en' : 'zh-CN';
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      if (!zhCache.has(el)) zhCache.set(el, el.textContent);
+      var k = el.getAttribute('data-i18n');
+      el.textContent = t(k);
+    });
+    btn.textContent = LANG === 'en' ? '中' : 'EN';
+    if (countEl && ITEMS.length) countEl.textContent = t('count', ITEMS.length);
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function authors() {
+    var seen = [], out = [];
+    ITEMS.forEach(function (g) {
+      var a = (g.author || '').trim();
+      if (a && seen.indexOf(a.toLowerCase()) < 0) { seen.push(a.toLowerCase()); out.push(a); }
+    });
+    return out;
+  }
+
+  function renderFilters() {
+    var box = document.getElementById('filters');
+    if (!box) return;
+    var list = authors();
+    if (!list.length) { box.innerHTML = ''; return; }
+    var html = '<button class="chip ' + (CURRENT === 'all' ? 'on' : '') + '" data-author="all">' + esc(t('all')) + '</button>';
+    html += list.map(function (a) {
+      return '<button class="chip ' + (CURRENT.toLowerCase() === a.toLowerCase() ? 'on' : '') +
+        '" data-author="' + esc(a) + '">' + esc(a) + '</button>';
+    }).join('');
+    box.innerHTML = html;
+    box.querySelectorAll('.chip').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        CURRENT = btn.getAttribute('data-author') || 'all';
+        renderFilters();
+        render();
+      });
+    });
+  }
+
+  function visible() {
+    if (CURRENT === 'all') return ITEMS;
+    return ITEMS.filter(function (g) { return (g.author || '').toLowerCase() === CURRENT.toLowerCase(); });
+  }
+
+  function render() {
+    var list = visible();
+    if (!ITEMS.length) {
+      grid.innerHTML = '<div class="state">' + esc(t('empty')) + '</div>';
+      countEl.textContent = '';
+      return;
+    }
+    countEl.textContent = t('count', list.length);
+    grid.innerHTML = list.map(function (g) {
+      var name = (LANG === 'en' && g.name_en) ? g.name_en : g.name;
+      var desc = (LANG === 'en' && g.desc_en) ? g.desc_en : g.desc;
+      return '<a class="card" href="' + esc(g.url) + '" target="_blank" rel="noopener">' +
+        '<span class="card-head"><span class="name">' + esc(name) + '</span>' +
+        (g.tag ? '<span class="tag">' + esc(LANG === 'en' && g.tag_en ? g.tag_en : g.tag) + '</span>' : '') + '</span>' +
+        '<span class="desc">' + esc(desc) + '</span>' +
+        '<span class="card-foot">' +
+          (g.author ? '<span class="by">' + esc(t('by')) + ' · ' + esc(g.author) + '</span>' : '<span></span>') +
+          '<span class="go">→</span>' +
+        '</span></a>';
+    }).join('');
+  }
+
+  function showFail(msg) {
+    grid.innerHTML = '<div class="state">' + esc(t('fail')) +
+      '<br><b>' + esc(msg || 'other_games/games.json') + '</b></div>';
+    countEl.textContent = '';
+  }
+
+  function load() {
+    fetch('other_games/games.json', { cache: 'no-store' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        ITEMS = (Array.isArray(data) ? data : (data && data.games) || []).filter(function (g) {
+          return g && g.name && g.url;
+        });
+        renderFilters();
+        render();
+      })
+      .catch(function (e) { showFail(e && e.message); });
+  }
+
+  btn.addEventListener('click', function () {
+    LANG = LANG === 'en' ? 'zh' : 'en';
+    try { localStorage.setItem('lang', LANG); } catch (e) {}
+    applyStatic();
+    renderFilters();
+    render();
+  });
+
+  applyStatic();
+  load();
+})();
+</script>
+</body>
+</html>
