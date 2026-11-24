@@ -47,6 +47,9 @@ window.game = (function(){
           setTimeout(function(){
             hide('screen-loading');show('screen-menu');
             refreshMenu();
+            // 线上（HTTP/HTTPS）显示返回个人站入口；本地双击打开时隐藏
+            var back=$('btn-back-site');
+            if(back)back.hidden=(location.protocol==='file:');
             bindUI();bindMobile();
             lastT=U.now();loop();
           },350);

@@ -978,6 +978,18 @@
   .mini-games-title { font-size: 15px; letter-spacing: 2px; color: var(--gold); }
   .mini-games-sub { font-size: 12.5px; color: var(--muted); }
   .mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  /* 「更多」占满一整行，做成横向入口条 */
+  .mini-card.mini-card-more {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+    border-style: dashed;
+  }
+  .mini-card-more .mini-name { color: var(--cyan); }
+  .mini-card-more .mini-name { min-width: 72px; }
+  .mini-card-more .mini-desc { flex: 1; }
   .mini-card {
     display: flex; flex-direction: column; gap: 8px;
     padding: 18px; border: 1px solid var(--border); border-radius: 14px;
@@ -2171,6 +2183,11 @@
             <span class="mini-desc" data-i18n="mg_ling_d">校园 3v3 单机 MOBA · 草稿纸手绘风</span>
             <span class="mini-go">→</span>
           </a>
+          <a class="mini-card mini-card-more" href="games.html" target="_blank" rel="noopener">
+            <span class="mini-name" data-i18n="mg_more">更多</span>
+            <span class="mini-desc" data-i18n="mg_more_d">其余小游戏，按清单自动列出</span>
+            <span class="mini-go">→</span>
+          </a>
         </div>
       </div>
     </div>
@@ -2572,8 +2589,7 @@ const I18N = {
     t_tags_full: '我的标签',
     tag_code: '编程', tag_game: '游戏', tag_sleep: '睡觉', tag_board: '桌游',
     g_title_full: '游戏', g_tab_xu: '须臾 · 时间感知', g_tab_ttt: '终极井字棋',
-    mg_title: '独立小游戏', mg_sub: '点击进入各自页面游玩', mg_race: '六边形赛车', mg_race_d: '六边形平台上的缩圈竞速，撑到最后', mg_dragon: '火柴人龙之战', mg_dragon_d: '御龙对决 · 故事 / 对战 / 养成，本地存档', mg_ling: '铃响之前', mg_ling_d: '校园 3v3 / 5v5 单机 MOBA · 草稿纸手绘风',
-    xu_sub: '你感知的时间，和真实的时间，差多少？', xu_target: '点击「开始实验」', xu_start: '开始实验',
+    mg_title: '独立小游戏', mg_sub: '点击进入各自页面游玩', mg_race: '六边形赛车', mg_race_d: '六边形平台上的缩圈竞速，撑到最后', mg_dragon: '火柴人龙之战', mg_dragon_d: '御龙对决 · 故事 / 对战 / 养成，本地存档', mg_ling: '铃响之前', mg_ling_d: '校园 3v3 / 5v5 单机 MOBA · 草稿纸手绘风', mg_more: '更多', mg_more_d: '其余小游戏，按清单自动列出', xu_sub: '你感知的时间，和真实的时间，差多少？', xu_target: '点击「开始实验」', xu_start: '开始实验',
     ttt_sub: '九宫格中的九宫格 · 与 AI 对弈，制霸全盘', ttt_rules: '玩法规则',
     ttt_diff: '难度', ttt_easy: '简单模式', ttt_medium: '中等模式', ttt_hard: '困难模式',
     ttt_order: '手序', ttt_first: '先手', ttt_second: '后手', ttt_new: '新游戏', ttt_status: '准备开始',
@@ -2622,8 +2638,7 @@ const I18N = {
     t_tags_full: 'My Tags',
     tag_code: 'Coding', tag_game: 'Gaming', tag_sleep: 'Sleeping', tag_board: 'Board Games',
     g_title_full: 'Games', g_tab_xu: 'Moment · Time Sense', g_tab_ttt: 'Ultimate Tic-Tac-Toe',
-    mg_title: 'Standalone games', mg_sub: 'Each opens its own page', mg_race: 'Hex Racing', mg_race_d: 'Shrink-zone racing on a hex platform - be the last one standing', mg_dragon: 'Matchstick Dragon War', mg_dragon_d: 'Dragon duels - story / versus / upgrades, local save', mg_ling: 'Before the Bell', mg_ling_d: 'Campus 3v3 / 5v5 single-player MOBA - sketchbook style',
-    xu_sub: 'How far is your sense of time from real time?', xu_target: 'Click to start', xu_start: 'Start',
+    mg_title: 'Standalone games', mg_sub: 'Each opens its own page', mg_race: 'Hex Racing', mg_race_d: 'Shrink-zone racing on a hex platform - be the last one standing', mg_dragon: 'Matchstick Dragon War', mg_dragon_d: 'Dragon duels - story / versus / upgrades, local save', mg_ling: 'Before the Bell', mg_ling_d: 'Campus 3v3 / 5v5 single-player MOBA - sketchbook style', mg_more: 'More', mg_more_d: 'All the other games, listed from a JSON file', xu_sub: 'How far is your sense of time from real time?', xu_target: 'Click to start', xu_start: 'Start',
     ttt_sub: 'A 9-in-1 tic-tac-toe · Battle the AI, rule the board', ttt_rules: 'Rules',
     ttt_diff: 'Difficulty', ttt_easy: 'Easy', ttt_medium: 'Medium', ttt_hard: 'Hard',
     ttt_order: 'Turn', ttt_first: 'First', ttt_second: 'Second', ttt_new: 'New Game', ttt_status: 'Ready',

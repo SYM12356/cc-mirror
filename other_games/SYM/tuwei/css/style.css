@@ -65,6 +65,10 @@ button.danger{background:transparent;border:1px solid var(--danger);color:var(--
 .menu-buttons{display:flex;flex-direction:column;gap:12px;max-width:320px;margin:0 auto}
 .menu-footer{display:flex;justify-content:space-between;margin-top:40px;font-size:11px;color:var(--ink-dim);
   font-family:var(--mono)}
+.btn-back-site{display:inline-block;margin:18px auto 0;padding:8px 18px;font-size:12px;letter-spacing:1px;
+  color:var(--ink-dim);text-decoration:none;border:1px solid var(--line);transition:.15s}
+.btn-back-site:hover{color:var(--accent);border-color:var(--accent2);background:rgba(200,162,74,.08)}
+.btn-back-site[hidden]{display:none}
 .menu-note{position:absolute;bottom:18px;font-size:10px;color:#5b6358;letter-spacing:1px}
 
 /* ============ HUD ============ */

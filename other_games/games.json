@@ -1,0 +1,26 @@
+{
+  "updated": "2026-11-24",
+  "note": "更多小游戏清单。新增游戏：把目录放进 other_games/，在这里加一条即可，页面自动读取。url 是相对站点根的路径。可选 name_en / desc_en / tag_en 用于英文界面；author 是开发者，页面上按它分类。",
+  "games": [
+    {
+      "name": "汪义轩突围",
+      "name_en": "WAREGY BREAKOUT",
+      "desc": "写实战术突围 · 3D，建议桌面端游玩",
+      "desc_en": "Realistic tactical breakout in 3D - desktop recommended",
+      "url": "other_games/SYM/tuwei/",
+      "tag": "3D",
+      "tag_en": "3D",
+      "author": "SYM"
+    },
+    {
+      "name": "这是预备铃！",
+      "name_en": "This Is the Prep Bell!",
+      "desc": "课桌塔防 · 用文具拦住墨水，重置版",
+      "desc_en": "Desk tower defence - stop the ink with stationery",
+      "url": "other_games/ying/yubei.html",
+      "tag": "塔防",
+      "tag_en": "TD",
+      "author": "章鱼烤章鱼"
+    }
+  ]
+}
