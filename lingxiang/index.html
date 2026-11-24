@@ -11213,6 +11213,8 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
         else if (cmd.type === "recall") tryRecall(w, u);
         else if (cmd.type === "release") releaseChannel(w, u);
         else if (cmd.type === "item") useItem(w, u, cmd.slot);
+        else if (cmd.type === "buy") buyItem(w, u, cmd.itemId);
+        else if (cmd.type === "sell") sellItem(w, u, cmd.slot);
       }
     }
   }
@@ -11988,7 +11990,8 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
         "\u65B0\u589E\u5B66\u751F\u82F1\u96C4\u300C\u5C0F\u660E\u300D\uFF1A\u5077\u6280\u80FD\u3001\u9525\u5F62\u5636\u543C\u3001\u5B66\u672F\u62A4\u76FE\u30015 \u79D2\u8DD1\u8DEF\u56DE\u57CE\u3002",
         "\u65B0\u589E\u6559\u5E08\u82F1\u96C4\u300C\u4E8C\u8205\u5988\u300D\uFF1A\u56DB\u5C0F\u53EA\u6551\u9A7E\u3001\u4FDD\u6E29\u676F\u3001\u5438\u5F15\u529B\u5927\u3001\u5976\u5976\u7684\u3002",
         "\u5C0F\u5356\u90E8\u52A0\u56DE\u84DD\u836F\uFF1A\u4E3B\u52A8\u56DE\u590D 180 \u6CD5\u529B\uFF0C90 \u79D2\u51B7\u5374\u3002",
-        "\u706B\u534E\u53EC\u5524\u7269\u6539\u540D\u300C\u4F59\u524D\u5C3B\u300D\uFF0C\u5E76\u663E\u793A\u540D\u5B57\uFF1B\u4E8C\u8205\u5988\u56DB\u5C0F\u53EA\u4E5F\u663E\u793A\u5404\u81EA\u540D\u5B57\u3002"
+        "\u706B\u534E\u53EC\u5524\u7269\u6539\u540D\u300C\u4F59\u524D\u5C3B\u300D\uFF0C\u5E76\u663E\u793A\u540D\u5B57\uFF1B\u4E8C\u8205\u5988\u56DB\u5C0F\u53EA\u4E5F\u663E\u793A\u5404\u81EA\u540D\u5B57\u3002",
+        "\u8054\u673A 1v1 / 3v3 \u652F\u6301\u5546\u5E97\uFF0C\u8D2D\u4E70\u3001\u51FA\u552E\u3001\u88C5\u5907\u4E3B\u52A8\u7531\u623F\u4E3B\u540C\u6B65\u3002"
       ]
     },
     {
@@ -13606,6 +13609,7 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
   var onlineDesync = false;
   var onlineInfoTimer = 0;
   var onlineHudAt = 0;
+  var shopUiAt = 0;
   var zeroInput = { moveX: 0, moveY: 0, aimX: 0, aimY: 0 };
   var room = null;
   var roomHost = false;
@@ -13889,6 +13893,13 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
       if (!world) return;
       const p = playerOf(world);
       if (!p) return;
+      if (onlineQueue({ type: "buy", itemId: id }) || roomQueue({ type: "buy", itemId: id })) {
+        sfx("buy");
+        window.setTimeout(() => {
+          if (world) ui.renderShop(world);
+        }, 80);
+        return;
+      }
       if (buyItem(world, p, id)) {
         sfx("buy");
         ui.renderShop(world);
@@ -13899,6 +13910,13 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
       if (!world) return;
       const p = playerOf(world);
       if (!p) return;
+      if (onlineQueue({ type: "sell", slot: index }) || roomQueue({ type: "sell", slot: index })) {
+        sfx("buy");
+        window.setTimeout(() => {
+          if (world) ui.renderShop(world);
+        }, 80);
+        return;
+      }
       if (sellItem(world, p, index)) {
         sfx("buy");
         ui.renderShop(world);
@@ -13907,16 +13925,13 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
     },
     onUseItem: (slot) => {
       if (!world || paused) return;
+      if (onlineQueue({ type: "item", slot }) || roomQueue({ type: "item", slot })) return;
       const p = playerOf(world);
       if (p) useItem(world, p, slot);
     }
   });
   function toggleShop(force) {
     if (!world || world.state !== "playing") return;
-    if (onlineActive || roomActive) {
-      ui.toast("\u8054\u673A\u5BF9\u5C40\u6682\u4E0D\u652F\u6301\u5546\u5E97");
-      return;
-    }
     const next = force ?? !shopOpen;
     if (next === shopOpen) return;
     if (next) {
@@ -14127,6 +14142,10 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
       if ((onlineActive || roomActive) && now - onlineHudAt > 200) {
         onlineHudAt = now;
         updateOnlineHud();
+      }
+      if (shopOpen && (onlineActive || roomActive) && now - shopUiAt > 150) {
+        shopUiAt = now;
+        ui.renderShop(world);
       }
       if (world.state === "over" && !resultShown) {
         resultShown = true;
