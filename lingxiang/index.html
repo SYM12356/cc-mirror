@@ -785,6 +785,7 @@ body.mobile #touch-controls { display: block; }
   box-shadow: 0 2px 0 rgba(46, 42, 36, .12);
 }
 .touch-btn:active { transform: translateY(1px); box-shadow: none; }
+.touch-btn.active { background: var(--ink); color: var(--paper-2); border-color: var(--ink); }
 .touch-btn:disabled { opacity: .35; }
 
 #rotate-hint {
@@ -2221,7 +2222,7 @@ body.mobile #quick-badge { top: calc(env(safe-area-inset-top, 0px) + 46px); font
 .online-code-wrap b { font-family: ui-monospace, monospace; font-size: 30px; letter-spacing: .18em; color: var(--red-deep); }
 .online-status { text-align: center; font-size: 10px; color: var(--ink-soft); min-height: 18px; margin: 5px 0 8px; }
 .online-tip { text-align: center; margin-top: 8px; }
-.online-mode #btn-shop, .online-mode #touch-shop, .online-mode #touch-pause { display: none !important; }
+.online-mode #btn-shop, .online-mode #touch-pause { display: none !important; }
 .online-mode #hint { display: none !important; }
 
 /* 联机战斗 HUD */
@@ -2483,6 +2484,25 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
   input, select, textarea { font-size: 16px !important; }
 }
 
+/* 移动端 HUD 纵向避让：英雄状态 → 联机状态 → 战报 */
+body.mobile #online-hud { top: calc(env(safe-area-inset-top, 0px) + 166px); }
+body.mobile #killfeed { top: calc(env(safe-area-inset-top, 0px) + 214px); }
+body.mobile.landscape #online-hud { top: calc(env(safe-area-inset-top, 0px) + 148px); }
+body.mobile.landscape #killfeed { top: calc(env(safe-area-inset-top, 0px) + 192px); }
+
+/* 移动端操作栏：右对齐整行，避免第 4/5 个按钮被挤出屏幕 */
+#touch-actions {
+  left: calc(env(safe-area-inset-left, 0px) + 8px);
+  justify-content: flex-end;
+}
+@media (max-width: 620px) {
+  body.mobile #killfeed {
+    display: flex;
+    max-height: 128px;
+    overflow: hidden;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -2564,6 +2584,7 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
       <div id="touch-actions">
         <button id="touch-pause" class="touch-btn">暂停</button>
         <button id="touch-shop" class="touch-btn">商店</button>
+        <button id="touch-ranges" class="touch-btn active" aria-pressed="true">范围</button>
         <button id="touch-recall" class="touch-btn">回城</button>
         <button id="touch-item" class="touch-btn" disabled>药</button>
       </div>
@@ -2796,7 +2817,7 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
                 <li><kbd>B</kbd> 回城（4 秒引导，受击打断）</li>
                 <li><kbd>P</kbd> 小卖部，<kbd>Tab</kbd> 记分板，<kbd>Esc</kbd> 暂停</li>
                 <li><kbd>Alt</kbd> 显示全部塔范围；默认只显示附近/正在锁你的塔</li>
-                <li>手机：左下摇杆，右下 J/K/L/U 自动瞄准；暂停页可调镜头</li>
+                <li>手机：左下摇杆，右下 J/K/L/U 自动瞄准；「范围」按钮切换全部塔范围；暂停页可调镜头</li>
                 <li>手机：暂停页「自定义手机按键」，或点技能上方的「布局」，可拖动摇杆/技能/动作按钮</li>
                 <li><kbd>Esc</kbd> → 暂停页可开「护眼模式」：暖纸色、降低网格和迷雾对比</li>
               </ul>
@@ -7211,7 +7232,7 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
   };
   var messiQ = {
     id: "messi_q",
-    name: "\u6885\u897F\u5927\u8098\u5B50",
+    name: "\u5927\u8098\u5B50",
     slot: "q",
     targeting: "unit",
     range: 200,
@@ -7230,7 +7251,7 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
   };
   var messiE = {
     id: "messi_e",
-    name: "\u6885\u897F\u98DE\u8E22",
+    name: "\u98DE\u8E22",
     slot: "e",
     targeting: "unit",
     range: 420,
@@ -7256,7 +7277,7 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
   };
   var messiR = {
     id: "messi_r",
-    name: "\u6885\u897F\u7684\u96F7\u9706\u6B4C\u58F0",
+    name: "\u96F7\u9706\u6B4C\u58F0",
     slot: "r",
     targeting: "self",
     range: 500,
@@ -7278,7 +7299,7 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
   };
   var messiT = {
     id: "messi_t",
-    name: "\u6885\u897F\u7684\u5934\u76AE\u96EA",
+    name: "\u5934\u76AE\u96EA",
     slot: "t",
     targeting: "point",
     range: 450,
@@ -11991,7 +12012,9 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
         "\u65B0\u589E\u6559\u5E08\u82F1\u96C4\u300C\u4E8C\u8205\u5988\u300D\uFF1A\u56DB\u5C0F\u53EA\u6551\u9A7E\u3001\u4FDD\u6E29\u676F\u3001\u5438\u5F15\u529B\u5927\u3001\u5976\u5976\u7684\u3002",
         "\u5C0F\u5356\u90E8\u52A0\u56DE\u84DD\u836F\uFF1A\u4E3B\u52A8\u56DE\u590D 180 \u6CD5\u529B\uFF0C90 \u79D2\u51B7\u5374\u3002",
         "\u706B\u534E\u53EC\u5524\u7269\u6539\u540D\u300C\u4F59\u524D\u5C3B\u300D\uFF0C\u5E76\u663E\u793A\u540D\u5B57\uFF1B\u4E8C\u8205\u5988\u56DB\u5C0F\u53EA\u4E5F\u663E\u793A\u5404\u81EA\u540D\u5B57\u3002",
-        "\u8054\u673A 1v1 / 3v3 \u652F\u6301\u5546\u5E97\uFF0C\u8D2D\u4E70\u3001\u51FA\u552E\u3001\u88C5\u5907\u4E3B\u52A8\u7531\u623F\u4E3B\u540C\u6B65\u3002"
+        "\u8054\u673A 1v1 / 3v3 \u652F\u6301\u5546\u5E97\uFF0C\u8D2D\u4E70\u3001\u51FA\u552E\u3001\u88C5\u5907\u4E3B\u52A8\u7531\u623F\u4E3B\u540C\u6B65\u3002",
+        "\u79FB\u52A8\u7AEF\u65B0\u589E\u300C\u8303\u56F4\u300D\u6309\u94AE\uFF0C\u9ED8\u8BA4\u663E\u793A\u5168\u90E8\u5854\u8303\u56F4\u3002",
+        "\u79FB\u52A8\u7AEF\u300C\u836F\u300D\u6309\u94AE\u6539\u4E3A\u5FAA\u73AF\u4F7F\u7528\u5168\u90E8\u4E3B\u52A8\u88C5\u5907\uFF0C\u652F\u6301\u591A\u4E2A\u521B\u53EF\u8D34\u548C\u84DD\u836F\u3002"
       ]
     },
     {
@@ -13144,11 +13167,12 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
       }
       const itemBtn = document.getElementById("touch-item");
       if (itemBtn) {
+        const active = (p.itemIds ?? []).filter((id) => !!ITEM_MAP[id]?.active);
         const idx = p.itemIds?.findIndex((id) => ITEM_MAP[id]?.active) ?? -1;
         if (idx >= 0 && p.itemIds) {
           const def = ITEM_MAP[p.itemIds[idx]];
           itemBtn.disabled = false;
-          itemBtn.textContent = def.name.length > 2 ? def.name.slice(0, 2) : def.name;
+          itemBtn.textContent = active.length > 1 ? `\u836F${active.length}` : def.name.length > 2 ? def.name.slice(0, 2) : def.name;
           itemBtn.dataset.slot = String(idx);
         } else {
           itemBtn.disabled = true;
@@ -13561,6 +13585,8 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
   var tutorial = null;
   var camera = createCamera();
   var zoomLevel = isTouchDevice ? 1.15 : 1.28;
+  var touchTowerRanges = isTouchDevice;
+  var touchItemCursor = 0;
   var cssW = window.innerWidth;
   var cssH = window.innerHeight;
   var dpr = Math.min(isTouchDevice ? 1.5 : 2, window.devicePixelRatio || 1);
@@ -13609,7 +13635,7 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
   var onlineDesync = false;
   var onlineInfoTimer = 0;
   var onlineHudAt = 0;
-  var shopUiAt = 0;
+  var shopDirty = false;
   var zeroInput = { moveX: 0, moveY: 0, aimX: 0, aimY: 0 };
   var room = null;
   var roomHost = false;
@@ -13895,9 +13921,7 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
       if (!p) return;
       if (onlineQueue({ type: "buy", itemId: id }) || roomQueue({ type: "buy", itemId: id })) {
         sfx("buy");
-        window.setTimeout(() => {
-          if (world) ui.renderShop(world);
-        }, 80);
+        shopDirty = true;
         return;
       }
       if (buyItem(world, p, id)) {
@@ -13912,9 +13936,7 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
       if (!p) return;
       if (onlineQueue({ type: "sell", slot: index }) || roomQueue({ type: "sell", slot: index })) {
         sfx("buy");
-        window.setTimeout(() => {
-          if (world) ui.renderShop(world);
-        }, 80);
+        shopDirty = true;
         return;
       }
       if (sellItem(world, p, index)) {
@@ -13936,12 +13958,14 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
     if (next === shopOpen) return;
     if (next) {
       shopOpen = true;
+      shopDirty = false;
       pausedBeforeShop = paused;
       paused = true;
       ui.showPause(false);
       ui.showShop(true, world);
     } else {
       shopOpen = false;
+      shopDirty = false;
       paused = pausedBeforeShop;
       ui.showShop(false);
     }
@@ -14132,7 +14156,7 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
       }
       updateCamera(camera, world, cssW, cssH, dt);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      render(ctx, world, camera, cssW, cssH, { allTowerRanges: keys.has("alt") || devRanges, eyeCare, noFog: devNoFog });
+      render(ctx, world, camera, cssW, cssH, { allTowerRanges: keys.has("alt") || devRanges || touchTowerRanges, eyeCare, noFog: devNoFog });
       drawMinimap(minimap, world, camera, cssW / camera.zoom, cssH / camera.zoom);
       if (!paused || world.state === "over") ui.updateHud(world);
       if (devModeOpen && now - devLastRefresh > 280) {
@@ -14143,8 +14167,8 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
         onlineHudAt = now;
         updateOnlineHud();
       }
-      if (shopOpen && (onlineActive || roomActive) && now - shopUiAt > 150) {
-        shopUiAt = now;
+      if (shopOpen && shopDirty) {
+        shopDirty = false;
         ui.renderShop(world);
       }
       if (world.state === "over" && !resultShown) {
@@ -15933,6 +15957,39 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
     });
     applyTouchLayout(readTouchLayout());
   }
+  function useMobileItem() {
+    if (!world || paused) return;
+    const p = playerOf(world);
+    if (!p) return;
+    const activeSlots = (p.itemIds ?? []).map((id, slot) => ({ slot, def: ITEM_MAP[id] })).filter((x) => !!x.def?.active);
+    if (!activeSlots.length) {
+      ui.toast("\u6CA1\u6709\u4E3B\u52A8\u88C5\u5907");
+      return;
+    }
+    let chosen = -1;
+    let chosenIdx = -1;
+    for (let i = 0; i < activeSlots.length; i++) {
+      const idx = (touchItemCursor + i) % activeSlots.length;
+      const slot = activeSlots[idx].slot;
+      if ((p.itemCds?.[slot] ?? 0) <= world.time) {
+        chosen = slot;
+        chosenIdx = idx;
+        break;
+      }
+    }
+    if (chosen < 0) {
+      ui.toast("\u4E3B\u52A8\u88C5\u5907\u90FD\u5728\u51B7\u5374");
+      return;
+    }
+    touchItemCursor = (chosenIdx + 1) % activeSlots.length;
+    const def = ITEM_MAP[p.itemIds[chosen]];
+    if (onlineQueue({ type: "item", slot: chosen }) || roomQueue({ type: "item", slot: chosen })) {
+      ui.toast(`\u4F7F\u7528 ${def.name}`);
+      return;
+    }
+    useItem(world, p, chosen);
+    ui.toast(`\u4F7F\u7528 ${def.name}`);
+  }
   function bindTouchControls() {
     const joy = document.getElementById("joystick");
     const knob = document.getElementById("joystick-knob");
@@ -16030,20 +16087,20 @@ button, .tskill, .touch-btn, input, select { -webkit-touch-callout: none; }
       if (shopOpen) toggleShop(false);
       else if (!paused) toggleShop(true);
     });
+    onTap("touch-ranges", () => {
+      touchTowerRanges = !touchTowerRanges;
+      const btn = document.getElementById("touch-ranges");
+      btn?.classList.toggle("active", touchTowerRanges);
+      btn?.setAttribute("aria-pressed", String(touchTowerRanges));
+      ui.toast(touchTowerRanges ? "\u663E\u793A\u5168\u90E8\u5854\u8303\u56F4" : "\u53EA\u663E\u793A\u9644\u8FD1\u5854\u8303\u56F4");
+    });
     onTap("touch-recall", () => {
       if (!world || paused) return;
       if (onlineQueue({ type: "recall" }) || roomQueue({ type: "recall" })) return;
       world.queued.push({ type: "recall" });
     });
     onTap("touch-item", () => {
-      if (!world || paused) return;
-      const p = playerOf(world);
-      const btn = document.getElementById("touch-item");
-      const slot = Number(btn?.dataset.slot);
-      if (p && Number.isFinite(slot)) {
-        if (onlineQueue({ type: "item", slot }) || roomQueue({ type: "item", slot })) return;
-        useItem(world, p, slot);
-      }
+      useMobileItem();
     });
     canvas.addEventListener("pointerdown", (e) => {
       if (e.pointerType !== "touch") return;
