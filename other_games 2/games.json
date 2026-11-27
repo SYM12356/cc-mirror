@@ -1,0 +1,76 @@
+{
+  "updated": "2026-11-27",
+  "note": "更多小游戏清单。新增游戏：把目录放进 other_games/，在这里加一条即可，页面自动读取。url 是相对站点根的路径。可选 name_en / desc_en / tag_en 用于英文界面；author 是开发者，页面上按它分类。注意这是严格 JSON：不能写注释，最后一项后面不能多逗号。",
+  "games": [
+    {
+      "name": "穷途末旅",
+      "name_en": "The Last Road",
+      "desc": "末日公路 · 卡牌生存经营，一局约 30 分钟",
+      "desc_en": "A post-apocalyptic road trip card survival management game",
+      "url": "other_games/SYM/qiongtu/",
+      "tag": "卡牌经营",
+      "tag_en": "Card / Survival",
+      "author": "SYM"
+    },
+    {
+      "name": "苔野",
+      "name_en": "Mossfield",
+      "desc": "涌现式自然开放世界 · 你只负责第一颗种子",
+      "desc_en": "An emergent open world of nature - you only plant the first seed",
+      "url": "other_games/SYM/mossfield/",
+      "tag": "开放世界",
+      "tag_en": "Open World",
+      "author": "SYM"
+    },
+    {
+      "name": "汪义轩突围",
+      "name_en": "WAREGY BREAKOUT",
+      "desc": "写实战术突围 · 3D，建议桌面端游玩",
+      "desc_en": "Realistic tactical breakout in 3D - desktop recommended",
+      "url": "other_games/SYM/tuwei/",
+      "tag": "3D",
+      "tag_en": "3D",
+      "author": "SYM"
+    },
+    {
+      "name": "海战棋",
+      "name_en": "Sea Battle",
+      "desc": "与 AI 在海上争锋，早期作品，简陋见谅",
+      "desc_en": "Duel the AI at sea - an early work, rough around the edges",
+      "url": "other_games/SYM/haizhan/",
+      "tag": "模拟桌游",
+      "tag_en": "Board",
+      "author": "SYM"
+    },
+    {
+      "name": "古尘录",
+      "name_en": "Ancient Dust",
+      "desc": "古代像素人生模拟器，早期作品，简陋见谅",
+      "desc_en": "Ancient-era pixel life sim - an early work, rough around the edges",
+      "url": "other_games/SYM/guchen/",
+      "tag": "模拟器",
+      "tag_en": "Sim",
+      "author": "SYM"
+    },
+    {
+      "name": "机甲对决",
+      "name_en": "Mech Arena",
+      "desc": "机甲对决，早期作品，简陋见谅",
+      "desc_en": "Mech duels - an early work, rough around the edges",
+      "url": "other_games/SYM/mech-arena/",
+      "tag": "2D 战斗",
+      "tag_en": "2D",
+      "author": "SYM"
+    },
+    {
+      "name": "这是预备铃！",
+      "name_en": "This Is the Prep Bell!",
+      "desc": "课桌塔防 · 用文具拦住墨水，重置版",
+      "desc_en": "Desk tower defence - stop the ink with stationery",
+      "url": "other_games/ying/yubei/",
+      "tag": "塔防",
+      "tag_en": "TD",
+      "author": "章鱼烤章鱼"
+    }
+  ]
+}
