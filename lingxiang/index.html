@@ -3588,6 +3588,24 @@ body.mobile.landscape #killfeed { top: calc(env(safe-area-inset-top, 0px) + 192p
       stats: { atkSpeed: 0.15, speed: 0.05 }
     },
     {
+      id: "liji_scooter",
+      name: "\u6770\u7684\u7535\u74F6\u8F66",
+      short: "\u8F66",
+      price: 1e3,
+      color: "#d97a4a",
+      desc: "+8% \u79FB\u901F\u3001+120 \u751F\u547D\uFF1B\u6770\u4E13\u5C5E\uFF1AE \u8DDD\u79BB/\u4F24\u5BB3 +20%\uFF0CE \u51B7\u5374 -30%",
+      stats: { speed: 0.08, hp: 120 }
+    },
+    {
+      id: "chaoran_suit",
+      name: "\u8D85\u7136\u7684\u5957",
+      short: "\u5957",
+      price: 1e3,
+      color: "#8b6fd8",
+      desc: "+35 \u62A4\u7532\u3001+220 \u751F\u547D\uFF1B\u8D85\u7136\u4E13\u5C5E\uFF1AR \u65A9\u6740\u7EBF 45%\uFF0C\u4F24\u5BB3 \xD71.8\uFF0C\u51FB\u6740\u8FD4\u8FD8 30% \u51B7\u5374",
+      stats: { armor: 35, hp: 220 }
+    },
+    {
       id: "notebook",
       name: "\u9519\u9898\u672C",
       short: "\u9519",
@@ -4093,6 +4111,9 @@ body.mobile.landscape #killfeed { top: calc(env(safe-area-inset-top, 0px) + 192p
     let v = 0;
     for (const b of u.buffs) if (b.type === type) v = Math.max(v, b.value);
     return v;
+  }
+  function hasItem(u, id) {
+    return u.kind === "hero" && !!u.itemIds?.includes(id);
   }
   function itemMods(u) {
     const m = emptyMods();
@@ -4865,7 +4886,9 @@ body.mobile.landscape #killfeed { top: calc(env(safe-area-inset-top, 0px) + 192p
       if (!tgt || dist(u.pos, tgt.pos) > def.range + tgt.radius + 8) return false;
     }
     u.mp -= manaCost;
-    st.cdUntil = w.time + def.cooldown * (1 - cdrOf(u));
+    let cd = def.cooldown;
+    if (def.id === "liji_e" && hasItem(u, "liji_scooter")) cd *= 0.7;
+    st.cdUntil = w.time + cd * (1 - cdrOf(u));
     u.recallUntil = void 0;
     u.channel = null;
     u.lastCastAt = w.time;
@@ -5854,9 +5877,11 @@ body.mobile.landscape #killfeed { top: calc(env(safe-area-inset-top, 0px) + 192p
       dash(w, u, norm(sub(t.pos, u.pos)), d, 2e3, void 0, {
         onEnd: () => {
           if (t.dead) return;
+          const suit = hasItem(u, "chaoran_suit");
           let dmg = 200 + 60 * (rank - 1) + 1 * adOf(u);
-          if (t.hp / t.maxHp < 0.35) dmg *= 1.5;
+          if (t.hp / t.maxHp < (suit ? 0.45 : 0.35)) dmg *= suit ? 1.8 : 1.5;
           damage(w, u, t, dmg, "physical", { skill: true });
+          if (suit && t.dead && u.abilities) u.abilities.r.cdUntil = Math.max(0, u.abilities.r.cdUntil - u.abilities.r.def.cooldown * 0.3);
           burst(w, t.pos, "#D94F3D", 22, "star");
           w.floats.push({ pos: { x: t.pos.x, y: t.pos.y - t.radius - 30 }, text: "\u5C31\u4E00\u4E0B", color: "#D94F3D", size: 18, until: w.time + 0.8, vy: -26 });
         }
@@ -5978,11 +6003,13 @@ body.mobile.landscape #killfeed { top: calc(env(safe-area-inset-top, 0px) + 192p
     ai: { use: "enemy", range: 420 },
     cast(ctx2) {
       const { world: w, caster: u, aim, rank } = ctx2;
-      const dmg = 80 + 25 * (rank - 1) + 0.5 * adOf(u);
-      dash(w, u, norm(sub(aim, u.pos)), 450, 1600, (w2, caster, t) => {
+      const scooter = hasItem(u, "liji_scooter");
+      const dmg = (80 + 25 * (rank - 1) + 0.5 * adOf(u)) * (scooter ? 1.2 : 1);
+      dash(w, u, norm(sub(aim, u.pos)), scooter ? 540 : 450, 1600, (w2, caster, t) => {
         damage(w2, caster, t, dmg, "physical", { skill: true });
         const dir = norm(sub(t.pos, caster.pos));
-        for (let i = 0; i < 10; i++) {
+        const steps = scooter ? 12 : 10;
+        for (let i = 0; i < steps; i++) {
           const step2 = 25;
           t.pos = add(t.pos, scale(dir, step2));
         }
@@ -12014,7 +12041,8 @@ body.mobile.landscape #killfeed { top: calc(env(safe-area-inset-top, 0px) + 192p
         "\u706B\u534E\u53EC\u5524\u7269\u6539\u540D\u300C\u4F59\u524D\u5C3B\u300D\uFF0C\u5E76\u663E\u793A\u540D\u5B57\uFF1B\u4E8C\u8205\u5988\u56DB\u5C0F\u53EA\u4E5F\u663E\u793A\u5404\u81EA\u540D\u5B57\u3002",
         "\u8054\u673A 1v1 / 3v3 \u652F\u6301\u5546\u5E97\uFF0C\u8D2D\u4E70\u3001\u51FA\u552E\u3001\u88C5\u5907\u4E3B\u52A8\u7531\u623F\u4E3B\u540C\u6B65\u3002",
         "\u79FB\u52A8\u7AEF\u65B0\u589E\u300C\u8303\u56F4\u300D\u6309\u94AE\uFF0C\u9ED8\u8BA4\u663E\u793A\u5168\u90E8\u5854\u8303\u56F4\u3002",
-        "\u79FB\u52A8\u7AEF\u300C\u836F\u300D\u6309\u94AE\u6539\u4E3A\u5FAA\u73AF\u4F7F\u7528\u5168\u90E8\u4E3B\u52A8\u88C5\u5907\uFF0C\u652F\u6301\u591A\u4E2A\u521B\u53EF\u8D34\u548C\u84DD\u836F\u3002"
+        "\u79FB\u52A8\u7AEF\u300C\u836F\u300D\u6309\u94AE\u6539\u4E3A\u5FAA\u73AF\u4F7F\u7528\u5168\u90E8\u4E3B\u52A8\u88C5\u5907\uFF0C\u652F\u6301\u591A\u4E2A\u521B\u53EF\u8D34\u548C\u84DD\u836F\u3002",
+        "\u65B0\u589E\u4E24\u4EF6 1000 \u91D1\u5E01\u82F1\u96C4\u4E13\u5C5E\u88C5\u5907\uFF1A\u6770\u7684\u7535\u74F6\u8F66\u3001\u8D85\u7136\u7684\u5957\uFF1B\u5176\u4ED6\u82F1\u96C4\u4E5F\u6709\u57FA\u7840\u5C5E\u6027\u3002"
       ]
     },
     {
