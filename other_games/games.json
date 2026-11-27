@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-24",
+  "updated": "2026-11-27",
   "note": "更多小游戏清单。新增游戏：把目录放进 other_games/，在这里加一条即可，页面自动读取。url 是相对站点根的路径。可选 name_en / desc_en / tag_en 用于英文界面；author 是开发者，页面上按它分类。注意这是严格 JSON：不能写注释，最后一项后面不能多逗号。",
   "games": [
     {
@@ -54,13 +54,13 @@
     },
     {
       "name": "校园对决",
-      "name_en": "",
-      "desc": "使用道具，支援者，角色进行对决",
-      "desc_en": "",
-      "url": "other_games/ying/校园对决(1).html",
+      "name_en": "Campus Duel",
+      "desc": "使用道具、支援者与角色进行对决",
+      "desc_en": "Duel with items, supporters and characters",
+      "url": "other_games/ying/xiaoyuan-duijue.html",
       "tag": "集换式卡牌游戏",
-      "tag_en": "",
+      "tag_en": "CCG",
       "author": "章鱼烤章鱼"
-    },
+    }
   ]
 }
